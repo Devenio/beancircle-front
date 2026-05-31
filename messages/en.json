@@ -58,7 +58,9 @@
     "forward": "Forward",
     "forwardDescription": "Choose a conversation to forward this message.",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "invalidMessage": "Add a real message before sending",
+    "pinnedMessage": "Pinned message"
   },
   "notifications": {
     "title": "Notifications",

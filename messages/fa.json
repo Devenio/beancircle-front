@@ -58,7 +58,9 @@
     "forward": "فوروارد",
     "forwardDescription": "گفتگوی مقصد را برای فوروارد پیام انتخاب کنید.",
     "save": "ذخیره",
-    "cancel": "لغو"
+    "cancel": "لغو",
+    "invalidMessage": "قبل از ارسال یک پیام معنادار بنویسید",
+    "pinnedMessage": "پیام سنجاق‌شده"
   },
   "notifications": {
     "title": "اعلان‌ها",

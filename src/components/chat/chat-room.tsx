@@ -6,18 +6,15 @@ import { useTranslations } from 'next-intl';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChatHeader } from '@/components/chat/chat-header';
 import { ChatComposer } from '@/components/chat/composer';
-import { MessageBubble } from '@/components/chat/message-bubble';
+import { MessageGroup } from '@/components/chat/message-group';
+import { PinnedMessageBanner } from '@/components/chat/pinned-message-banner';
 import { MessageActionsSheet } from '@/components/chat/message-actions-sheet';
 import { DateSeparator } from '@/components/chat/date-separator';
 import { TypingIndicator } from '@/components/chat/typing-indicator';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
-import {
-  groupMessagesByDate,
-  isMineMessage,
-  messagePreview,
-} from '@/components/chat/utils';
+import { groupMessagesBySenderAndDate, isMineMessage, messagePreview } from '@/components/chat/utils';
 import {
   Dialog,
   DialogContent,
@@ -56,9 +53,17 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     enabled: forwardOpen,
   });
 
-  const groupedMessages = useMemo(() => groupMessagesByDate(room.messages), [room.messages]);
+  const groupedMessages = useMemo(
+    () => groupMessagesBySenderAndDate(room.messages, room.currentUserId, room.currentUsername),
+    [room.messages, room.currentUserId, room.currentUsername],
+  );
 
   const peerOnline = room.peer?.id ? onlineUserIds.has(room.peer.id) : false;
+
+  const pinnedPreview =
+    room.pinnedMessages.length > 0
+      ? messagePreview(room.pinnedMessages[room.pinnedMessages.length - 1])
+      : undefined;
 
   const copyMessage = (msg: ChatMessage | PendingMessage) => {
     const text =
@@ -87,17 +92,11 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <ChatHeader
-        peer={room.peer}
-        online={peerOnline}
-        typingUsername={room.typingUsername}
-        connectionState={room.connectionState}
-        pinnedPreview={
-          room.pinnedMessages.length
-            ? messagePreview(room.pinnedMessages[room.pinnedMessages.length - 1])
-            : undefined
-        }
-      />
+      <ChatHeader peer={room.peer} online={peerOnline} typingUsername={room.typingUsername} />
+
+      {pinnedPreview ? (
+        <PinnedMessageBanner preview={pinnedPreview} scrollContainerRef={room.listRef} />
+      ) : null}
 
       <div ref={room.listRef} className="flex-1 overflow-y-auto px-3 py-3">
         {room.isLoading ? (
@@ -112,33 +111,25 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
             <p className="max-w-xs text-sm text-muted-foreground">{t('emptyChatBody')}</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-1 pb-2">
-            {groupedMessages.map((group) => (
-              <div key={group.date}>
-                <DateSeparator date={group.date} />
-                {group.items.map((msg, index) => {
-                  const prev = group.items[index - 1];
-                  const isMine = isMineMessage(msg, room.currentUserId, room.currentUsername);
-                  const sameSenderAsPrev =
-                    prev &&
-                    prev.sender.id === msg.sender.id &&
-                    new Date(msg.createdAt).getTime() - new Date(prev.createdAt).getTime() < 120000;
-
-                  return (
-                    <MessageBubble
-                      key={'clientId' in msg ? msg.clientId : msg.id}
-                      message={msg}
-                      currentUserId={room.currentUserId}
-                      currentUsername={room.currentUsername}
-                      peerId={room.peer?.id}
-                      reactions={reactionsByMessage[msg.id] ?? []}
-                      isGrouped={Boolean(sameSenderAsPrev)}
-                      showAvatar={!isMine && !sameSenderAsPrev}
-                      onReply={() => room.setReplyTo(msg)}
-                      onOpenActions={() => setActiveMessage(msg)}
-                    />
-                  );
-                })}
+          <div className="flex flex-col pb-2">
+            {groupedMessages.map((dateGroup) => (
+              <div key={dateGroup.date}>
+                <DateSeparator date={dateGroup.date} />
+                {dateGroup.senderGroups.map((senderGroup) => (
+                  <MessageGroup
+                    key={`${dateGroup.date}-${senderGroup.senderId}-${senderGroup.messages[0]?.id}`}
+                    group={senderGroup}
+                    currentUserId={room.currentUserId}
+                    currentUsername={room.currentUsername}
+                    peerId={room.peer?.id}
+                    peerAvatar={room.peer?.avatarUrl}
+                    peerName={room.peer?.name ?? room.peer?.username}
+                    peerOnline={peerOnline}
+                    reactionsByMessage={reactionsByMessage}
+                    onReply={room.setReplyTo}
+                    onOpenActions={setActiveMessage}
+                  />
+                ))}
               </div>
             ))}
           </div>
@@ -189,6 +180,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           onStartRecording={room.startRecording}
           onStopRecording={room.stopRecording}
           composerError={room.composerError}
+          validationHint={t('invalidMessage')}
           placeholder={t('typeMessage')}
           disabled={room.isSending}
         />

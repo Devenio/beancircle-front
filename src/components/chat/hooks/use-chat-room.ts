@@ -11,7 +11,7 @@ import type {
   MessagePayload,
   PendingMessage,
 } from '@/components/chat/types';
-import { fileToDataUrl, isMineMessage, messagePreview } from '@/components/chat/utils';
+import { fileToDataUrl, isMineMessage, messagePreview, validateMessageText } from '@/components/chat/utils';
 
 const LIVE_CHAT_STORAGE_KEY = 'messages.live.enabled';
 const RECONNECT_BACKOFF_MAX_MS = 30000;
@@ -334,7 +334,14 @@ export function useChatRoom(conversationId: string, locale: string) {
 
   const sendText = useCallback(() => {
     const trimmed = draft.trim();
-    if (!trimmed) return;
+    const validation = validateMessageText(trimmed);
+    if (!validation.valid) {
+      if (validation.reason === 'spam') {
+        setComposerError('That message looks like spam. Try something more meaningful.');
+      }
+      return;
+    }
+    setComposerError('');
     sendPayload({
       body: trimmed,
       type: 'text',

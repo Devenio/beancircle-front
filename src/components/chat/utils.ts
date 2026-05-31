@@ -2,6 +2,24 @@ import type { ChatMessage, ChatMessageType, MessageDeliveryStatus, PendingMessag
 
 const URL_REGEX = /https?:\/\/[^\s]+/gi;
 
+/** Messages from the same sender within this window are visually grouped. */
+export const GROUP_TIME_THRESHOLD_MS = 3 * 60 * 1000;
+
+export type MessageSenderGroup = {
+  senderId: string;
+  isMine: boolean;
+  messages: (ChatMessage | PendingMessage)[];
+};
+
+export type MessageDateGroup = {
+  date: string;
+  senderGroups: MessageSenderGroup[];
+};
+
+export type MessageValidationResult =
+  | { valid: true }
+  | { valid: false; reason: 'empty' | 'spam' };
+
 export function formatTime(value: string) {
   return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -102,6 +120,71 @@ export function groupMessagesByDate(messages: (ChatMessage | PendingMessage)[]) 
     }
   }
   return groups;
+}
+
+export function groupMessagesBySenderAndDate(
+  messages: (ChatMessage | PendingMessage)[],
+  currentUserId?: string,
+  currentUsername?: string | null,
+): MessageDateGroup[] {
+  return groupMessagesByDate(messages).map(({ date, items }) => {
+    const senderGroups: MessageSenderGroup[] = [];
+
+    for (const msg of items) {
+      const isMine = isMineMessage(msg, currentUserId, currentUsername);
+      const senderId = msg.sender.id ?? msg.senderId ?? 'unknown';
+      const last = senderGroups[senderGroups.length - 1];
+      const prevMsg = last?.messages[last.messages.length - 1];
+      const withinWindow =
+        prevMsg &&
+        new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() <
+          GROUP_TIME_THRESHOLD_MS;
+
+      if (last && last.senderId === senderId && last.isMine === isMine && withinWindow) {
+        last.messages.push(msg);
+      } else {
+        senderGroups.push({ senderId, isMine, messages: [msg] });
+      }
+    }
+
+    return { date, senderGroups };
+  });
+}
+
+export function getGroupPosition(
+  index: number,
+  total: number,
+): 'single' | 'first' | 'middle' | 'last' {
+  if (total === 1) return 'single';
+  if (index === 0) return 'first';
+  if (index === total - 1) return 'last';
+  return 'middle';
+}
+
+export function validateMessageText(text: string): MessageValidationResult {
+  const trimmed = text.trim();
+  if (!trimmed) return { valid: false, reason: 'empty' };
+
+  // Repeated single character (aaaaaa)
+  if (/^(.)\1{4,}$/u.test(trimmed)) return { valid: false, reason: 'spam' };
+
+  // Short keyboard mash (asdasd, qweqwe)
+  if (trimmed.length <= 12 && /^([a-z]{2,4})\1+$/iu.test(trimmed)) {
+    return { valid: false, reason: 'spam' };
+  }
+
+  // Mostly non-alphanumeric noise with no spaces
+  if (
+    trimmed.length >= 4 &&
+    trimmed.length <= 16 &&
+    !/\s/u.test(trimmed) &&
+    /^[a-z]+$/iu.test(trimmed) &&
+    !/[aeiou]/iu.test(trimmed)
+  ) {
+    return { valid: false, reason: 'spam' };
+  }
+
+  return { valid: true };
 }
 
 export function renderMentionParts(text: string) {
