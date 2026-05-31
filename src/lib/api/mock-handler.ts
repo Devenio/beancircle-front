@@ -1,4 +1,5 @@
 import {
+  type MockChatMessage,
   MOCK_CAFES,
   MOCK_CITIES,
   MOCK_COMMENTS,
@@ -23,6 +24,23 @@ function parseBody(body?: BodyInit | null): Record<string, unknown> {
 
 function notFound(path: string): never {
   throw new Error(`Mock API: no handler for ${path}`);
+}
+
+function findConversationMessage(conversationId: string, messageId: string) {
+  const list = MOCK_MESSAGES[conversationId] ?? [];
+  const message = list.find((item) => item.id === messageId);
+  return { list, message };
+}
+
+function getConversationPreview(message: MockChatMessage): string {
+  if (message.deletedAt) return 'Message deleted';
+  if (message.type === 'sticker') return `Sticker ${message.sticker ?? ''}`.trim();
+  if (message.type === 'location') return message.location?.label ?? 'Location';
+  if (message.type === 'image') return `Image${message.attachment?.name ? `: ${message.attachment.name}` : ''}`;
+  if (message.type === 'video') return `Video${message.attachment?.name ? `: ${message.attachment.name}` : ''}`;
+  if (message.type === 'voice') return 'Voice message';
+  if (message.type === 'file') return `File${message.attachment?.name ? `: ${message.attachment.name}` : ''}`;
+  return message.body ?? '';
 }
 
 export async function handleMockRequest<T>(
@@ -141,19 +159,103 @@ export async function handleMockRequest<T>(
   }
   const messagesMatch = pathname.match(/^\/conversations\/([^/]+)\/messages$/);
   if (messagesMatch && method === 'GET') {
+    const conversationMessages = MOCK_MESSAGES[messagesMatch[1]] ?? [];
     return {
-      data: MOCK_MESSAGES[messagesMatch[1]] ?? [],
+      data: [...conversationMessages].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      ),
       nextCursor: null,
     } as T;
   }
   if (messagesMatch && method === 'POST') {
     const body = parseBody(options.body);
-    return {
+    const conversationId = messagesMatch[1];
+    const list = (MOCK_MESSAGES[conversationId] ??= []);
+    const message: MockChatMessage = {
       id: `mock-msg-${Date.now()}`,
       body: String(body.body ?? ''),
       sender: { id: MOCK_CURRENT_USER.id, username: MOCK_CURRENT_USER.username },
       createdAt: new Date().toISOString(),
-    } as T;
+      type:
+        typeof body.type === 'string'
+          ? (body.type as MockChatMessage['type'])
+          : 'text',
+      attachment:
+        typeof body.attachment === 'object' && body.attachment
+          ? (body.attachment as MockChatMessage['attachment'])
+          : undefined,
+      location:
+        typeof body.location === 'object' && body.location
+          ? (body.location as MockChatMessage['location'])
+          : undefined,
+      sticker: typeof body.sticker === 'string' ? body.sticker : undefined,
+      replyToId: typeof body.replyToId === 'string' ? body.replyToId : undefined,
+      replyToSnippet:
+        typeof body.replyToSnippet === 'string' ? body.replyToSnippet : undefined,
+      pinned: Boolean(body.pinned),
+      seenBy: [MOCK_CURRENT_USER.username],
+    };
+
+    list.push(message);
+    const conversation = MOCK_CONVERSATIONS.find((item) => item.id === conversationId);
+    if (conversation) {
+      conversation.lastMessage = { body: getConversationPreview(message) };
+    }
+    return message as T;
+  }
+
+  const messageItemMatch = pathname.match(/^\/conversations\/([^/]+)\/messages\/([^/]+)$/);
+  if (messageItemMatch && method === 'PATCH') {
+    const body = parseBody(options.body);
+    const conversationId = messageItemMatch[1];
+    const messageId = messageItemMatch[2];
+    const { message } = findConversationMessage(conversationId, messageId);
+    if (!message) notFound(path);
+
+    if (typeof body.body === 'string') {
+      message.body = body.body;
+      message.editedAt = new Date().toISOString();
+    }
+    if (typeof body.pinned === 'boolean') {
+      message.pinned = body.pinned;
+    }
+    return message as T;
+  }
+
+  if (messageItemMatch && method === 'DELETE') {
+    const conversationId = messageItemMatch[1];
+    const messageId = messageItemMatch[2];
+    const { message } = findConversationMessage(conversationId, messageId);
+    if (!message) notFound(path);
+    message.body = '';
+    message.deletedAt = new Date().toISOString();
+    return message as T;
+  }
+
+  const seenMatch = pathname.match(/^\/conversations\/([^/]+)\/messages\/([^/]+)\/seen$/);
+  if (seenMatch && method === 'POST') {
+    const conversationId = seenMatch[1];
+    const messageId = seenMatch[2];
+    const { message } = findConversationMessage(conversationId, messageId);
+    if (!message) notFound(path);
+    if (!message.seenBy) {
+      message.seenBy = [];
+    }
+    if (!message.seenBy.includes(MOCK_CURRENT_USER.username)) {
+      message.seenBy.push(MOCK_CURRENT_USER.username);
+    }
+    return { seen: true } as T;
+  }
+
+  const pinMatch = pathname.match(/^\/conversations\/([^/]+)\/messages\/([^/]+)\/pin$/);
+  if (pinMatch && method === 'POST') {
+    const conversationId = pinMatch[1];
+    const messageId = pinMatch[2];
+    const body = parseBody(options.body);
+    const { message } = findConversationMessage(conversationId, messageId);
+    if (!message) notFound(path);
+    message.pinned = typeof body.pinned === 'boolean' ? body.pinned : !message.pinned;
+    return message as T;
   }
 
   // Notifications

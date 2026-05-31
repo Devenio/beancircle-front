@@ -165,9 +165,49 @@ export const MOCK_CONVERSATIONS = [
   },
 ];
 
+export type MockMessageType =
+  | 'text'
+  | 'image'
+  | 'file'
+  | 'location'
+  | 'voice'
+  | 'video'
+  | 'sticker';
+
+export type MockMessageAttachment = {
+  url: string;
+  name?: string;
+  mimeType?: string;
+  size?: number;
+  durationSec?: number;
+};
+
+export type MockMessageLocation = {
+  lat: number;
+  lng: number;
+  label?: string;
+};
+
+export type MockChatMessage = {
+  id: string;
+  body?: string;
+  sender: { id: string; username?: string };
+  createdAt: string;
+  type: MockMessageType;
+  attachment?: MockMessageAttachment;
+  location?: MockMessageLocation;
+  sticker?: string;
+  replyToId?: string;
+  replyToSnippet?: string;
+  editedAt?: string;
+  deletedAt?: string;
+  seenBy?: string[];
+  pinned?: boolean;
+};
+
 export const MOCK_MESSAGES: Record<
   string,
-  { id: string; body?: string; sender: { id: string; username?: string }; createdAt: string }[]
+  MockChatMessage[]
 > = {
   'mock-conv-1': [
     {
@@ -175,18 +215,25 @@ export const MOCK_MESSAGES: Record<
       body: 'Hey! Have you tried the new blend?',
       sender: { id: MOCK_USERS.sara.id, username: 'sara' },
       createdAt: '2026-05-30T10:00:00.000Z',
+      type: 'text',
+      seenBy: ['sara', 'nima'],
     },
     {
       id: 'mock-msg-2',
       body: 'Not yet — planning to go tomorrow.',
       sender: { id: MOCK_USERS.nima.id, username: 'nima' },
       createdAt: '2026-05-30T10:05:00.000Z',
+      type: 'text',
+      seenBy: ['nima', 'sara'],
     },
     {
       id: 'mock-msg-3',
       body: 'See you at Bean Circle tomorrow?',
       sender: { id: MOCK_USERS.sara.id, username: 'sara' },
       createdAt: '2026-05-30T10:06:00.000Z',
+      type: 'text',
+      pinned: true,
+      seenBy: ['sara'],
     },
   ],
   'mock-conv-2': [
@@ -195,6 +242,8 @@ export const MOCK_MESSAGES: Record<
       body: 'Welcome to Bean Circle!',
       sender: { id: MOCK_USERS.admin.id, username: 'admin' },
       createdAt: '2026-05-29T08:00:00.000Z',
+      type: 'text',
+      seenBy: ['admin', 'nima'],
     },
   ],
 };
