@@ -136,7 +136,7 @@ export function MentionText({ body, isMine }: { body: string; isMine?: boolean }
         part.type === 'mention' ? (
           <span
             key={part.key}
-            className={cn('font-semibold', isMine ? 'text-sky-200' : 'text-sky-600 dark:text-sky-400')}
+            className={cn('font-semibold', isMine ? 'text-primary-foreground/80' : 'text-primary')}
           >
             {part.value}
           </span>

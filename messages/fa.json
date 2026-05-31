@@ -52,7 +52,7 @@
     "emptyListTitle": "هنوز گفتگویی ندارید",
     "emptyListBody": "از پروفایل دوستان، گفتگو را شروع کنید.",
     "emptyChatTitle": "سلام کنید",
-    "emptyChatBody": "با ارسال پیام، عکس، ویس یا استیکر گفتگو را شروع کنید.",
+    "emptyChatBody": "با ارسال پیام، عکس یا ویس گفتگو را شروع کنید.",
     "noResults": "گفتگویی پیدا نشد",
     "noResultsBody": "نام یا نام کاربری دیگری را امتحان کنید.",
     "forward": "فوروارد",
@@ -72,6 +72,10 @@
   },
   "settings": {
     "title": "تنظیمات",
+    "theme": "ظاهر",
+    "themeLight": "روشن",
+    "themeDark": "تاریک",
+    "themeSystem": "سیستم",
     "language": "زبان",
     "logout": "خروج"
   },

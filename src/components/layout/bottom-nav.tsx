@@ -1,7 +1,7 @@
 'use client';
 
 import { Home, PlusSquare, Search, MessageCircle, User } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';

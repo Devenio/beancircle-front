@@ -52,7 +52,7 @@
     "emptyListTitle": "No conversations yet",
     "emptyListBody": "Start chatting with friends from their profile.",
     "emptyChatTitle": "Say hello",
-    "emptyChatBody": "Send a message, photo, voice note, or sticker to start the conversation.",
+    "emptyChatBody": "Send a message, photo, or voice note to start the conversation.",
     "noResults": "No chats found",
     "noResultsBody": "Try a different name or username.",
     "forward": "Forward",
@@ -72,6 +72,10 @@
   },
   "settings": {
     "title": "Settings",
+    "theme": "Appearance",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
     "language": "Language",
     "logout": "Log out"
   },

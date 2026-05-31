@@ -10,15 +10,22 @@ Next.js 16 mobile-first client for Cafe Community.
 
 ## Quick start
 
+From the API repo (starts Docker, API, and this app together):
+
+```bash
+cd ../beancircle-api
+nvm use
+npm run dev:local:setup   # first time
+npm run dev:local         # later runs
+```
+
+Or front only (API must already be running on port 3001):
+
 ```bash
 cp .env.local.example .env.local
 npm install
 npm run dev
 ```
-
-Open `http://localhost:3000/fa` (default locale) or `/en`.
-
-Ensure [beancircle-api](../beancircle-api) is running on port 3001.
 
 ## Routes
 

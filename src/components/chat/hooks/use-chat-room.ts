@@ -15,7 +15,6 @@ import { fileToDataUrl, isMineMessage, messagePreview } from '@/components/chat/
 
 const LIVE_CHAT_STORAGE_KEY = 'messages.live.enabled';
 const RECONNECT_BACKOFF_MAX_MS = 30000;
-const STICKERS = ['😀', '😍', '🔥', '☕', '🎉', '🤝', '💯', '😎'];
 
 type MessageListResponse = { data: ChatMessage[] };
 
@@ -43,7 +42,6 @@ export function useChatRoom(conversationId: string, locale: string) {
   });
   const [composerError, setComposerError] = useState('');
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
-  const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'none' | 'voice' | 'video'>('none');
 
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -477,9 +475,6 @@ export function useChatRoom(conversationId: string, locale: string) {
     setDraft,
     replyTo,
     setReplyTo,
-    showStickerPicker,
-    setShowStickerPicker,
-    stickers: STICKERS,
     recordingMode,
     composerError,
     connectionState,

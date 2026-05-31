@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { getLocaleFontClass } from '@/lib/fonts';
 import { QueryProvider } from '@/providers/query-provider';
+import { ThemeProvider } from '@/providers/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function generateStaticParams() {
@@ -28,11 +29,13 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={`min-h-screen bg-background antialiased ${fontClass}`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>
-            <TooltipProvider>
-              <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
-            </TooltipProvider>
-          </QueryProvider>
+          <ThemeProvider>
+            <QueryProvider>
+              <TooltipProvider>
+                <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
+              </TooltipProvider>
+            </QueryProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

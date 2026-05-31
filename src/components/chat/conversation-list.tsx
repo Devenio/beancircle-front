@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Pin, Search } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { Link } from '@/i18n/navigation';

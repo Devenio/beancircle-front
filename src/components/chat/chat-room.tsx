@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChatHeader } from '@/components/chat/chat-header';
@@ -181,19 +181,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           onTyping={room.emitTyping}
           replyTo={room.replyTo}
           onCancelReply={() => room.setReplyTo(null)}
-          showStickerPicker={room.showStickerPicker}
-          onToggleStickerPicker={() => room.setShowStickerPicker((prev) => !prev)}
-          stickers={room.stickers}
-          onPickSticker={(sticker) => {
-            room.sendPayload({
-              type: 'sticker',
-              sticker,
-              body: `Sticker ${sticker}`,
-              replyToId: room.replyTo?.id,
-              replyToSnippet: room.replyTo ? messagePreview(room.replyTo) : undefined,
-            });
-            room.setShowStickerPicker(false);
-          }}
           onPickImage={(files) => void room.handlePickFiles(files, 'image')}
           onPickFile={(files) => void room.handlePickFiles(files, 'file')}
           onPickVideo={(files) => void room.handlePickFiles(files, 'video')}

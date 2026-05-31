@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'motion/react';
+import { motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { ChatMessage, MessageDeliveryStatus, PendingMessage } from '@/components/chat/types';
 import { formatTime, getDeliveryStatus, isMineMessage } from '@/components/chat/utils';

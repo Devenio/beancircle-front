@@ -7,7 +7,6 @@ import {
   Paperclip,
   Plus,
   SendHorizontal,
-  Smile,
   Square,
   Video,
   ImageIcon,
@@ -25,10 +24,6 @@ type ChatComposerProps = {
   onTyping: () => void;
   replyTo: ChatMessage | null;
   onCancelReply: () => void;
-  showStickerPicker: boolean;
-  onToggleStickerPicker: () => void;
-  stickers: string[];
-  onPickSticker: (sticker: string) => void;
   onPickImage: (files: FileList | null) => void;
   onPickFile: (files: FileList | null) => void;
   onPickVideo: (files: FileList | null) => void;
@@ -48,10 +43,6 @@ export function ChatComposer({
   onTyping,
   replyTo,
   onCancelReply,
-  showStickerPicker,
-  onToggleStickerPicker,
-  stickers,
-  onPickSticker,
   onPickImage,
   onPickFile,
   onPickVideo,
@@ -81,21 +72,6 @@ export function ChatComposer({
         </div>
       ) : null}
 
-      {showStickerPicker ? (
-        <div className="mb-2 grid grid-cols-8 gap-1 rounded-xl border border-border bg-card p-2">
-          {stickers.map((sticker) => (
-            <button
-              key={sticker}
-              type="button"
-              className="rounded-lg p-2 text-xl transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() => onPickSticker(sticker)}
-            >
-              {sticker}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {composerError ? <p className="mb-2 text-xs text-destructive">{composerError}</p> : null}
 
       <input ref={imageRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => onPickImage(e.target.files)} />
@@ -109,9 +85,6 @@ export function ChatComposer({
           </Button>
           <Button type="button" variant="ghost" size="icon" className="size-10 shrink-0" onClick={() => fileRef.current?.click()} aria-label="Send file">
             <Paperclip />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-10 shrink-0" onClick={onToggleStickerPicker} aria-label="Stickers">
-            <Smile />
           </Button>
           <Button type="button" variant="ghost" size="icon" className="size-10 shrink-0" onClick={onSendLocation} aria-label="Send location">
             <MapPin />

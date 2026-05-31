@@ -18,12 +18,12 @@ export default function HomePage() {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white px-4 py-3">
+      <header className="sticky top-0 z-10 border-b border-border bg-background px-4 py-3">
         <h1 className="text-lg font-bold">Bean Circle</h1>
       </header>
-      {isLoading && <p className="p-4 text-center text-sm text-neutral-500">{t('empty')}</p>}
+      {isLoading && <p className="p-4 text-center text-sm text-muted-foreground">{t('empty')}</p>}
       {data?.data?.length === 0 && (
-        <p className="p-8 text-center text-neutral-500">{t('empty')}</p>
+        <p className="p-8 text-center text-muted-foreground">{t('empty')}</p>
       )}
       {data?.data?.map((post) => (
         <FeedCard key={(post as { id: string }).id} post={post as never} locale={locale} />

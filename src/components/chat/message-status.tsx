@@ -17,5 +17,5 @@ export function MessageStatusIcon({
   if (status === 'failed') return <AlertCircle className={cn(iconClass, 'text-destructive')} aria-label="Failed" />;
   if (status === 'sent') return <Check className={iconClass} aria-label="Sent" />;
   if (status === 'delivered') return <CheckCheck className={cn(iconClass, 'opacity-70')} aria-label="Delivered" />;
-  return <CheckCheck className={cn(iconClass, 'text-sky-500')} aria-label="Seen" />;
+  return <CheckCheck className={cn(iconClass, 'text-primary')} aria-label="Seen" />;
 }
