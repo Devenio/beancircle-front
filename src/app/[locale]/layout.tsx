@@ -24,8 +24,11 @@ export default async function LocaleLayout({
   const fontClass = getLocaleFontClass(locale);
 
   return (
-    <html lang={locale} dir={dir}>
-      <body className={`min-h-screen bg-neutral-50 antialiased ${fontClass}`}>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
+      <body
+        className={`min-h-screen bg-neutral-50 antialiased ${fontClass}`}
+        suppressHydrationWarning
+      >
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
             <div className="mx-auto min-h-screen max-w-[430px] bg-white shadow-sm">

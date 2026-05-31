@@ -1,3 +1,5 @@
+import { fetchMock, isMockMode } from './mock';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 type RequestOptions = RequestInit & { locale?: string };
@@ -21,6 +23,10 @@ export async function api<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  if (isMockMode()) {
+    return fetchMock<T>(path, options);
+  }
+
   const { locale, ...init } = options;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
