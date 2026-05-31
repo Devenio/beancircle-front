@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "بین سرکل",
+    "tagline": "جامعه کافه"
+  },
+  "nav": {
+    "home": "خانه",
+    "explore": "جستجو",
+    "create": "ایجاد",
+    "messages": "پیام‌ها",
+    "profile": "پروفایل"
+  },
+  "auth": {
+    "login": "ورود",
+    "phone": "شماره موبایل",
+    "sendOtp": "ارسال کد",
+    "verifyOtp": "تأیید",
+    "otpCode": "کد تأیید",
+    "google": "ورود با گوگل",
+    "onboarding": "تکمیل پروفایل",
+    "username": "نام کاربری",
+    "usernameHint": "فقط حروف کوچک انگلیسی، عدد و _ (مثال: nima_coffee)",
+    "usernameInvalid": "نام کاربری باید ۳ تا ۳۰ کاراکتر باشد: a-z، 0-9 و _",
+    "name": "نام",
+    "city": "شهر",
+    "save": "ذخیره"
+  },
+  "feed": {
+    "empty": "افراد و کافه‌ها را دنبال کنید تا پست ببینید",
+    "like": "پسند",
+    "comment": "نظر",
+    "save": "ذخیره"
+  },
+  "cafe": {
+    "follow": "دنبال کردن",
+    "unfollow": "لغو دنبال",
+    "checkin": "چک‌این",
+    "reviews": "نظرات",
+    "writeReview": "نوشتن نظر"
+  },
+  "search": {
+    "placeholder": "جستجوی کاربران و کافه‌ها",
+    "users": "کاربران",
+    "cafes": "کافه‌ها"
+  },
+  "messages": {
+    "title": "پیام‌ها",
+    "typeMessage": "پیام بنویسید...",
+    "send": "ارسال"
+  },
+  "notifications": {
+    "title": "اعلان‌ها",
+    "empty": "اعلانی وجود ندارد"
+  },
+  "gift": {
+    "title": "هدیه قهوه",
+    "amount": "مبلغ (تومان)",
+    "send": "ارسال هدیه",
+    "voucher": "ووچر شما"
+  },
+  "settings": {
+    "title": "تنظیمات",
+    "language": "زبان",
+    "logout": "خروج"
+  },
+  "admin": {
+    "title": "مدیریت",
+    "users": "کاربران",
+    "cafes": "کافه‌ها",
+    "reviews": "نظرات",
+    "reports": "گزارش‌ها",
+    "checkins": "چک‌این‌ها",
+    "gifts": "هدایا"
+  },
+  "common": {
+    "loading": "در حال بارگذاری...",
+    "error": "خطایی رخ داد",
+    "follow": "دنبال کردن",
+    "unfollow": "لغو دنبال",
+    "message": "پیام"
+  }
+}

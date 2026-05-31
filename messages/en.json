@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "Bean Circle",
+    "tagline": "Cafe community"
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "create": "Create",
+    "messages": "Messages",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": "Log in",
+    "phone": "Phone number",
+    "sendOtp": "Send code",
+    "verifyOtp": "Verify",
+    "otpCode": "Verification code",
+    "google": "Continue with Google",
+    "onboarding": "Complete your profile",
+    "username": "Username",
+    "usernameHint": "Lowercase letters, numbers, and underscores only (e.g. nima_coffee)",
+    "usernameInvalid": "Username must be 3–30 characters: a–z, 0–9, and _",
+    "name": "Name",
+    "city": "City",
+    "save": "Save"
+  },
+  "feed": {
+    "empty": "Follow people and cafes to see posts",
+    "like": "Like",
+    "comment": "Comment",
+    "save": "Save"
+  },
+  "cafe": {
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "checkin": "Check in",
+    "reviews": "Reviews",
+    "writeReview": "Write review"
+  },
+  "search": {
+    "placeholder": "Search users and cafes",
+    "users": "Users",
+    "cafes": "Cafes"
+  },
+  "messages": {
+    "title": "Messages",
+    "typeMessage": "Type a message...",
+    "send": "Send"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet"
+  },
+  "gift": {
+    "title": "Gift coffee",
+    "amount": "Amount (IRR)",
+    "send": "Send gift",
+    "voucher": "Your voucher"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "logout": "Log out"
+  },
+  "admin": {
+    "title": "Admin",
+    "users": "Users",
+    "cafes": "Cafes",
+    "reviews": "Reviews",
+    "reports": "Reports",
+    "checkins": "Check-ins",
+    "gifts": "Gifts"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "message": "Message"
+  }
+}
