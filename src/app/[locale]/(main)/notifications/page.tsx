@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api/client';
-import { Avatar } from '@/components/ui/avatar';
+import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 
 export default function NotificationsPage() {
   const t = useTranslations('notifications');

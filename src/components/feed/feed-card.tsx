@@ -3,7 +3,7 @@
 import { Heart, MessageCircle, Bookmark } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Avatar } from '@/components/ui/avatar';
+import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { api } from '@/lib/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { getLocaleFontClass } from '@/lib/fonts';
 import { QueryProvider } from '@/providers/query-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -25,15 +26,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
-      <body
-        className={`min-h-screen bg-neutral-50 antialiased ${fontClass}`}
-        suppressHydrationWarning
-      >
+      <body className={`min-h-screen bg-background antialiased ${fontClass}`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
-            <div className="mx-auto min-h-screen max-w-[430px] bg-white shadow-sm">
-              {children}
-            </div>
+            <TooltipProvider>
+              <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
+            </TooltipProvider>
           </QueryProvider>
         </NextIntlClientProvider>
       </body>

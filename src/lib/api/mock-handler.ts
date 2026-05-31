@@ -199,7 +199,13 @@ export async function handleMockRequest<T>(
     list.push(message);
     const conversation = MOCK_CONVERSATIONS.find((item) => item.id === conversationId);
     if (conversation) {
-      conversation.lastMessage = { body: getConversationPreview(message) };
+      conversation.updatedAt = message.createdAt;
+      conversation.lastMessage = {
+        body: getConversationPreview(message),
+        type: message.type,
+        createdAt: message.createdAt,
+        senderId: message.sender.id,
+      };
     }
     return message as T;
   }

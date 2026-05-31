@@ -4,12 +4,14 @@ import { BottomNav } from '@/components/layout/bottom-nav';
 import { PageTransition } from '@/components/layout/page-transition';
 import { useSocket } from '@/hooks/use-socket';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
 import { useEffect } from 'react';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
+  const pathname = usePathname();
+  const isChatRoom = /^\/messages\/[^/]+$/.test(pathname);
   useSocket();
 
   useEffect(() => {
@@ -23,10 +25,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <>
-      <main className="pb-20">
+      <main className={isChatRoom ? 'h-dvh overflow-hidden' : 'pb-20'}>
         <PageTransition>{children}</PageTransition>
       </main>
-      <BottomNav />
+      {!isChatRoom ? <BottomNav /> : null}
     </>
   );
 }

@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import { Input } from '@/components/ui/input';
 import { Link } from '@/i18n/navigation';
-import { Avatar } from '@/components/ui/avatar';
+import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 
 export default function ExplorePage() {
   const t = useTranslations('search');

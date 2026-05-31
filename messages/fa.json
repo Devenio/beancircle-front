@@ -45,8 +45,20 @@
   },
   "messages": {
     "title": "پیام‌ها",
-    "typeMessage": "پیام بنویسید...",
-    "send": "ارسال"
+    "typeMessage": "پیام بنویسید…",
+    "send": "ارسال",
+    "search": "جستجوی گفتگوها",
+    "typing": "{name} در حال نوشتن است…",
+    "emptyListTitle": "هنوز گفتگویی ندارید",
+    "emptyListBody": "از پروفایل دوستان، گفتگو را شروع کنید.",
+    "emptyChatTitle": "سلام کنید",
+    "emptyChatBody": "با ارسال پیام، عکس، ویس یا استیکر گفتگو را شروع کنید.",
+    "noResults": "گفتگویی پیدا نشد",
+    "noResultsBody": "نام یا نام کاربری دیگری را امتحان کنید.",
+    "forward": "فوروارد",
+    "forwardDescription": "گفتگوی مقصد را برای فوروارد پیام انتخاب کنید.",
+    "save": "ذخیره",
+    "cancel": "لغو"
   },
   "notifications": {
     "title": "اعلان‌ها",

@@ -152,19 +152,6 @@ export const MOCK_COMMENTS: Record<
   ],
 };
 
-export const MOCK_CONVERSATIONS = [
-  {
-    id: 'mock-conv-1',
-    otherMember: MOCK_USERS.sara,
-    lastMessage: { body: 'See you at Bean Circle tomorrow?' },
-  },
-  {
-    id: 'mock-conv-2',
-    otherMember: MOCK_USERS.admin,
-    lastMessage: { body: 'Welcome to Bean Circle!' },
-  },
-];
-
 export type MockMessageType =
   | 'text'
   | 'image'
@@ -173,6 +160,43 @@ export type MockMessageType =
   | 'voice'
   | 'video'
   | 'sticker';
+
+export type MockConversation = {
+  id: string;
+  updatedAt?: string;
+  otherMember: (typeof MOCK_USERS)[keyof typeof MOCK_USERS];
+  lastMessage?: {
+    body?: string;
+    type?: MockMessageType;
+    createdAt?: string;
+    senderId?: string;
+  };
+};
+
+export const MOCK_CONVERSATIONS: MockConversation[] = [
+  {
+    id: 'mock-conv-1',
+    updatedAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+    otherMember: MOCK_USERS.sara,
+    lastMessage: {
+      body: 'See you at Bean Circle tomorrow?',
+      type: 'text',
+      createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+      senderId: MOCK_USERS.sara.id,
+    },
+  },
+  {
+    id: 'mock-conv-2',
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+    otherMember: MOCK_USERS.admin,
+    lastMessage: {
+      body: 'Welcome to Bean Circle!',
+      type: 'text',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+      senderId: MOCK_USERS.admin.id,
+    },
+  },
+];
 
 export type MockMessageAttachment = {
   url: string;

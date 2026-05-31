@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
-import { Avatar } from '@/components/ui/avatar';
+import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useAuthStore } from '@/stores/auth-store';
