@@ -24,6 +24,12 @@ type MessageGroupProps = {
   reactionsByMessage: Record<string, MessageReaction[]>;
   onReply: (msg: ChatMessage | PendingMessage) => void;
   onOpenActions: (msg: ChatMessage | PendingMessage) => void;
+  onCopy: (msg: ChatMessage | PendingMessage) => void;
+  onForward: (msg: ChatMessage | PendingMessage) => void;
+  onEdit: (msg: ChatMessage | PendingMessage) => void;
+  onDelete: (msg: ChatMessage | PendingMessage) => void;
+  onPin: (msg: ChatMessage | PendingMessage) => void;
+  onReact: (msg: ChatMessage | PendingMessage, emoji: string) => void;
 };
 
 export function MessageGroup({
@@ -37,6 +43,12 @@ export function MessageGroup({
   reactionsByMessage,
   onReply,
   onOpenActions,
+  onCopy,
+  onForward,
+  onEdit,
+  onDelete,
+  onPin,
+  onReact,
 }: MessageGroupProps) {
   const { isMine, messages } = group;
   const lastMessage = messages[messages.length - 1];
@@ -77,6 +89,12 @@ export function MessageGroup({
                 isMine={isMine}
                 onReply={() => onReply(msg)}
                 onOpenActions={() => onOpenActions(msg)}
+                onCopy={() => onCopy(msg)}
+                onForward={() => onForward(msg)}
+                onEdit={() => onEdit(msg)}
+                onDelete={() => onDelete(msg)}
+                onPin={() => onPin(msg)}
+                onReact={(emoji) => onReact(msg, emoji)}
               />
             </div>
           );

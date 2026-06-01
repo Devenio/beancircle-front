@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/components/chat/types';
 import { messagePreview, validateMessageText } from '@/components/chat/utils';
+import { VoiceRecordingBar } from '@/components/chat/voice-recording-bar';
 
 type ChatComposerProps = {
   draft: string;
@@ -26,6 +27,7 @@ type ChatComposerProps = {
   onPickVideo: (files: FileList | null) => void;
   onSendLocation: () => void;
   recordingMode: 'none' | 'voice' | 'video';
+  recordingElapsedSec: number;
   onStartRecording: (mode: 'voice' | 'video') => void;
   onStopRecording: () => void;
   composerError?: string;
@@ -46,6 +48,7 @@ export function ChatComposer({
   onPickVideo,
   onSendLocation,
   recordingMode,
+  recordingElapsedSec,
   onStartRecording,
   onStopRecording,
   composerError,
@@ -112,27 +115,31 @@ export function ChatComposer({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="relative min-w-0 flex-1">
-          <Textarea
-            value={draft}
-            onChange={(event) => {
-              onDraftChange(event.target.value);
-              if (event.target.value.trim()) onTyping();
-            }}
-            placeholder={placeholder}
-            rows={1}
-            disabled={disabled}
-            className="max-h-28 min-h-10 resize-none rounded-2xl border-transparent bg-muted/60 px-4 py-2.5 text-[15px] shadow-none focus-visible:border-border focus-visible:ring-1"
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                if (canSend) onSend();
-              }
-            }}
-          />
-        </div>
+        {recordingMode === 'voice' ? (
+          <VoiceRecordingBar elapsedSec={recordingElapsedSec} onStop={onStopRecording} />
+        ) : (
+          <div className="relative min-w-0 flex-1">
+            <Textarea
+              value={draft}
+              onChange={(event) => {
+                onDraftChange(event.target.value);
+                if (event.target.value.trim()) onTyping();
+              }}
+              placeholder={placeholder}
+              rows={1}
+              disabled={disabled}
+              className="max-h-28 min-h-10 resize-none rounded-2xl border-transparent bg-muted/60 px-4 py-2.5 text-[15px] shadow-none focus-visible:border-border focus-visible:ring-1"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  if (canSend) onSend();
+                }
+              }}
+            />
+          </div>
+        )}
 
-        {showSend ? (
+        {recordingMode === 'voice' ? null : showSend ? (
           <Button
             type="button"
             size="icon"
@@ -146,26 +153,31 @@ export function ChatComposer({
           >
             <SendHorizontal className="size-5" />
           </Button>
+        ) : recordingMode === 'video' ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="destructive"
+            className="size-10 shrink-0 rounded-full"
+            onClick={onStopRecording}
+            aria-label="Stop video recording"
+          >
+            <Square className="size-4" />
+          </Button>
         ) : (
           <Button
             type="button"
             size="icon"
-            variant={recordingMode !== 'none' ? 'destructive' : 'secondary'}
+            variant="secondary"
             className="size-10 shrink-0 rounded-full"
-            onClick={() => {
-              if (recordingMode === 'voice' || recordingMode === 'video') {
-                onStopRecording();
-                return;
-              }
-              onStartRecording('voice');
-            }}
+            onClick={() => onStartRecording('voice')}
             onContextMenu={(event) => {
               event.preventDefault();
-              if (recordingMode === 'none') onStartRecording('video');
+              onStartRecording('video');
             }}
-            aria-label={recordingMode !== 'none' ? 'Stop recording' : 'Record voice message'}
+            aria-label="Record voice message"
           >
-            {recordingMode !== 'none' ? <Square className="size-4" /> : <Mic className="size-5" />}
+            <Mic className="size-5" />
           </Button>
         )}
       </div>

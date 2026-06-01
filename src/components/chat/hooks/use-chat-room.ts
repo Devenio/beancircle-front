@@ -43,10 +43,10 @@ export function useChatRoom(conversationId: string, locale: string) {
   const [composerError, setComposerError] = useState('');
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [recordingMode, setRecordingMode] = useState<'none' | 'voice' | 'video'>('none');
+  const [recordingElapsedSec, setRecordingElapsedSec] = useState(0);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const shouldAutoScrollRef = useRef(true);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seenSentRef = useRef<Set<string>>(new Set());
@@ -87,21 +87,20 @@ export function useChatRoom(conversationId: string, locale: string) {
     node.scrollTo({ top: node.scrollHeight, behavior });
   }, []);
 
-  const isNearBottom = useCallback((node: HTMLDivElement | null) => {
-    if (!node) return true;
-    return node.scrollHeight - node.scrollTop - node.clientHeight < 120;
-  }, []);
-
   useEffect(() => {
-    const node = listRef.current;
-    if (!node) return;
-    const onScroll = () => {
-      shouldAutoScrollRef.current = isNearBottom(node);
+    if (recordingMode === 'none') {
+      setRecordingElapsedSec(0);
+      return;
+    }
+    const tick = () => {
+      setRecordingElapsedSec(
+        Math.max(0, Math.floor((Date.now() - recordingStartedAtRef.current) / 1000)),
+      );
     };
-    node.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => node.removeEventListener('scroll', onScroll);
-  }, [isNearBottom]);
+    tick();
+    const interval = setInterval(tick, 250);
+    return () => clearInterval(interval);
+  }, [recordingMode]);
 
   useEffect(() => {
     if (!liveEnabled) {
@@ -222,7 +221,6 @@ export function useChatRoom(conversationId: string, locale: string) {
       setPendingMessages((prev) => [...prev, optimistic]);
       setDraft('');
       setReplyTo(null);
-      shouldAutoScrollRef.current = true;
       scrollToBottom('smooth');
       return { clientId };
     },
@@ -305,10 +303,16 @@ export function useChatRoom(conversationId: string, locale: string) {
   );
 
   useEffect(() => {
-    if (!messages.length) return;
-    if (!shouldAutoScrollRef.current && !sendMutation.isPending) return;
-    scrollToBottom(messages.length > 8 ? 'smooth' : 'auto');
-  }, [messages, scrollToBottom, sendMutation.isPending]);
+    if (!messages.length || isLoading) return;
+    const frame = requestAnimationFrame(() => {
+      scrollToBottom(messages.length > 8 ? 'smooth' : 'auto');
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages, isLoading, scrollToBottom]);
+
+  useEffect(() => {
+    if (typingUsername) scrollToBottom('smooth');
+  }, [typingUsername, scrollToBottom]);
 
   useEffect(() => {
     const unseen = [...messages].reverse().find((msg) => {
@@ -483,6 +487,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     replyTo,
     setReplyTo,
     recordingMode,
+    recordingElapsedSec,
     composerError,
     connectionState,
     liveEnabled,

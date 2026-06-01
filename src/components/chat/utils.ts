@@ -113,10 +113,10 @@ export function groupMessagesByDate(messages: (ChatMessage | PendingMessage)[]) 
   for (const msg of messages) {
     const dateKey = new Date(msg.createdAt).toDateString();
     const last = groups[groups.length - 1];
-    if (last?.date === dateKey) {
+    if (last && new Date(last.date).toDateString() === dateKey) {
       last.items.push(msg);
     } else {
-      groups.push({ date: msg.createdAt, items: [msg] });
+      groups.push({ date: dateKey, items: [msg] });
     }
   }
   return groups;

@@ -65,6 +65,8 @@ export function FileAttachmentCard({
   );
 }
 
+const VOICE_WAVE_HEIGHTS = [4, 7, 5, 9, 6, 8, 4, 10, 5, 7, 6, 9, 4, 8, 5, 7, 6, 10, 4, 8];
+
 export function VoiceMessagePlayer({
   url,
   durationSec,
@@ -77,20 +79,42 @@ export function VoiceMessagePlayer({
   return (
     <div
       className={cn(
-        'flex min-w-[220px] items-center gap-3 rounded-xl px-2 py-1',
+        'flex min-w-[220px] items-center gap-3 rounded-xl px-1 py-1',
         isMine ? 'text-primary-foreground' : 'text-foreground',
       )}
     >
-      <div className={cn('flex size-9 items-center justify-center rounded-full', isMine ? 'bg-primary-foreground/15' : 'bg-muted')}>
+      <button
+        type="button"
+        className={cn(
+          'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors',
+          isMine ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted hover:bg-muted/80',
+        )}
+        onClick={(event) => {
+          const audio = event.currentTarget.parentElement?.querySelector('audio');
+          if (!audio) return;
+          if (audio.paused) void audio.play();
+          else audio.pause();
+        }}
+        aria-label="Play voice message"
+      >
         <Play className="size-4" />
-      </div>
-      <div className="flex flex-1 flex-col gap-1">
-        <div className={cn('h-1.5 rounded-full', isMine ? 'bg-primary-foreground/25' : 'bg-muted')}>
-          <div className={cn('h-full w-1/3 rounded-full', isMine ? 'bg-primary-foreground' : 'bg-primary')} />
+      </button>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex items-end gap-[3px]" aria-hidden>
+          {VOICE_WAVE_HEIGHTS.map((height, index) => (
+            <span
+              key={index}
+              className={cn(
+                'w-[3px] shrink-0 rounded-full',
+                isMine ? 'bg-primary-foreground/80' : 'bg-primary/80',
+              )}
+              style={{ height: `${height}px` }}
+            />
+          ))}
         </div>
-        <span className="text-[10px] opacity-70">{formatDuration(durationSec)}</span>
+        <span className="text-[10px] tabular-nums opacity-70">{formatDuration(durationSec)}</span>
       </div>
-      <audio src={url} controls className="sr-only" />
+      <audio src={url} preload="metadata" className="sr-only" />
     </div>
   );
 }

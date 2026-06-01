@@ -128,6 +128,30 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
                     reactionsByMessage={reactionsByMessage}
                     onReply={room.setReplyTo}
                     onOpenActions={setActiveMessage}
+                    onCopy={copyMessage}
+                    onForward={(msg) => {
+                      setActiveMessage(msg);
+                      setForwardOpen(true);
+                    }}
+                    onEdit={(msg) => {
+                      setEditingMessageId(msg.id);
+                      setEditingDraft(msg.body ?? '');
+                    }}
+                    onDelete={(msg) => room.deleteMutation.mutate(msg.id)}
+                    onPin={(msg) =>
+                      room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
+                    }
+                    onReact={(msg, emoji) => {
+                      if (!room.currentUserId) return;
+                      const existing = reactionsByMessage[msg.id]?.find(
+                        (item) => item.userId === room.currentUserId,
+                      );
+                      if (existing?.emoji === emoji) {
+                        removeReaction(msg.id, room.currentUserId);
+                      } else {
+                        addReaction(msg.id, { emoji, userId: room.currentUserId });
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -177,6 +201,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           onPickVideo={(files) => void room.handlePickFiles(files, 'video')}
           onSendLocation={room.sendLocation}
           recordingMode={room.recordingMode}
+          recordingElapsedSec={room.recordingElapsedSec}
           onStartRecording={room.startRecording}
           onStopRecording={room.stopRecording}
           composerError={room.composerError}
