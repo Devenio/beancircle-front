@@ -4,7 +4,14 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { Pin, Search } from 'lucide-react';
+import { MessageCircle, Pin, Search } from 'lucide-react';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { api } from '@/lib/api/client';
 import { Link } from '@/i18n/navigation';
 import { Input } from '@/components/ui/input';
@@ -35,13 +42,19 @@ function ConversationListSkeleton() {
 function ConversationEmpty({ query }: { query: string }) {
   const t = useTranslations('messages');
   return (
-    <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-muted text-2xl">💬</div>
-      <p className="text-lg font-semibold">{query ? t('noResults') : t('emptyListTitle')}</p>
-      <p className="max-w-xs text-sm text-muted-foreground">
-        {query ? t('noResultsBody') : t('emptyListBody')}
-      </p>
-    </div>
+    <Empty className="border-0 px-6 py-20">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <MessageCircle />
+        </EmptyMedia>
+        <EmptyTitle className="text-lg">
+          {query ? t('noResults') : t('emptyListTitle')}
+        </EmptyTitle>
+        <EmptyDescription className="max-w-xs">
+          {query ? t('noResultsBody') : t('emptyListBody')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 }
 
