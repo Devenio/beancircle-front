@@ -29,14 +29,26 @@
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
+  "engines": {
+    "node": ">=24.11.0",
+    "pnpm": ">=10"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.26.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "@swc/core",
+      "@parcel/watcher"
+    ]
   }
 }

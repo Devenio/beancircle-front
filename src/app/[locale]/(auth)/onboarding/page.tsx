@@ -22,7 +22,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: cities } = useQuery({
+  const { data: cities, isError: citiesError } = useQuery({
     queryKey: ['cities'],
     queryFn: () => api<{ id: string; name: string; slug: string }[]>('/users/cities', { locale }),
   });
@@ -96,6 +96,11 @@ export default function OnboardingPage() {
           </option>
         ))}
       </select>
+      {citiesError && (
+        <p className="text-sm text-red-600">
+          Could not load cities. Is the API running on port 3001?
+        </p>
+      )}
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button
         onClick={submit}
