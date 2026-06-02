@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, PlusSquare, Search, MessageCircle, User } from 'lucide-react';
+import { Home, Compass, Stamp, MessageCircle, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
@@ -9,8 +9,8 @@ import { useChatStore } from '@/stores/chat-store';
 
 const tabs = [
   { href: '/', icon: Home, key: 'home' as const },
-  { href: '/explore', icon: Search, key: 'explore' as const },
-  { href: '/create', icon: PlusSquare, key: 'create' as const },
+  { href: '/discover', icon: Compass, key: 'discover' as const },
+  { href: '/passport', icon: Stamp, key: 'passport' as const },
   { href: '/messages', icon: MessageCircle, key: 'messages' as const },
   { href: '/profile', icon: User, key: 'profile' as const },
 ];
@@ -23,13 +23,16 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[430px] -translate-x-1/2 items-center justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-md">
       {tabs.map(({ href, icon: Icon, key }) => {
-        const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+        const active =
+          href === '/'
+            ? pathname === '/'
+            : pathname === href || pathname.startsWith(`${href}/`);
         const showBadge = key === 'messages' && totalUnread > 0;
         return (
           <Link
             key={href}
             href={href}
-            className={`relative flex flex-col items-center gap-0.5 px-3 py-1 text-xs ${active ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={`relative flex flex-col items-center gap-0.5 px-2 py-1 text-xs ${active ? 'text-foreground' : 'text-muted-foreground'}`}
           >
             <motion.span
               animate={{ scale: active ? 1.08 : 1 }}

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api/client';
 import { Link } from '@/i18n/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ReferralPanel } from '@/components/growth/referral-panel';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
@@ -60,6 +61,10 @@ export default function SettingsPage() {
           Admin panel
         </Link>
       )}
+      <ReferralPanel locale={locale} />
+      <Link href="/owner" className="block text-primary">
+        {t('ownerDashboard')}
+      </Link>
       <Link href="/gift" className="block text-primary">
         Gift coffee
       </Link>

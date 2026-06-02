@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { api } from '@/lib/api/client';
+import { PostReactions } from '@/components/feed/post-reactions';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type FeedPost = {
@@ -14,9 +15,11 @@ type FeedPost = {
   photos?: { url: string }[];
   author: { id: string; username?: string | null; name?: string | null; avatarUrl?: string | null };
   cafe?: { id: string; name: string } | null;
-  _count?: { likes: number; comments: number };
+  _count?: { likes: number; comments: number; reactions?: number };
   liked?: boolean;
   saved?: boolean;
+  reaction?: string | null;
+  reactionCount?: number;
 };
 
 export function FeedCard({ post, locale }: { post: FeedPost; locale: string }) {
@@ -29,7 +32,10 @@ export function FeedCard({ post, locale }: { post: FeedPost; locale: string }) {
         method: post.liked ? 'DELETE' : 'POST',
         locale,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['feed', locale] });
+      qc.invalidateQueries({ queryKey: ['community', locale] });
+    },
   });
 
   const saveMutation = useMutation({
@@ -38,7 +44,7 @@ export function FeedCard({ post, locale }: { post: FeedPost; locale: string }) {
         method: post.saved ? 'DELETE' : 'POST',
         locale,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed', locale] }),
   });
 
   const image = post.photos?.[0]?.url;
@@ -80,6 +86,12 @@ export function FeedCard({ post, locale }: { post: FeedPost; locale: string }) {
           <Bookmark className={`h-6 w-6 ${post.saved ? 'fill-neutral-900' : ''}`} />
         </button>
       </div>
+      <PostReactions
+        postId={post.id}
+        locale={locale}
+        current={post.reaction}
+        count={post.reactionCount ?? post._count?.reactions}
+      />
       {post.caption && (
         <p className="px-4 text-sm">
           <span className="font-semibold">{post.author.username} </span>

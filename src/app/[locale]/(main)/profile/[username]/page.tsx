@@ -7,6 +7,7 @@ import { api } from '@/lib/api/client';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
+import { BeanScorePanel } from '@/components/beanscore/beanscore-panel';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function ProfilePage() {
@@ -25,12 +26,19 @@ export default function ProfilePage() {
         name?: string;
         bio?: string;
         avatarUrl?: string;
+        cityId?: string;
         followersCount: number;
         followingCount: number;
         postsCount: number;
         isFollowing?: boolean;
         isSelf?: boolean;
       }>(`/users/${username}`, { locale }),
+  });
+
+  const { data: me } = useQuery({
+    queryKey: ['me', locale],
+    queryFn: () => api<{ cityId?: string }>('/users/me', { locale }),
+    enabled: !!profile?.isSelf,
   });
 
   const followMutation = useMutation({
@@ -90,9 +98,12 @@ export default function ProfilePage() {
         </div>
       )}
       {profile.isSelf && (
-        <Link href="/settings" className="mt-4 inline-block text-sm text-blue-600">
-          Settings
-        </Link>
+        <div className="mt-4 space-y-4">
+          <BeanScorePanel locale={locale} cityId={me?.cityId} />
+          <Link href="/settings" className="inline-block text-sm text-blue-600">
+            Settings
+          </Link>
+        </div>
       )}
     </div>
   );

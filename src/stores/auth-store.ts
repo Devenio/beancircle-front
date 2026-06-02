@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { clearSessionCookie, setSessionCookie } from '@/lib/auth-session';
 
 export type AuthUser = {
   id: string;
@@ -25,10 +26,12 @@ export const useAuthStore = create<AuthState>()(
       setTokens: (accessToken, refreshToken) => {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
+        setSessionCookie();
       },
       logout: () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        clearSessionCookie();
         set({ user: null });
       },
     }),
