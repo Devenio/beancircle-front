@@ -28,6 +28,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import type { Conversation } from '@/components/chat/types';
 
+const CHAT_WALLPAPER = '/d36bcceceaa1d390489ec70d93154311.jpg';
+
 type ChatRoomProps = {
   conversationId: string;
   locale: string;
@@ -98,72 +100,80 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         <PinnedMessageBanner preview={pinnedPreview} scrollContainerRef={room.listRef} />
       ) : null}
 
-      <div ref={room.listRef} className="flex-1 overflow-y-auto px-3 py-3">
-        {room.isLoading ? (
-          <div className="flex flex-col gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className={i % 2 ? 'ml-auto h-14 w-[70%] rounded-2xl' : 'h-14 w-[70%] rounded-2xl'} />
-            ))}
-          </div>
-        ) : room.messages.length === 0 ? (
-          <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
-            <p className="text-lg font-medium">{t('emptyChatTitle')}</p>
-            <p className="max-w-xs text-sm text-muted-foreground">{t('emptyChatBody')}</p>
-          </div>
-        ) : (
-          <div className="flex flex-col pb-2">
-            {groupedMessages.map((dateGroup) => (
-              <div key={dateGroup.date}>
-                <DateSeparator date={dateGroup.date} />
-                {dateGroup.senderGroups.map((senderGroup) => (
-                  <MessageGroup
-                    key={`${dateGroup.date}-${senderGroup.senderId}-${senderGroup.messages[0]?.id}`}
-                    group={senderGroup}
-                    currentUserId={room.currentUserId}
-                    currentUsername={room.currentUsername}
-                    peerId={room.peer?.id}
-                    peerAvatar={room.peer?.avatarUrl}
-                    peerName={room.peer?.name ?? room.peer?.username}
-                    peerOnline={peerOnline}
-                    reactionsByMessage={reactionsByMessage}
-                    onReply={room.setReplyTo}
-                    onOpenActions={setActiveMessage}
-                    onCopy={copyMessage}
-                    onForward={(msg) => {
-                      setActiveMessage(msg);
-                      setForwardOpen(true);
-                    }}
-                    onEdit={(msg) => {
-                      setEditingMessageId(msg.id);
-                      setEditingDraft(msg.body ?? '');
-                    }}
-                    onDelete={(msg) => room.deleteMutation.mutate(msg.id)}
-                    onPin={(msg) =>
-                      room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
-                    }
-                    onReact={(msg, emoji) => {
-                      if (!room.currentUserId) return;
-                      const existing = reactionsByMessage[msg.id]?.find(
-                        (item) => item.userId === room.currentUserId,
-                      );
-                      if (existing?.emoji === emoji) {
-                        removeReaction(msg.id, room.currentUserId);
-                      } else {
-                        addReaction(msg.id, { emoji, userId: room.currentUserId });
+      <div ref={room.listRef} className="relative flex-1 overflow-y-auto px-3 py-3">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('${CHAT_WALLPAPER}')` }}
+        />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-black/35" />
+        <div className="relative z-10">
+          {room.isLoading ? (
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className={i % 2 ? 'ml-auto h-14 w-[70%] rounded-2xl' : 'h-14 w-[70%] rounded-2xl'} />
+              ))}
+            </div>
+          ) : room.messages.length === 0 ? (
+            <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
+              <p className="text-lg font-medium">{t('emptyChatTitle')}</p>
+              <p className="max-w-xs text-sm text-muted-foreground">{t('emptyChatBody')}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col pb-2">
+              {groupedMessages.map((dateGroup) => (
+                <div key={dateGroup.date}>
+                  <DateSeparator date={dateGroup.date} />
+                  {dateGroup.senderGroups.map((senderGroup) => (
+                    <MessageGroup
+                      key={`${dateGroup.date}-${senderGroup.senderId}-${senderGroup.messages[0]?.id}`}
+                      group={senderGroup}
+                      currentUserId={room.currentUserId}
+                      currentUsername={room.currentUsername}
+                      peerId={room.peer?.id}
+                      peerAvatar={room.peer?.avatarUrl}
+                      peerName={room.peer?.name ?? room.peer?.username}
+                      peerOnline={peerOnline}
+                      reactionsByMessage={reactionsByMessage}
+                      onReply={room.setReplyTo}
+                      onOpenActions={setActiveMessage}
+                      onCopy={copyMessage}
+                      onForward={(msg) => {
+                        setActiveMessage(msg);
+                        setForwardOpen(true);
+                      }}
+                      onEdit={(msg) => {
+                        setEditingMessageId(msg.id);
+                        setEditingDraft(msg.body ?? '');
+                      }}
+                      onDelete={(msg) => room.deleteMutation.mutate(msg.id)}
+                      onPin={(msg) =>
+                        room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
                       }
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
+                      onReact={(msg, emoji) => {
+                        if (!room.currentUserId) return;
+                        const existing = reactionsByMessage[msg.id]?.find(
+                          (item) => item.userId === room.currentUserId,
+                        );
+                        if (existing?.emoji === emoji) {
+                          removeReaction(msg.id, room.currentUserId);
+                        } else {
+                          addReaction(msg.id, { emoji, userId: room.currentUserId });
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
 
-        <AnimatePresence>
-          {room.typingUsername ? (
-            <TypingIndicator label={t('typing', { name: room.typingUsername })} />
-          ) : null}
-        </AnimatePresence>
+          <AnimatePresence>
+            {room.typingUsername ? (
+              <TypingIndicator label={t('typing', { name: room.typingUsername })} />
+            ) : null}
+          </AnimatePresence>
+        </div>
       </div>
 
       {editingMessageId ? (
