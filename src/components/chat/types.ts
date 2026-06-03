@@ -16,6 +16,12 @@ export type ChatMember = {
   avatarUrl?: string | null;
 };
 
+export type ReactionGroup = {
+  emoji: string;
+  count: number;
+  userIds: string[];
+};
+
 export type ChatMessage = {
   id: string;
   senderId?: string;
@@ -30,14 +36,18 @@ export type ChatMessage = {
     size?: number;
     durationSec?: number;
   };
+  imageUrl?: string;
   location?: { lat: number; lng: number; label?: string };
   sticker?: string;
   replyToId?: string;
   replyToSnippet?: string;
+  forwardedFromId?: string;
+  forwardedFromName?: string;
   editedAt?: string;
   deletedAt?: string;
   pinned?: boolean;
   seenBy?: string[];
+  reactions?: ReactionGroup[];
 };
 
 export type PendingMessage = ChatMessage & {
@@ -49,6 +59,7 @@ export type MessagePayload = {
   body?: string;
   type: ChatMessageType;
   attachment?: ChatMessage['attachment'];
+  imageUrl?: string;
   location?: ChatMessage['location'];
   sticker?: string;
   replyToId?: string;
@@ -58,13 +69,14 @@ export type MessagePayload = {
 export type Conversation = {
   id: string;
   updatedAt?: string;
+  createdAt?: string;
   otherMember?: ChatMember;
-  lastMessage?: {
-    body?: string;
-    type?: ChatMessageType;
-    createdAt?: string;
-    senderId?: string;
-  };
+  lastMessage?: ChatMessage;
+  unreadCount?: number;
+  muted?: boolean;
+  pinned?: boolean;
+  lastReadAt?: string | null;
+  lastReadMessageId?: string | null;
 };
 
 export type MessageReaction = {

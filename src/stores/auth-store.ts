@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { clearSessionCookie, setSessionCookie } from '@/lib/auth-session';
+import { disconnectSocket } from '@/lib/realtime/socket';
 
 export type AuthUser = {
   id: string;
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         clearSessionCookie();
+        disconnectSocket();
         set({ user: null });
       },
     }),

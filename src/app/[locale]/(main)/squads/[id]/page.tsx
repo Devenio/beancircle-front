@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Crown, Send, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import { getSocket } from '@/lib/realtime/socket';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -148,17 +148,14 @@ function SquadChat({
 
   useEffect(() => {
     if (!isMember) return;
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
-    const socket: Socket = io(
-      process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:3001',
-      { auth: { token } },
-    );
+    const socket = getSocket();
+    if (!socket) return;
+    const onMessage = (msg: SquadMessage) => append(msg);
     socket.emit('squad:join', squadId);
-    socket.on('squad:message', (msg: SquadMessage) => append(msg));
+    socket.on('squad:message', onMessage);
     return () => {
       socket.emit('squad:leave', squadId);
-      socket.disconnect();
+      socket.off('squad:message', onMessage);
     };
   }, [squadId, isMember]);
 

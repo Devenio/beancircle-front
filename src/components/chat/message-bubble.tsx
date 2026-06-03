@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import { MessageBodyContent } from '@/components/chat/message-content';
 import { MessageContextMenu } from '@/components/chat/message-context-menu';
-import type { MessageReaction } from '@/components/chat/types';
 
 type BubblePosition = 'single' | 'first' | 'middle' | 'last';
 
@@ -15,7 +14,6 @@ type MessageBubbleProps = {
   currentUserId?: string;
   currentUsername?: string | null;
   peerId?: string;
-  reactions?: MessageReaction[];
   position?: BubblePosition;
   isMine?: boolean;
   onReply: () => void;
@@ -49,7 +47,7 @@ function bubbleRadius(isMine: boolean, position: BubblePosition) {
 
 export function MessageBubble({
   message,
-  reactions = [],
+  currentUserId,
   position = 'single',
   isMine = false,
   onReply,
@@ -61,6 +59,7 @@ export function MessageBubble({
   onPin,
   onReact,
 }: MessageBubbleProps) {
+  const reactions = message.reactions ?? [];
   const [swipeReply, setSwipeReply] = useState(false);
   const x = useMotionValue(0);
   const replyOpacity = useTransform(x, [-72, -24, 0], [1, 0.4, 0]);
@@ -137,6 +136,18 @@ export function MessageBubble({
           )}
           aria-label="Message actions"
         >
+          {message.forwardedFromName ? (
+            <div
+              className={cn(
+                'mb-1 flex items-center gap-1 text-[11px] italic opacity-80',
+                isMine ? 'text-primary-foreground/80' : 'text-muted-foreground',
+              )}
+            >
+              <span aria-hidden>↪</span>
+              Forwarded from {message.forwardedFromName}
+            </div>
+          ) : null}
+
           {message.replyToSnippet ? (
             <div
               className={cn(
@@ -159,14 +170,34 @@ export function MessageBubble({
 
           {reactions.length > 0 ? (
             <div className="mt-1.5 flex flex-wrap gap-1">
-              {reactions.map((reaction) => (
-                <span
-                  key={`${reaction.userId}-${reaction.emoji}`}
-                  className="rounded-full bg-background/80 px-1.5 py-0.5 text-xs shadow-sm"
-                >
-                  {reaction.emoji}
-                </span>
-              ))}
+              {reactions.map((reaction) => {
+                const mine = currentUserId
+                  ? reaction.userIds.includes(currentUserId)
+                  : false;
+                return (
+                  <button
+                    key={reaction.emoji}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onReact(reaction.emoji);
+                    }}
+                    className={cn(
+                      'flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs shadow-sm transition-colors',
+                      mine
+                        ? 'bg-primary/15 ring-1 ring-primary/40'
+                        : 'bg-background/80 hover:bg-background',
+                    )}
+                  >
+                    <span>{reaction.emoji}</span>
+                    {reaction.count > 1 ? (
+                      <span className="tabular-nums text-[10px] font-medium opacity-80">
+                        {reaction.count}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
         </motion.button>

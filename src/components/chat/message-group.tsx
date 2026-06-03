@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MessageBubble } from '@/components/chat/message-bubble';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import { MessageStatusIcon } from '@/components/chat/message-status';
-import type { ChatMessage, MessageReaction, PendingMessage } from '@/components/chat/types';
+import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import {
   formatTime,
   getDeliveryStatus,
@@ -21,7 +22,6 @@ type MessageGroupProps = {
   peerAvatar?: string | null;
   peerName?: string | null;
   peerOnline?: boolean;
-  reactionsByMessage: Record<string, MessageReaction[]>;
   onReply: (msg: ChatMessage | PendingMessage) => void;
   onOpenActions: (msg: ChatMessage | PendingMessage) => void;
   onCopy: (msg: ChatMessage | PendingMessage) => void;
@@ -40,7 +40,6 @@ export function MessageGroup({
   peerAvatar,
   peerName,
   peerOnline,
-  reactionsByMessage,
   onReply,
   onOpenActions,
   onCopy,
@@ -70,6 +69,7 @@ export function MessageGroup({
           return (
             <div
               key={'clientId' in msg ? msg.clientId : msg.id}
+              data-message-id={'clientId' in msg ? undefined : msg.id}
               className={cn('flex w-full gap-2', isMine ? 'justify-end' : 'justify-start')}
             >
               {!isMine ? (
@@ -84,7 +84,6 @@ export function MessageGroup({
                 currentUserId={currentUserId}
                 currentUsername={currentUsername}
                 peerId={peerId}
-                reactions={reactionsByMessage[msg.id] ?? []}
                 position={getGroupPosition(index, messages.length)}
                 isMine={isMine}
                 onReply={() => onReply(msg)}
@@ -109,7 +108,20 @@ export function MessageGroup({
       >
         <time dateTime={lastMessage.createdAt}>{formatTime(lastMessage.createdAt)}</time>
         {lastMessage.editedAt ? <span>· edited</span> : null}
-        {isMine && lastStatus ? <MessageStatusIcon status={lastStatus} className="size-3" /> : null}
+        {isMine && lastStatus ? (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={lastStatus}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="inline-flex"
+            >
+              <MessageStatusIcon status={lastStatus} className="size-3" />
+            </motion.span>
+          </AnimatePresence>
+        ) : null}
       </footer>
     </div>
   );
