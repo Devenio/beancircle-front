@@ -7,6 +7,7 @@ import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkReportSection } from '@/components/cafe/work-report-section';
+import { CheckinSheet } from '@/components/checkin/checkin-sheet';
 import { ReportDialog } from '@/components/report/report-dialog';
 import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
@@ -43,25 +44,6 @@ export default function CafePage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cafe', id, locale] }),
   });
 
-  const checkinMutation = useMutation({
-    mutationFn: () =>
-      api<{ newStamp: boolean; earnedBadges?: unknown[] }>('/passport/checkin', {
-        method: 'POST',
-        body: JSON.stringify({ cafeId: id }),
-        locale,
-      }),
-    onSuccess: (res) => {
-      const extra = res.newStamp ? ` ${t('newStamp')}` : '';
-      setCheckinMessage(`${t('checkinSuccess')}${extra}`);
-      qc.invalidateQueries({ queryKey: ['passport', locale] });
-      setTimeout(() => setCheckinMessage(''), 3000);
-    },
-    onError: (e: Error) => {
-      setCheckinMessage(e.message);
-      setTimeout(() => setCheckinMessage(''), 4000);
-    },
-  });
-
   const reviewMutation = useMutation({
     mutationFn: () =>
       api(`/reviews/cafes/${id}`, {
@@ -94,9 +76,16 @@ export default function CafePage() {
           >
             {cafe.isFollowing ? t('unfollow') : t('follow')}
           </Button>
-          <Button variant="outline" onClick={() => checkinMutation.mutate()}>
-            {t('checkin')}
-          </Button>
+          <CheckinSheet
+            cafeId={id}
+            locale={locale}
+            onDone={() => setCheckinMessage(t('checkinSuccess'))}
+            trigger={
+              <Button variant="default" type="button">
+                {t('checkin')}
+              </Button>
+            }
+          />
           <ReportDialog
             targetType="CAFE"
             targetId={id}

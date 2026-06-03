@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Compass, Stamp, MessageCircle, User } from 'lucide-react';
+import { Home, CalendarDays, Compass, MessageCircle, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
@@ -9,8 +9,8 @@ import { useChatStore } from '@/stores/chat-store';
 
 const tabs = [
   { href: '/', icon: Home, key: 'home' as const },
+  { href: '/events', icon: CalendarDays, key: 'events' as const },
   { href: '/discover', icon: Compass, key: 'discover' as const },
-  { href: '/passport', icon: Stamp, key: 'passport' as const },
   { href: '/messages', icon: MessageCircle, key: 'messages' as const },
   { href: '/profile', icon: User, key: 'profile' as const },
 ];

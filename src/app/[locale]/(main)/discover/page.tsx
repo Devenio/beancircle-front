@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Link } from '@/i18n/navigation';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { CafeCard, type DiscoverCafe } from '@/components/discover/cafe-card';
+import { DiscoverExtras } from '@/components/discover/discover-extras';
 import { FilterChips, type DiscoverFilter } from '@/components/discover/filter-chips';
 
 type DiscoverSections = {
@@ -17,6 +18,20 @@ type DiscoverSections = {
   hiddenGems: DiscoverCafe[];
   recommended: DiscoverCafe[];
 };
+
+function SectionRow({ title, cafes }: { title: string; cafes: DiscoverCafe[] }) {
+  if (!cafes?.length) return null;
+  return (
+    <section className="mt-6">
+      <h2 className="mb-2 text-sm font-semibold text-muted-foreground">{title}</h2>
+      <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {cafes.map((cafe) => (
+          <CafeCard key={cafe.id} cafe={cafe} compact />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function DiscoverPage() {
   const t = useTranslations('discover');
@@ -67,20 +82,6 @@ export default function DiscoverPage() {
 
   const showSections = q.length < 2 && filters.length === 0;
 
-  function SectionRow({ title, cafes }: { title: string; cafes: DiscoverCafe[] }) {
-    if (!cafes?.length) return null;
-    return (
-      <section className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold text-muted-foreground">{title}</h2>
-        <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {cafes.map((cafe) => (
-            <CafeCard key={cafe.id} cafe={cafe} compact />
-          ))}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <div className="p-4 pb-24">
       <h1 className="mb-1 text-lg font-bold">{t('title')}</h1>
@@ -108,6 +109,7 @@ export default function DiscoverPage() {
       {showSections && sections && (
         <>
           <SectionRow title={t('sections.trending')} cafes={sections.trending} />
+          <DiscoverExtras locale={locale} cityId={me?.cityId} />
           <SectionRow title={t('sections.recommended')} cafes={sections.recommended} />
           <SectionRow title={t('sections.new')} cafes={sections.new} />
           <SectionRow title={t('sections.hiddenGems')} cafes={sections.hiddenGems} />

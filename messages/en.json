@@ -5,6 +5,7 @@
   },
   "nav": {
     "home": "Home",
+    "events": "Events",
     "discover": "Discover",
     "passport": "Passport",
     "create": "Create",
@@ -61,7 +62,9 @@
       "trending": "Trending",
       "recommended": "Recommended for you",
       "new": "New cafes",
-      "hiddenGems": "Hidden gems"
+      "hiddenGems": "Hidden gems",
+      "events": "Popular events",
+      "squads": "Popular squads"
     },
     "filters": {
       "bestCoffee": "Best coffee",
@@ -248,11 +251,145 @@
     "checkins": "Check-ins",
     "gifts": "Gifts"
   },
+  "activity": {
+    "title": "Activity",
+    "subtitle": "What your circle is up to",
+    "emptyTitle": "Your circle is quiet",
+    "emptyBody": "Follow friends and cafes, then check in to start the buzz.",
+    "cheer": "Cheer",
+    "checkedInAt": "checked in at {cafe}",
+    "joinedEvent": "is going to {event}",
+    "earnedBadge": "earned the {badge} badge",
+    "completedChallenge": "completed a challenge",
+    "joinedSquad": "joined {squad}",
+    "streakMilestone": "hit a {count}-day streak",
+    "collectedCard": "collected the {cafe} card",
+    "cafeTrending": "{cafe} is trending right now",
+    "eventAnnounced": "New event: {event}",
+    "squadActivity": "New activity in {squad}",
+    "withFriends": "with {count} friends",
+    "checkInNow": "Check in"
+  },
+  "eventsPage": {
+    "title": "Events",
+    "subtitle": "Real plans with real people",
+    "upcoming": "Upcoming",
+    "all": "All",
+    "emptyTitle": "No events yet",
+    "emptyBody": "Be the first to host something at your favorite cafe.",
+    "host": "Host",
+    "going": "Going",
+    "interested": "Interested",
+    "participants": "Who's coming",
+    "remindMe": "Remind me",
+    "reminderOn": "Reminder on",
+    "rsvpCount": "{count} going",
+    "startsAt": "Starts {date}",
+    "createTitle": "Create event",
+    "atCafe": "at {cafe}",
+    "types": {
+      "OPEN_MIC": "Open Mic",
+      "GAME_NIGHT": "Game Night",
+      "STUDY_GROUP": "Study Group",
+      "STARTUP_MEETUP": "Startup Meetup",
+      "MUSIC_NIGHT": "Music Night",
+      "COFFEE_WORKSHOP": "Coffee Workshop",
+      "BOOK_CLUB": "Book Club",
+      "OTHER": "Other"
+    }
+  },
+  "squads": {
+    "title": "Squads",
+    "subtitle": "Find your people",
+    "mine": "My squads",
+    "discover": "Discover squads",
+    "join": "Join",
+    "joined": "Joined",
+    "leave": "Leave",
+    "members": "{count} members",
+    "memberList": "Members",
+    "leaderboard": "Leaderboard",
+    "chat": "Chat",
+    "chatPlaceholder": "Message your squad…",
+    "send": "Send",
+    "emptyTitle": "No squads yet",
+    "emptyBody": "Join a community around your favorite cafe or hobby.",
+    "joinToChat": "Join the squad to chat",
+    "points": "{count} pts",
+    "categories": {
+      "GAMERS": "Gamers",
+      "COFFEE_LOVERS": "Coffee Lovers",
+      "ARTISTS": "Artists",
+      "STUDENTS": "Students",
+      "DEVELOPERS": "Developers",
+      "BOOK_CLUB": "Book Club",
+      "OTHER": "Other"
+    }
+  },
+  "streaks": {
+    "title": "Streaks",
+    "current": "Current",
+    "best": "Best",
+    "days": "{count} days",
+    "nextMilestone": "{count} to next milestone",
+    "types": {
+      "DAILY_VISIT": "Daily visits",
+      "WEEKLY_CAFE": "Weekly cafe",
+      "CONSECUTIVE_CHECKIN": "Check-in streak",
+      "EVENT_PARTICIPATION": "Events"
+    }
+  },
+  "collectibles": {
+    "title": "Cafe Collection",
+    "progress": "{owned} / {total} cafes",
+    "emptyTitle": "Start your collection",
+    "emptyBody": "Each cafe has a unique card. Check in to collect it.",
+    "rarity": {
+      "COMMON": "Common",
+      "UNCOMMON": "Uncommon",
+      "RARE": "Rare",
+      "EPIC": "Epic",
+      "LEGENDARY": "Legendary"
+    }
+  },
+  "profile": {
+    "posts": "posts",
+    "followers": "followers",
+    "following": "following",
+    "streak": "Streak",
+    "collection": "Collection",
+    "achievements": "Achievements",
+    "recentActivity": "Recent activity",
+    "upcomingEvents": "Upcoming events",
+    "myPassport": "My passport",
+    "mySquads": "My squads",
+    "settings": "Settings",
+    "editProfile": "Edit profile"
+  },
+  "checkin": {
+    "title": "Check in",
+    "mood": "How's the vibe?",
+    "status": "What are you up to?",
+    "statusPlaceholder": "Studying, gaming, working…",
+    "withFriends": "With friends",
+    "submit": "Check in",
+    "success": "Checked in!",
+    "moods": {
+      "studying": "Studying",
+      "gaming": "Gaming",
+      "working": "Working",
+      "chilling": "Chilling",
+      "social": "Social",
+      "reading": "Reading"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Something went wrong",
     "follow": "Follow",
     "unfollow": "Unfollow",
-    "message": "Message"
+    "message": "Message",
+    "seeAll": "See all",
+    "retry": "Retry"
   }
 }

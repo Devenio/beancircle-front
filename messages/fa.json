@@ -5,6 +5,7 @@
   },
   "nav": {
     "home": "خانه",
+    "events": "رویدادها",
     "discover": "کاوش",
     "passport": "پاسپورت",
     "create": "ایجاد",
@@ -61,7 +62,9 @@
       "trending": "پرطرفدار",
       "recommended": "پیشنهادی برای شما",
       "new": "کافه‌های جدید",
-      "hiddenGems": "گنجینه‌های پنهان"
+      "hiddenGems": "گنجینه‌های پنهان",
+      "events": "رویدادهای پرطرفدار",
+      "squads": "اسکوادهای پرطرفدار"
     },
     "filters": {
       "bestCoffee": "بهترین قهوه",
@@ -248,11 +251,145 @@
     "checkins": "چک‌این‌ها",
     "gifts": "هدایا"
   },
+  "activity": {
+    "title": "فعالیت",
+    "subtitle": "حلقه‌ی شما چه می‌کند",
+    "emptyTitle": "حلقه‌ی شما ساکت است",
+    "emptyBody": "دوستان و کافه‌ها را دنبال کنید و چک‌این کنید تا شروع شود.",
+    "cheer": "تشویق",
+    "checkedInAt": "در {cafe} چک‌این کرد",
+    "joinedEvent": "به {event} می‌رود",
+    "earnedBadge": "نشان {badge} را گرفت",
+    "completedChallenge": "یک چالش را کامل کرد",
+    "joinedSquad": "به {squad} پیوست",
+    "streakMilestone": "به استریک {count} روزه رسید",
+    "collectedCard": "کارت {cafe} را جمع کرد",
+    "cafeTrending": "{cafe} الان پرطرفدار است",
+    "eventAnnounced": "رویداد جدید: {event}",
+    "squadActivity": "فعالیت جدید در {squad}",
+    "withFriends": "با {count} دوست",
+    "checkInNow": "چک‌این"
+  },
+  "eventsPage": {
+    "title": "رویدادها",
+    "subtitle": "برنامه‌های واقعی با آدم‌های واقعی",
+    "upcoming": "پیش‌رو",
+    "all": "همه",
+    "emptyTitle": "هنوز رویدادی نیست",
+    "emptyBody": "اولین نفری باشید که در کافه‌ی محبوبتان برنامه‌ای می‌گذارد.",
+    "host": "میزبان",
+    "going": "شرکت می‌کنم",
+    "interested": "علاقه‌مندم",
+    "participants": "چه کسانی می‌آیند",
+    "remindMe": "یادآوری کن",
+    "reminderOn": "یادآوری فعال",
+    "rsvpCount": "{count} نفر می‌آیند",
+    "startsAt": "شروع {date}",
+    "createTitle": "ساخت رویداد",
+    "atCafe": "در {cafe}",
+    "types": {
+      "OPEN_MIC": "اجرای زنده",
+      "GAME_NIGHT": "شب بازی",
+      "STUDY_GROUP": "گروه مطالعه",
+      "STARTUP_MEETUP": "میتاپ استارتاپ",
+      "MUSIC_NIGHT": "شب موسیقی",
+      "COFFEE_WORKSHOP": "کارگاه قهوه",
+      "BOOK_CLUB": "باشگاه کتاب",
+      "OTHER": "سایر"
+    }
+  },
+  "squads": {
+    "title": "اسکوادها",
+    "subtitle": "آدم‌های خودت را پیدا کن",
+    "mine": "اسکوادهای من",
+    "discover": "کشف اسکوادها",
+    "join": "پیوستن",
+    "joined": "عضو شدی",
+    "leave": "خروج",
+    "members": "{count} عضو",
+    "memberList": "اعضا",
+    "leaderboard": "جدول برترین‌ها",
+    "chat": "گفتگو",
+    "chatPlaceholder": "به اسکواد پیام بده…",
+    "send": "ارسال",
+    "emptyTitle": "هنوز اسکوادی نیست",
+    "emptyBody": "به جامعه‌ای حول کافه یا سرگرمی محبوبت بپیوند.",
+    "joinToChat": "برای گفتگو به اسکواد بپیوند",
+    "points": "{count} امتیاز",
+    "categories": {
+      "GAMERS": "گیمرها",
+      "COFFEE_LOVERS": "عاشقان قهوه",
+      "ARTISTS": "هنرمندان",
+      "STUDENTS": "دانشجوها",
+      "DEVELOPERS": "برنامه‌نویس‌ها",
+      "BOOK_CLUB": "باشگاه کتاب",
+      "OTHER": "سایر"
+    }
+  },
+  "streaks": {
+    "title": "استریک‌ها",
+    "current": "فعلی",
+    "best": "بهترین",
+    "days": "{count} روز",
+    "nextMilestone": "{count} تا مرحله بعد",
+    "types": {
+      "DAILY_VISIT": "بازدید روزانه",
+      "WEEKLY_CAFE": "کافه هفتگی",
+      "CONSECUTIVE_CHECKIN": "استریک چک‌این",
+      "EVENT_PARTICIPATION": "رویدادها"
+    }
+  },
+  "collectibles": {
+    "title": "کلکسیون کافه",
+    "progress": "{owned} از {total} کافه",
+    "emptyTitle": "کلکسیونت را شروع کن",
+    "emptyBody": "هر کافه یک کارت یکتا دارد. چک‌این کن تا جمعش کنی.",
+    "rarity": {
+      "COMMON": "معمولی",
+      "UNCOMMON": "غیرمعمول",
+      "RARE": "کمیاب",
+      "EPIC": "حماسی",
+      "LEGENDARY": "افسانه‌ای"
+    }
+  },
+  "profile": {
+    "posts": "پست",
+    "followers": "دنبال‌کننده",
+    "following": "دنبال‌شونده",
+    "streak": "استریک",
+    "collection": "کلکسیون",
+    "achievements": "دستاوردها",
+    "recentActivity": "فعالیت اخیر",
+    "upcomingEvents": "رویدادهای پیش‌رو",
+    "myPassport": "پاسپورت من",
+    "mySquads": "اسکوادهای من",
+    "settings": "تنظیمات",
+    "editProfile": "ویرایش پروفایل"
+  },
+  "checkin": {
+    "title": "چک‌این",
+    "mood": "حال‌وهوا چطوره؟",
+    "status": "چه می‌کنی؟",
+    "statusPlaceholder": "مطالعه، بازی، کار…",
+    "withFriends": "با دوستان",
+    "submit": "چک‌این",
+    "success": "چک‌این شد!",
+    "moods": {
+      "studying": "مطالعه",
+      "gaming": "بازی",
+      "working": "کار",
+      "chilling": "استراحت",
+      "social": "دورهمی",
+      "reading": "مطالعه کتاب"
+    }
+  },
   "common": {
     "loading": "در حال بارگذاری...",
     "error": "خطایی رخ داد",
     "follow": "دنبال کردن",
     "unfollow": "لغو دنبال",
-    "message": "پیام"
+    "message": "پیام",
+    "seeAll": "مشاهده همه",
+    "retry": "تلاش دوباره"
   }
 }
