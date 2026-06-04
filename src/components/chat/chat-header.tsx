@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import { ChatOptionsMenu } from '@/components/chat/chat-options-menu';
-import type { ChatMember } from '@/components/chat/types';
+import type { BlockStatus, ChatMember } from '@/components/chat/types';
 import { resolvePresenceStatus } from '@/components/chat/utils';
 import { useLongPress } from '@/hooks/use-long-press';
 import { ArrowLeft, BellOff } from 'lucide-react';
@@ -19,11 +19,13 @@ type ChatHeaderProps = {
   lastSeenAt?: string | null;
   lastSeenHidden?: boolean;
   muted?: boolean;
+  blockStatus?: BlockStatus;
   searchOpen?: boolean;
   onOpenProfile: () => void;
   onOpenSearch: () => void;
   onToggleMute: () => void;
   onBlock: () => void;
+  onUnblock: () => void;
   onReport: (reason: string) => void;
   onClearHistory: () => void;
 };
@@ -35,11 +37,13 @@ export function ChatHeader({
   lastSeenAt,
   lastSeenHidden,
   muted,
+  blockStatus,
   searchOpen,
   onOpenProfile,
   onOpenSearch,
   onToggleMute,
   onBlock,
+  onUnblock,
   onReport,
   onClearHistory,
 }: ChatHeaderProps) {
@@ -47,6 +51,8 @@ export function ChatHeader({
   const locale = useLocale();
 
   const avatarLongPress = useLongPress(onOpenProfile);
+
+  const isBlocked = Boolean(blockStatus?.blocked);
 
   const status = resolvePresenceStatus({
     online,
@@ -56,21 +62,25 @@ export function ChatHeader({
     locale,
   });
 
-  const statusLabel =
-    muted && !typingUsername
+  const statusLabel = isBlocked
+    ? blockStatus?.blockedByYou
+      ? t('chatBlockedStatus')
+      : t('chatBlockedCantMessage')
+    : muted && !typingUsername
       ? t('muted')
       : status.params
         ? t(status.key, status.params)
         : t(status.key);
 
-  const statusClass =
-    muted && !typingUsername
+  const statusClass = isBlocked
+    ? 'text-destructive'
+    : muted && !typingUsername
       ? 'text-muted-foreground'
       : status.tone === 'typing'
-      ? 'text-primary'
-      : status.tone === 'online'
-        ? 'text-emerald-500'
-        : 'text-muted-foreground';
+        ? 'text-primary'
+        : status.tone === 'online'
+          ? 'text-emerald-500'
+          : 'text-muted-foreground';
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur-md">
@@ -126,11 +136,13 @@ export function ChatHeader({
 
         <ChatOptionsMenu
           muted={muted}
+          blockedByYou={blockStatus?.blockedByYou}
           searchActive={searchOpen}
           onViewProfile={onOpenProfile}
           onOpenSearch={onOpenSearch}
           onToggleMute={onToggleMute}
           onBlock={onBlock}
+          onUnblock={onUnblock}
           onReport={onReport}
           onClearHistory={onClearHistory}
         />

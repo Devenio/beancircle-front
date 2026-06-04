@@ -33,22 +33,26 @@ import { cn } from '@/lib/utils';
 
 type ChatOptionsMenuProps = {
   muted?: boolean;
+  blockedByYou?: boolean;
   searchActive?: boolean;
   onViewProfile: () => void;
   onOpenSearch: () => void;
   onToggleMute: () => void;
   onBlock: () => void;
+  onUnblock: () => void;
   onReport: (reason: string) => void;
   onClearHistory: () => void;
 };
 
 export function ChatOptionsMenu({
   muted,
+  blockedByYou,
   searchActive,
   onViewProfile,
   onOpenSearch,
   onToggleMute,
   onBlock,
+  onUnblock,
   onReport,
   onClearHistory,
 }: ChatOptionsMenuProps) {
@@ -103,16 +107,28 @@ export function ChatOptionsMenu({
             {muted ? t('unmute') : t('muteNotifications')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => {
-              closeMenu();
-              setBlockOpen(true);
-            }}
-          >
-            <Ban className="size-4" />
-            {t('blockUser')}
-          </DropdownMenuItem>
+          {blockedByYou ? (
+            <DropdownMenuItem
+              onClick={() => {
+                closeMenu();
+                onUnblock();
+              }}
+            >
+              <Ban className="size-4" />
+              {t('unblock')}
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => {
+                closeMenu();
+                setBlockOpen(true);
+              }}
+            >
+              <Ban className="size-4" />
+              {t('blockUser')}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() => {
               closeMenu();

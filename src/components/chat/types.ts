@@ -85,3 +85,9 @@ export type MessageReaction = {
 };
 
 export type ConnectionState = 'offline' | 'connecting' | 'online';
+
+export type BlockStatus = {
+  blocked: boolean;
+  blockedByYou: boolean;
+  blockedByPeer: boolean;
+};

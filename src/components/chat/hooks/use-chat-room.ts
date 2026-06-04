@@ -8,6 +8,7 @@ import { useChatStore } from '@/stores/chat-store';
 import { getSocket, currentConnectionState } from '@/lib/realtime/socket';
 import { uploadMessageFile } from '@/lib/api/uploads';
 import type {
+  BlockStatus,
   ChatMessage,
   Conversation,
   ConnectionState,
@@ -124,6 +125,21 @@ export function useChatRoom(conversationId: string, locale: string) {
     const conv = conversations?.find((c) => c.id === conversationId);
     return conv?.otherMember;
   }, [conversationId, conversations, currentUserId, data?.data]);
+
+  const blockStatusQueryKey = useMemo(
+    () => ['block-status', peer?.id, locale] as const,
+    [peer?.id, locale],
+  );
+
+  const { data: blockStatus } = useQuery({
+    queryKey: blockStatusQueryKey,
+    queryFn: () => api<BlockStatus>(`/users/${peer!.id}/block-status`, { locale }),
+    enabled: Boolean(peer?.id && currentUserId),
+    staleTime: 30_000,
+  });
+
+  const isBlocked = Boolean(blockStatus?.blocked);
+  const blockedByYou = Boolean(blockStatus?.blockedByYou);
 
   const refreshPeerPresence = useCallback(async () => {
     if (!peer?.id) return;
@@ -506,7 +522,16 @@ export function useChatRoom(conversationId: string, locale: string) {
       qc.invalidateQueries({ queryKey: ['conversations'] });
       requestAnimationFrame(() => scrollToBottom('smooth'));
     },
-    onError: (_error, payload, context) => {
+    onError: (error, payload, context) => {
+      const message = error instanceof Error ? error.message : '';
+      if (message.toLowerCase().includes('cannot message')) {
+        qc.setQueryData<BlockStatus>(blockStatusQueryKey, {
+          blocked: true,
+          blockedByYou: false,
+          blockedByPeer: true,
+        });
+        setComposerError(t('chatBlockedCantMessage'));
+      }
       setPendingMessages((prev) =>
         prev.map((item) =>
           item.clientId === context?.clientId
@@ -640,10 +665,16 @@ export function useChatRoom(conversationId: string, locale: string) {
 
   const sendPayload = useCallback(
     (payload: MessagePayload) => {
+      if (isBlocked) {
+        setComposerError(
+          blockedByYou ? t('chatBlockedByYou', { name: peer?.name ?? peer?.username ?? t('thisUser') }) : t('chatBlockedCantMessage'),
+        );
+        return;
+      }
       setComposerError('');
       sendMutation.mutate(payload);
     },
-    [sendMutation],
+    [blockedByYou, isBlocked, peer?.name, peer?.username, sendMutation, t],
   );
 
   // ---- Typing (debounced, with reliable stop) -----------------------------
@@ -875,7 +906,28 @@ export function useChatRoom(conversationId: string, locale: string) {
   const blockPeer = useCallback(async () => {
     if (!peer?.id) return;
     await api(`/users/${peer.id}/block`, { method: 'POST', locale });
-  }, [peer?.id, locale]);
+    haptic('success');
+    qc.setQueryData<BlockStatus>(blockStatusQueryKey, {
+      blocked: true,
+      blockedByYou: true,
+      blockedByPeer: false,
+    });
+    qc.invalidateQueries({ queryKey: ['settings-blocked'] });
+    setComposerError('');
+  }, [blockStatusQueryKey, locale, peer?.id, qc]);
+
+  const unblockPeer = useCallback(async () => {
+    if (!peer?.id) return;
+    await api(`/users/${peer.id}/block`, { method: 'DELETE', locale });
+    haptic('success');
+    qc.setQueryData<BlockStatus>(blockStatusQueryKey, {
+      blocked: false,
+      blockedByYou: false,
+      blockedByPeer: false,
+    });
+    qc.invalidateQueries({ queryKey: ['settings-blocked'] });
+    setComposerError('');
+  }, [blockStatusQueryKey, locale, peer?.id, qc]);
 
   const reportPeer = useCallback(
     async (reason: string) => {
@@ -927,6 +979,9 @@ export function useChatRoom(conversationId: string, locale: string) {
     locationPickerOpen,
     setLocationPickerOpen,
     muted,
+    blockStatus,
+    isBlocked,
+    blockedByYou,
     peerPresence,
     sendText,
     sendPayload,
@@ -942,6 +997,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     stopRecording,
     toggleMute,
     blockPeer,
+    unblockPeer,
     reportPeer,
     clearHistory,
     acknowledgeUnread,

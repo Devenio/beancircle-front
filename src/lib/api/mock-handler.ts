@@ -26,6 +26,9 @@ function notFound(path: string): never {
   throw new Error(`Mock API: no handler for ${path}`);
 }
 
+/** user ids blocked by the mock current user */
+const mockBlockedUserIds = new Set<string>();
+
 function findConversationMessage(conversationId: string, messageId: string) {
   const list = MOCK_MESSAGES[conversationId] ?? [];
   const message = list.find((item) => item.id === messageId);
@@ -127,6 +130,25 @@ export async function handleMockRequest<T>(
   if (userFollowMatch && (method === 'POST' || method === 'DELETE')) {
     return { following: method === 'POST' } as T;
   }
+  const blockStatusMatch = pathname.match(/^\/users\/([^/]+)\/block-status$/);
+  if (blockStatusMatch && method === 'GET') {
+    const userId = blockStatusMatch[1];
+    const blockedByYou = mockBlockedUserIds.has(userId);
+    return {
+      blocked: blockedByYou,
+      blockedByYou,
+      blockedByPeer: false,
+    } as T;
+  }
+  const blockUserMatch = pathname.match(/^\/users\/([^/]+)\/block$/);
+  if (blockUserMatch && method === 'POST') {
+    mockBlockedUserIds.add(blockUserMatch[1]);
+    return { blocked: true } as T;
+  }
+  if (blockUserMatch && method === 'DELETE') {
+    mockBlockedUserIds.delete(blockUserMatch[1]);
+    return { blocked: false } as T;
+  }
 
   // Search
   if (pathname === '/search' && method === 'GET') {
@@ -168,8 +190,13 @@ export async function handleMockRequest<T>(
     } as T;
   }
   if (messagesMatch && method === 'POST') {
-    const body = parseBody(options.body);
     const conversationId = messagesMatch[1];
+    const conversation = MOCK_CONVERSATIONS.find((item) => item.id === conversationId);
+    const peerId = conversation?.otherMember?.id;
+    if (peerId && mockBlockedUserIds.has(peerId)) {
+      throw new Error('Cannot message this user');
+    }
+    const body = parseBody(options.body);
     const list = (MOCK_MESSAGES[conversationId] ??= []);
     const message: MockChatMessage = {
       id: `mock-msg-${Date.now()}`,
@@ -197,7 +224,6 @@ export async function handleMockRequest<T>(
     };
 
     list.push(message);
-    const conversation = MOCK_CONVERSATIONS.find((item) => item.id === conversationId);
     if (conversation) {
       conversation.updatedAt = message.createdAt;
       conversation.lastMessage = {

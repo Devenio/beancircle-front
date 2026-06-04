@@ -9,6 +9,7 @@ import { ChatHeader } from '@/components/chat/chat-header';
 import { ChatComposer } from '@/components/chat/composer';
 import { Button } from '@/components/ui/button';
 import { PinnedMessageBanner } from '@/components/chat/pinned-message-banner';
+import { ChatBlockedBar } from '@/components/chat/chat-blocked-bar';
 import { MessageActionsSheet } from '@/components/chat/message-actions-sheet';
 import { MediaViewerSheet } from '@/components/chat/attachment-picker-sheet';
 import { ForwardPickerSheet } from '@/components/chat/forward-picker-sheet';
@@ -271,11 +272,13 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         lastSeenAt={peerLastSeen}
         lastSeenHidden={peerLastSeenHidden}
         muted={room.muted}
+        blockStatus={room.blockStatus}
         searchOpen={searchOpen}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenSearch={() => setSearchOpen(true)}
         onToggleMute={() => void room.toggleMute()}
         onBlock={() => void room.blockPeer()}
+        onUnblock={() => void room.unblockPeer()}
         onReport={(reason) => void room.reportPeer(reason)}
         onClearHistory={() => void room.clearHistory()}
       />
@@ -423,6 +426,12 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
             </Button>
           </div>
         </div>
+      ) : room.isBlocked && room.blockStatus ? (
+        <ChatBlockedBar
+          peerName={room.peer?.name ?? room.peer?.username}
+          blockStatus={room.blockStatus}
+          onUnblock={() => void room.unblockPeer()}
+        />
       ) : (
         <ChatComposer
           draft={room.draft}
