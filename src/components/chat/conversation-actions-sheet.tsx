@@ -11,9 +11,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
-import { touch } from '@/lib/mobile/touch';
 import type { Conversation } from '@/components/chat/types';
-import { cn } from '@/lib/utils';
 
 type ConversationActionsSheetProps = {
   open: boolean;
@@ -69,11 +67,7 @@ export function ConversationActionsSheet({
             key={label}
             type="button"
             variant="ghost"
-            className={cn(
-              touch.actionRow,
-              'justify-start gap-3 rounded-xl px-4 text-base',
-              touch.motion,
-            )}
+            className="h-12 justify-start gap-3 rounded-xl px-3 text-base"
             onClick={() => {
               onClick();
               onOpenChange(false);

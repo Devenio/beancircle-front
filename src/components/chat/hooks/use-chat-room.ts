@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
 import { useChatStore } from '@/stores/chat-store';
 import { getSocket, currentConnectionState } from '@/lib/realtime/socket';
@@ -29,6 +30,7 @@ type MessageListResponse = { data: ChatMessage[]; nextCursor?: string | null };
 
 export function useChatRoom(conversationId: string, locale: string) {
   const qc = useQueryClient();
+  const t = useTranslations('messages');
   const setTypingStore = useChatStore((s) => s.setTyping);
 
   const messagesKey = useMemo(
@@ -55,6 +57,10 @@ export function useChatRoom(conversationId: string, locale: string) {
     return localStorage.getItem('username');
   });
   const [composerError, setComposerError] = useState('');
+  const updateDraft = useCallback((value: string) => {
+    setDraft(value);
+    setComposerError('');
+  }, []);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [recordingMode, setRecordingMode] = useState<'none' | 'voice' | 'video'>('none');
   const [recordingElapsedSec, setRecordingElapsedSec] = useState(0);
@@ -636,7 +642,11 @@ export function useChatRoom(conversationId: string, locale: string) {
   const sendText = useCallback(() => {
     const trimmed = draft.trim();
     const validation = validateMessageText(trimmed);
-    if (!validation.valid) return;
+    if (!trimmed) return;
+    if (!validation.valid) {
+      setComposerError(t('messageValidationRejected'));
+      return;
+    }
     setComposerError('');
     stopTyping();
     sendPayload({
@@ -646,7 +656,7 @@ export function useChatRoom(conversationId: string, locale: string) {
       replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
     });
     localStorage.removeItem(draftStorageKey(conversationId));
-  }, [draft, replyTo, sendPayload, stopTyping, conversationId]);
+  }, [draft, replyTo, sendPayload, stopTyping, conversationId, t]);
 
   const retryFailed = useCallback(
     (clientId: string) => {
@@ -863,6 +873,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     composerInputRef,
     draft,
     setDraft,
+    updateDraft,
     replyTo,
     setReplyTo,
     recordingMode,

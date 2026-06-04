@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { touchIconButton } from '@/lib/mobile/touch';
+import { cn } from '@/lib/utils';
 
 type ChatOptionsMenuProps = {
   muted?: boolean;
@@ -60,7 +60,9 @@ export function ChatOptionsMenu({
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
-          className={touchIconButton('text-muted-foreground hover:bg-muted')}
+          className={cn(
+            'inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          )}
           aria-label={t('chatOptions')}
         >
           <MoreVertical className="size-5" />

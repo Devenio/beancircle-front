@@ -24,7 +24,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { formatDuration, formatFileSize } from '@/components/chat/utils';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
-import { ChatIconButton } from '@/components/chat/chat-icon-button';
 import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 
 export type MediaComposerItem = {
@@ -145,22 +144,28 @@ export function MediaComposerModal({
 
           {items.length > 1 ? (
             <>
-              <ChatIconButton
-                icon={ChevronLeft}
-                label={t('previousMedia')}
-                variant="muted"
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full"
                 disabled={index === 0}
                 onClick={() => setIndex((i) => i - 1)}
-                className="absolute left-2 top-1/2 -translate-y-1/2 shadow-sm"
-              />
-              <ChatIconButton
-                icon={ChevronRight}
-                label={t('nextMedia')}
-                variant="muted"
+                aria-label={t('previousMedia')}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full"
                 disabled={index === items.length - 1}
                 onClick={() => setIndex((i) => i + 1)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 shadow-sm"
-              />
+                aria-label={t('nextMedia')}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
               <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-background/80 px-2 py-0.5 text-xs">
                 {index + 1} / {items.length}
               </span>
@@ -170,10 +175,18 @@ export function MediaComposerModal({
 
         {isImage ? (
           <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-2">
-            <ChatIconButton icon={RotateCw} label={t('rotate')} onClick={() => setRotation((r) => r + 90)} />
-            <ChatIconButton icon={ZoomIn} label={t('zoomIn')} onClick={() => setZoom((z) => Math.min(3, z + 0.25))} />
-            <ChatIconButton icon={ZoomOut} label={t('zoomOut')} onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} />
-            <ChatIconButton icon={X} label={t('reset')} onClick={() => { setRotation(0); setZoom(1); }} />
+            <Button type="button" size="icon" variant="ghost" onClick={() => setRotation((r) => r + 90)} aria-label={t('rotate')}>
+              <RotateCw className="size-4" />
+            </Button>
+            <Button type="button" size="icon" variant="ghost" onClick={() => setZoom((z) => Math.min(3, z + 0.25))} aria-label={t('zoomIn')}>
+              <ZoomIn className="size-4" />
+            </Button>
+            <Button type="button" size="icon" variant="ghost" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} aria-label={t('zoomOut')}>
+              <ZoomOut className="size-4" />
+            </Button>
+            <Button type="button" size="icon" variant="ghost" onClick={() => { setRotation(0); setZoom(1); }} aria-label={t('reset')}>
+              <X className="size-4" />
+            </Button>
           </div>
         ) : null}
 
@@ -189,10 +202,10 @@ export function MediaComposerModal({
             onChange={(e) => setCaption(e.target.value)}
             placeholder={t('addCaption')}
             rows={2}
-            className="min-h-11 resize-none rounded-xl"
+            className="resize-none rounded-xl"
           />
           <Button
-            className="min-h-[52px] w-full rounded-full"
+            className="w-full rounded-full"
             disabled={uploading}
             onClick={() => void handleSend()}
           >

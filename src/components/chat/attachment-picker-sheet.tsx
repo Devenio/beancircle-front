@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from 'react';
 import { Download, ImageIcon, MapPin, Paperclip, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
-import { touch } from '@/lib/mobile/touch';
 import { cn } from '@/lib/utils';
 
 type AttachmentPickerSheetProps = {
@@ -47,14 +46,12 @@ export function AttachmentPickerSheet({
             type="button"
             onClick={() => closeAnd(onClick)}
             className={cn(
-              'flex flex-col items-center gap-2 rounded-2xl p-3',
-              touch.motion,
-              touch.press,
+              'flex flex-col items-center gap-2 rounded-2xl p-3 transition-colors',
               'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             )}
           >
-            <span className={cn('flex size-14 items-center justify-center rounded-full bg-muted', color)}>
-              <Icon className="size-6" />
+            <span className={cn('flex size-11 items-center justify-center rounded-full bg-muted', color)}>
+              <Icon className="size-5" />
             </span>
             <span className="text-xs font-medium">{label}</span>
           </button>
@@ -156,10 +153,7 @@ export function MediaViewerSheet({
 
 function actionChip() {
   return cn(
-    touch.actionRow,
-    touch.motion,
-    touch.press,
-    'inline-flex items-center gap-2 rounded-full bg-muted px-4 text-sm font-medium',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    'inline-flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm font-medium transition-colors',
+    'hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
   );
 }

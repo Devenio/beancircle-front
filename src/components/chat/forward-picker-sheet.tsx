@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import type { Conversation } from '@/components/chat/types';
-import { touch } from '@/lib/mobile/touch';
 import { cn } from '@/lib/utils';
 
 type ForwardState = Record<string, 'idle' | 'sending' | 'ok' | 'failed'>;
@@ -58,10 +57,7 @@ export function ForwardPickerSheet({
                 type="button"
                 disabled={status === 'sending'}
                 className={cn(
-                  touch.actionRow,
-                  touch.motion,
-                  touch.press,
-                  'flex w-full items-center gap-3 rounded-xl px-4 text-left',
+                  'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors',
                   selected ? 'bg-primary/10' : 'hover:bg-muted',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 )}
@@ -90,11 +86,7 @@ export function ForwardPickerSheet({
           })}
       </div>
       <div className="border-t border-border px-4 pt-3">
-        <Button
-          className={cn('w-full rounded-full', touch.actionRow)}
-          onClick={onForward}
-          disabled={forwardTargets.size === 0 || isForwarding}
-        >
+        <Button className="w-full rounded-full" onClick={onForward} disabled={forwardTargets.size === 0 || isForwarding}>
           {isForwarding
             ? t('sending')
             : t('forwardToCount', { count: forwardTargets.size })}

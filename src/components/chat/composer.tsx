@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Loader2, Mic, Plus, SendHorizontal, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   DropdownMenu,
@@ -14,7 +15,6 @@ import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/components/chat/types';
 import { messagePreview, validateMessageText } from '@/components/chat/utils';
 import { VoiceRecordingBar } from '@/components/chat/voice-recording-bar';
-import { ChatIconButton } from '@/components/chat/chat-icon-button';
 import { AttachmentPickerSheet } from '@/components/chat/attachment-picker-sheet';
 import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { haptic } from '@/lib/mobile/haptics';
@@ -38,10 +38,15 @@ type ChatComposerProps = {
   composerError?: string;
   uploading?: boolean;
   placeholder: string;
-  disabled?: boolean;
+  isSending?: boolean;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   autoFocus?: boolean;
 };
+
+const attachTriggerClass =
+  'inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+const iconButtonClass = 'size-10 shrink-0 rounded-full';
 
 export function ChatComposer({
   draft,
@@ -61,7 +66,7 @@ export function ChatComposer({
   composerError,
   uploading,
   placeholder,
-  disabled,
+  isSending,
   inputRef: externalRef,
   autoFocus = true,
 }: ChatComposerProps) {
@@ -76,8 +81,9 @@ export function ChatComposer({
   const cursorRef = useRef<number | null>(null);
 
   const validation = useMemo(() => validateMessageText(draft), [draft]);
-  const canSend = validation.valid && !disabled;
-  const showSend = draft.trim().length > 0;
+  const hasText = draft.trim().length > 0;
+  const canSend = hasText && !isSending;
+  const showSend = hasText;
 
   useEffect(() => {
     if (!autoFocus || recordingMode !== 'none') return;
@@ -115,14 +121,9 @@ export function ChatComposer({
             <p className="text-[11px] font-medium text-primary">{t('reply')}</p>
             <p className="truncate text-xs text-muted-foreground">{messagePreview(replyTo)}</p>
           </div>
-          <button
-            type="button"
-            onClick={onCancelReply}
-            aria-label={t('cancelReply')}
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={onCancelReply} aria-label={t('cancelReply')}>
             ✕
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -133,6 +134,9 @@ export function ChatComposer({
         </p>
       ) : null}
       {composerError ? <p className="mb-1.5 text-xs text-destructive">{composerError}</p> : null}
+      {!validation.valid && hasText && !composerError ? (
+        <p className="mb-1.5 text-xs text-muted-foreground">{t('messageValidationHint')}</p>
+      ) : null}
 
       <input ref={imageRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { onPickImage(e.target.files); e.target.value = ''; }} />
       <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { onPickFile(e.target.files); e.target.value = ''; }} />
@@ -141,11 +145,14 @@ export function ChatComposer({
       <div className="flex items-end gap-2">
         {coarse ? (
           <>
-            <ChatIconButton
-              icon={Plus}
-              label={t('attachments')}
+            <button
+              type="button"
+              className={attachTriggerClass}
+              aria-label={t('attachments')}
               onClick={() => setAttachOpen(true)}
-            />
+            >
+              <Plus className="size-5" />
+            </button>
             <AttachmentPickerSheet
               open={attachOpen}
               onOpenChange={setAttachOpen}
@@ -157,10 +164,7 @@ export function ChatComposer({
           </>
         ) : (
           <DropdownMenu>
-            <DropdownMenuTrigger
-              className="inline-flex size-12 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97]"
-              aria-label={t('attachments')}
-            >
+            <DropdownMenuTrigger className={attachTriggerClass} aria-label={t('attachments')}>
               <Plus className="size-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="w-44">
@@ -194,12 +198,11 @@ export function ChatComposer({
               onChange={(event) => handleDraftChange(event.target.value)}
               placeholder={placeholder}
               rows={1}
-              disabled={disabled}
-              className="max-h-28 min-h-12 resize-none rounded-2xl border-transparent bg-muted/60 px-4 py-3 text-base shadow-none focus-visible:border-border focus-visible:ring-1"
+              className="max-h-28 min-h-10 resize-none rounded-2xl border-transparent bg-muted/60 px-4 py-2.5 text-[15px] shadow-none focus-visible:border-border focus-visible:ring-1"
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
-                  if (canSend) {
+                  if (hasText && !isSending) {
                     onSend();
                     focusInput();
                   }
@@ -210,33 +213,43 @@ export function ChatComposer({
         )}
 
         {recordingMode === 'voice' ? null : showSend ? (
-          <ChatIconButton
-            icon={SendHorizontal}
-            label={t('send')}
-            variant="primary"
-            size="primary"
-            disabled={!canSend}
+          <Button
+            type="button"
+            size="icon"
+            className={cn(iconButtonClass, (!canSend || !validation.valid) && 'opacity-40')}
             onClick={() => {
-              if (!canSend) return;
+              if (!hasText || isSending) return;
               haptic('light');
               onSend();
               focusInput();
             }}
-          />
+            disabled={!canSend}
+            aria-label={t('send')}
+          >
+            <SendHorizontal className="size-5" />
+          </Button>
         ) : recordingMode === 'video' ? (
-          <ChatIconButton
-            icon={Square}
-            label={t('stopVideoRecording')}
+          <Button
+            type="button"
+            size="icon"
             variant="destructive"
+            className={iconButtonClass}
             onClick={onStopRecording}
-          />
+            aria-label={t('stopVideoRecording')}
+          >
+            <Square className="size-4" />
+          </Button>
         ) : (
-          <ChatIconButton
-            icon={Mic}
-            label={t('recordVoice')}
-            variant="muted"
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            className={iconButtonClass}
             onClick={() => onStartRecording('voice')}
-          />
+            aria-label={t('recordVoice')}
+          >
+            <Mic className="size-5" />
+          </Button>
         )}
       </div>
     </div>

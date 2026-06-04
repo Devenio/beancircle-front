@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
 import { haptic } from '@/lib/mobile/haptics';
-import { touch } from '@/lib/mobile/touch';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import { messagePreview } from '@/components/chat/utils';
 import { cn } from '@/lib/utils';
@@ -106,13 +105,7 @@ export function MessageActionsSheet({
           <button
             key={emoji}
             type="button"
-            className={cn(
-              touch.reaction,
-              touch.motion,
-              touch.press,
-              'flex items-center justify-center rounded-full bg-muted text-xl',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            )}
+            className="flex size-11 items-center justify-center rounded-full bg-muted text-xl transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
               haptic('selection');
               onReact(emoji);
@@ -125,10 +118,7 @@ export function MessageActionsSheet({
         ))}
         <button
           type="button"
-          className={cn(
-            touch.reaction,
-            'flex items-center justify-center rounded-full border border-dashed border-border text-muted-foreground',
-          )}
+          className="flex size-11 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground"
           aria-label={t('moreReactions')}
         >
           <Smile className="size-5" />
@@ -143,11 +133,7 @@ export function MessageActionsSheet({
             key={label}
             type="button"
             variant="ghost"
-            className={cn(
-              touch.actionRow,
-              touch.motion,
-              'justify-start gap-3 rounded-xl px-4 text-base',
-            )}
+            className="h-12 justify-start gap-3 rounded-xl px-3 text-base"
             onClick={() => run(onClick)}
           >
             <Icon className={cn('size-5', destructive && 'text-destructive')} />

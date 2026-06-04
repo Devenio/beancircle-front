@@ -12,6 +12,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const pathname = usePathname();
   const isChatRoom = /^\/messages\/[^/]+$/.test(pathname);
+  const isSettingsSubpage = /^\/settings\/.+/.test(pathname);
   useSocket();
 
   useEffect(() => {
@@ -25,10 +26,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <>
-      <main className={isChatRoom ? 'h-dvh overflow-hidden' : 'pb-20'}>
+      <main
+        className={
+          isChatRoom
+            ? 'h-dvh overflow-hidden'
+            : isSettingsSubpage
+              ? 'min-h-dvh'
+              : 'pb-20'
+        }
+      >
         <PageTransition>{children}</PageTransition>
       </main>
-      {!isChatRoom ? <BottomNav /> : null}
+      {!isChatRoom && !isSettingsSubpage ? <BottomNav /> : null}
     </>
   );
 }

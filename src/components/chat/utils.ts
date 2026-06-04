@@ -198,22 +198,11 @@ export function validateMessageText(text: string): MessageValidationResult {
   const trimmed = text.trim();
   if (!trimmed) return { valid: false, reason: 'empty' };
 
-  // Repeated single character (aaaaaa)
-  if (/^(.)\1{4,}$/u.test(trimmed)) return { valid: false, reason: 'spam' };
+  // Repeated single character (6+ times)
+  if (/^(.)\1{5,}$/u.test(trimmed)) return { valid: false, reason: 'spam' };
 
-  // Short keyboard mash (asdasd, qweqwe)
+  // Short Latin keyboard mash only (asdasd, qweqwe)
   if (trimmed.length <= 12 && /^([a-z]{2,4})\1+$/iu.test(trimmed)) {
-    return { valid: false, reason: 'spam' };
-  }
-
-  // Mostly non-alphanumeric noise with no spaces
-  if (
-    trimmed.length >= 4 &&
-    trimmed.length <= 16 &&
-    !/\s/u.test(trimmed) &&
-    /^[a-z]+$/iu.test(trimmed) &&
-    !/[aeiou]/iu.test(trimmed)
-  ) {
     return { valid: false, reason: 'spam' };
   }
 

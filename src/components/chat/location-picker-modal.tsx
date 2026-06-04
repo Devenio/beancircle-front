@@ -14,9 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
-import { ChatIconButton } from '@/components/chat/chat-icon-button';
 import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
-import { touch } from '@/lib/mobile/touch';
 
 type LocationResult = {
   lat: number;
@@ -118,15 +116,11 @@ export function LocationPickerModal({ open, onOpenChange, onSend }: LocationPick
               placeholder={t('searchPlace')}
               onKeyDown={(e) => e.key === 'Enter' && void searchPlaces()}
               aria-label={t('searchPlace')}
-              className="min-h-11"
+              className="h-9"
             />
-            <ChatIconButton
-              icon={Search}
-              label={t('searchPlace')}
-              variant="muted"
-              loading={searching}
-              onClick={() => void searchPlaces()}
-            />
+            <Button type="button" size="icon" variant="secondary" onClick={() => void searchPlaces()} aria-label={t('searchPlace')}>
+              {searching ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
+            </Button>
           </div>
 
           {results.length > 0 ? (
@@ -135,7 +129,7 @@ export function LocationPickerModal({ open, onOpenChange, onSend }: LocationPick
                 <button
                   key={`${item.lat}-${item.lon}`}
                   type="button"
-                  className={cn(touch.actionRow, 'flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted')}
+                  className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
                   onClick={() =>
                     setSelected({
                       lat: Number(item.lat),
@@ -175,7 +169,7 @@ export function LocationPickerModal({ open, onOpenChange, onSend }: LocationPick
             <Button
               type="button"
               variant="outline"
-              className={cn('flex-1 rounded-full', touch.actionRow)}
+              className="flex-1 rounded-full"
               onClick={useCurrentLocation}
               disabled={loadingCurrent}
             >
@@ -185,7 +179,7 @@ export function LocationPickerModal({ open, onOpenChange, onSend }: LocationPick
             <Button
               type="button"
               variant={liveSharing ? 'default' : 'outline'}
-              className={cn('flex-1 rounded-full', touch.actionRow)}
+              className="flex-1 rounded-full"
               onClick={() => setLiveSharing((v) => !v)}
             >
               <Radio className={cn('size-4', liveSharing && 'animate-pulse')} />
@@ -200,7 +194,7 @@ export function LocationPickerModal({ open, onOpenChange, onSend }: LocationPick
           ) : null}
 
           <Button
-            className={cn('w-full rounded-full', touch.actionRow)}
+            className="w-full rounded-full"
             disabled={!selected}
             onClick={handleSend}
           >

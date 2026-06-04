@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import { useLongPress } from '@/hooks/use-long-press';
 import { haptic } from '@/lib/mobile/haptics';
-import { touch } from '@/lib/mobile/touch';
 import type { Conversation } from '@/components/chat/types';
 import { previewFromLastMessage } from '@/components/chat/utils';
 import { cn } from '@/lib/utils';
@@ -93,7 +92,7 @@ export function SwipeableConversationRow({
           href={`/messages/${conversation.id}`}
           className={cn(
             'flex min-h-[56px] items-center gap-3 px-3 py-3',
-            touch.motion,
+            'transition-colors duration-200',
             'hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             unread > 0 && !muted && 'bg-primary/5',
             dragging && 'pointer-events-none',

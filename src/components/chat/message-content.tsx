@@ -86,7 +86,7 @@ export function VoiceMessagePlayer({
       <button
         type="button"
         className={cn(
-          'flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
+          'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
           isMine ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted hover:bg-muted/80',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           'active:scale-95',

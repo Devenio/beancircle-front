@@ -1,9 +1,9 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
-import { ChatIconButton } from '@/components/chat/chat-icon-button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type MessageSearchBarProps = {
@@ -39,7 +39,7 @@ export function MessageSearchBar({
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         placeholder={t('searchInChat')}
-        className="h-11 min-h-11 border-0 bg-muted/60 shadow-none focus-visible:ring-1"
+        className="h-9 border-0 bg-muted/60 shadow-none focus-visible:ring-1"
         aria-label={t('searchInChat')}
       />
       {query ? (
@@ -49,15 +49,23 @@ export function MessageSearchBar({
           </span>
           {matchCount > 1 ? (
             <div className="flex shrink-0 gap-0.5">
-              <ChatIconButton icon={ChevronUp} label={t('previousMatch')} onClick={onPrev} />
-              <ChatIconButton icon={ChevronDown} label={t('nextMatch')} onClick={onNext} />
+              <Button type="button" size="icon-sm" variant="ghost" onClick={onPrev} aria-label={t('previousMatch')}>
+                ↑
+              </Button>
+              <Button type="button" size="icon-sm" variant="ghost" onClick={onNext} aria-label={t('nextMatch')}>
+                ↓
+              </Button>
             </div>
           ) : null}
-          <ChatIconButton
-            icon={X}
-            label={t('clearSearch')}
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
             onClick={() => onQueryChange('')}
-          />
+            aria-label={t('clearSearch')}
+          >
+            <X className="size-4" />
+          </Button>
         </>
       ) : null}
     </div>

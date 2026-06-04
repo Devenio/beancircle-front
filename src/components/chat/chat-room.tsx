@@ -7,7 +7,7 @@ import { ArrowDown, Check, Loader2, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChatHeader } from '@/components/chat/chat-header';
 import { ChatComposer } from '@/components/chat/composer';
-import { ChatIconButton } from '@/components/chat/chat-icon-button';
+import { Button } from '@/components/ui/button';
 import { PinnedMessageBanner } from '@/components/chat/pinned-message-banner';
 import { MessageActionsSheet } from '@/components/chat/message-actions-sheet';
 import { MediaViewerSheet } from '@/components/chat/attachment-picker-sheet';
@@ -30,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import { cn } from '@/lib/utils';
@@ -292,12 +291,16 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       ) : null}
 
       <div className="absolute right-3 top-[max(3.5rem,calc(env(safe-area-inset-top)+3rem))] z-30">
-        <ChatIconButton
-          icon={Search}
-          label={t('searchInChat')}
-          variant={searchOpen ? 'primary' : 'muted'}
+        <Button
+          type="button"
+          size="icon-sm"
+          variant={searchOpen ? 'default' : 'secondary'}
+          className="rounded-full shadow-sm"
           onClick={() => setSearchOpen((v) => !v)}
-        />
+          aria-label={t('searchInChat')}
+        >
+          <Search className="size-4" />
+        </Button>
       </div>
 
       {pinnedPreview ? (
@@ -421,7 +424,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       ) : (
         <ChatComposer
           draft={room.draft}
-          onDraftChange={room.setDraft}
+          onDraftChange={room.updateDraft}
           onSend={room.sendText}
           onTyping={room.emitTyping}
           replyTo={room.replyTo}
@@ -437,7 +440,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           composerError={room.composerError}
           uploading={room.uploadingCount > 0}
           placeholder={t('typeMessage')}
-          disabled={room.isSending}
+          isSending={room.isSending}
           inputRef={room.composerInputRef}
         />
       )}

@@ -10,7 +10,6 @@ import { useLongPress } from '@/hooks/use-long-press';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { touchIconButton } from '@/lib/mobile/touch';
 
 type ChatHeaderProps = {
   peer?: ChatMember;
@@ -77,7 +76,7 @@ export function ChatHeader({
         <Link
           href="/messages"
           aria-label={t('backToConversations')}
-          className={touchIconButton('text-foreground hover:bg-muted')}
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft className="size-5" />
         </Link>
@@ -87,9 +86,8 @@ export function ChatHeader({
           onClick={onOpenProfile}
           {...avatarLongPress.bind()}
           className={cn(
-            'flex min-h-[48px] min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left',
-            'transition-colors duration-200 hover:bg-muted/50 active:scale-[0.99]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left',
+            'transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}
         >
           <UserAvatar

@@ -37,7 +37,7 @@ export function PinnedMessageBanner({
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
-        className="flex min-h-11 w-full items-center gap-2 px-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="flex w-full items-center gap-2 px-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         aria-expanded={expanded}
       >
         <Pin className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />

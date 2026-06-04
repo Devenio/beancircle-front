@@ -1,0 +1,71 @@
+export type SettingsSectionId =
+  | 'account'
+  | 'privacy'
+  | 'notifications'
+  | 'appearance'
+  | 'chat'
+  | 'security'
+  | 'storage'
+  | 'support'
+  | 'about';
+
+export type SettingsSearchItem = {
+  id: string;
+  section: SettingsSectionId;
+  href: string;
+  labelKey: string;
+  descriptionKey: string;
+  keywords: string[];
+};
+
+export const SETTINGS_SECTIONS: {
+  id: SettingsSectionId;
+  href: string;
+  labelKey: string;
+  descriptionKey: string;
+  icon: string;
+}[] = [
+  { id: 'account', href: '/settings/account', labelKey: 'sections.account', descriptionKey: 'sections.accountDesc', icon: 'user' },
+  { id: 'privacy', href: '/settings/privacy', labelKey: 'sections.privacy', descriptionKey: 'sections.privacyDesc', icon: 'shield' },
+  { id: 'notifications', href: '/settings/notifications', labelKey: 'sections.notifications', descriptionKey: 'sections.notificationsDesc', icon: 'bell' },
+  { id: 'appearance', href: '/settings/appearance', labelKey: 'sections.appearance', descriptionKey: 'sections.appearanceDesc', icon: 'palette' },
+  { id: 'chat', href: '/settings/chat', labelKey: 'sections.chat', descriptionKey: 'sections.chatDesc', icon: 'message' },
+  { id: 'security', href: '/settings/security', labelKey: 'sections.security', descriptionKey: 'sections.securityDesc', icon: 'lock' },
+  { id: 'storage', href: '/settings/storage', labelKey: 'sections.storage', descriptionKey: 'sections.storageDesc', icon: 'database' },
+  { id: 'support', href: '/settings/support', labelKey: 'sections.support', descriptionKey: 'sections.supportDesc', icon: 'life-buoy' },
+  { id: 'about', href: '/settings/about', labelKey: 'sections.about', descriptionKey: 'sections.aboutDesc', icon: 'info' },
+];
+
+export const SETTINGS_SEARCH_INDEX: SettingsSearchItem[] = [
+  { id: 'profile', section: 'account', href: '/settings/account', labelKey: 'items.profile', descriptionKey: 'items.profileDesc', keywords: ['profile', 'name', 'bio', 'avatar', 'پروفایل'] },
+  { id: 'username', section: 'account', href: '/settings/account', labelKey: 'items.username', descriptionKey: 'items.usernameDesc', keywords: ['username', 'handle', 'نام کاربری'] },
+  { id: 'email', section: 'account', href: '/settings/account', labelKey: 'items.email', descriptionKey: 'items.emailDesc', keywords: ['email', 'mail', 'ایمیل'] },
+  { id: 'phone', section: 'account', href: '/settings/account', labelKey: 'items.phone', descriptionKey: 'items.phoneDesc', keywords: ['phone', 'mobile', 'تلفن'] },
+  { id: 'lastSeen', section: 'privacy', href: '/settings/privacy', labelKey: 'items.lastSeen', descriptionKey: 'items.lastSeenDesc', keywords: ['last seen', 'visibility', 'privacy', 'آخرین بازدید'] },
+  { id: 'online', section: 'privacy', href: '/settings/privacy', labelKey: 'items.onlineStatus', descriptionKey: 'items.onlineStatusDesc', keywords: ['online', 'status', 'آنلاین'] },
+  { id: 'readReceipts', section: 'privacy', href: '/settings/privacy', labelKey: 'items.readReceipts', descriptionKey: 'items.readReceiptsDesc', keywords: ['read', 'receipts', 'seen', 'خوانده'] },
+  { id: 'blocked', section: 'privacy', href: '/settings/privacy', labelKey: 'items.blocked', descriptionKey: 'items.blockedDesc', keywords: ['block', 'blocked', 'مسدود'] },
+  { id: 'push', section: 'notifications', href: '/settings/notifications', labelKey: 'items.push', descriptionKey: 'items.pushDesc', keywords: ['push', 'notification', 'اعلان'] },
+  { id: 'sound', section: 'notifications', href: '/settings/notifications', labelKey: 'items.sound', descriptionKey: 'items.soundDesc', keywords: ['sound', 'volume', 'صدا'] },
+  { id: 'vibration', section: 'notifications', href: '/settings/notifications', labelKey: 'items.vibration', descriptionKey: 'items.vibrationDesc', keywords: ['vibration', 'haptic', 'لرزش'] },
+  { id: 'theme', section: 'appearance', href: '/settings/appearance', labelKey: 'theme', descriptionKey: 'sections.appearanceDesc', keywords: ['theme', 'dark', 'light', 'ظاهر', 'تم'] },
+  { id: 'accent', section: 'appearance', href: '/settings/appearance', labelKey: 'items.accent', descriptionKey: 'items.accentDesc', keywords: ['accent', 'color', 'رنگ'] },
+  { id: 'font', section: 'appearance', href: '/settings/appearance', labelKey: 'items.fontSize', descriptionKey: 'items.fontSizeDesc', keywords: ['font', 'text size', 'فونت'] },
+  { id: 'wallpaper', section: 'appearance', href: '/settings/appearance', labelKey: 'items.wallpaper', descriptionKey: 'items.wallpaperDesc', keywords: ['wallpaper', 'background', 'chat', 'پس‌زمینه'] },
+  { id: 'password', section: 'security', href: '/settings/security', labelKey: 'items.password', descriptionKey: 'items.passwordDesc', keywords: ['password', 'رمز'] },
+  { id: '2fa', section: 'security', href: '/settings/security', labelKey: 'items.twoFactor', descriptionKey: 'items.twoFactorDesc', keywords: ['2fa', 'two factor', 'authentication', 'احراز'] },
+  { id: 'sessions', section: 'security', href: '/settings/security', labelKey: 'items.sessions', descriptionKey: 'items.sessionsDesc', keywords: ['session', 'device', 'logout', 'دستگاه'] },
+  { id: 'cache', section: 'storage', href: '/settings/storage', labelKey: 'items.cache', descriptionKey: 'items.cacheDesc', keywords: ['cache', 'clear', 'storage', 'کش'] },
+  { id: 'language', section: 'account', href: '/settings/account', labelKey: 'language', descriptionKey: 'items.languageDesc', keywords: ['language', 'locale', 'زبان'] },
+];
+
+export function filterSettingsSearch(query: string, locale: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return SETTINGS_SEARCH_INDEX.filter(
+    (item) =>
+      item.keywords.some((k) => k.toLowerCase().includes(q)) ||
+      item.id.includes(q) ||
+      item.section.includes(q),
+  ).slice(0, 12);
+}
