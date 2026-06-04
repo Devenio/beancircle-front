@@ -2,6 +2,7 @@
 
 import {
   Copy,
+  CheckSquare,
   Download,
   ExternalLink,
   Forward,
@@ -39,6 +40,7 @@ type MessageActionsSheetProps = {
   onShareMedia?: () => void;
   onCopyLink?: () => void;
   onOpenDetails?: () => void;
+  onSelect?: () => void;
 };
 
 export function MessageActionsSheet({
@@ -57,6 +59,7 @@ export function MessageActionsSheet({
   onShareMedia,
   onCopyLink,
   onOpenDetails,
+  onSelect,
 }: MessageActionsSheetProps) {
   const t = useTranslations('messages');
   if (!message) return null;
@@ -68,6 +71,7 @@ export function MessageActionsSheet({
     { icon: MessageSquareReply, label: t('reply'), onClick: onReply },
     { icon: Copy, label: t('copy'), onClick: onCopy },
     { icon: Forward, label: t('forward'), onClick: onForward },
+    ...(onSelect ? [{ icon: CheckSquare, label: t('selectMessages'), onClick: onSelect }] : []),
     { icon: Pin, label: message.pinned ? t('unpin') : t('pin'), onClick: onPin },
     ...(isMine && message.type === 'text' && !message.deletedAt
       ? [{ icon: Pencil, label: t('edit'), onClick: onEdit }]

@@ -18,11 +18,13 @@ import { ChatProfileSheet } from '@/components/chat/chat-profile-sheet';
 import { MediaComposerModal } from '@/components/chat/media-composer-modal';
 import { LocationPickerModal } from '@/components/chat/location-picker-modal';
 import { MessageSearchBar } from '@/components/chat/message-search-bar';
+import { MessageSelectionHeader } from '@/components/chat/message-selection-header';
+import { MessageSelectionBar } from '@/components/chat/message-selection-bar';
 import { VirtualMessageList } from '@/components/chat/virtual-message-list';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, Conversation, PendingMessage } from '@/components/chat/types';
-import { groupMessagesBySenderAndDate, isMineMessage } from '@/components/chat/utils';
+import { groupMessagesBySenderAndDate, isMineMessage, messagePreview } from '@/components/chat/utils';
 import {
   Dialog,
   DialogContent,
@@ -55,9 +57,12 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState('');
   const [forwardOpen, setForwardOpen] = useState(false);
-  const [forwardSource, setForwardSource] = useState<ChatMessage | PendingMessage | null>(null);
+  const [forwardSources, setForwardSources] = useState<ChatMessage[]>([]);
   const [forwardTargets, setForwardTargets] = useState<Set<string>>(new Set());
   const [forwardState, setForwardState] = useState<ForwardState>({});
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteSelectedOpen, setDeleteSelectedOpen] = useState(false);
   const [showJumpToUnread, setShowJumpToUnread] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -99,6 +104,52 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     );
   }, [room.messages, searchQuery]);
 
+  const selectableMessages = useMemo(
+    () =>
+      room.messages.filter(
+        (msg): msg is ChatMessage => !('clientId' in msg) && !msg.deletedAt,
+      ),
+    [room.messages],
+  );
+
+  const selectedMessages = useMemo(
+    () => selectableMessages.filter((msg) => selectedIds.has(msg.id)),
+    [selectableMessages, selectedIds],
+  );
+
+  const deletableSelected = useMemo(
+    () =>
+      selectedMessages.filter((msg) =>
+        isMineMessage(msg, room.currentUserId, room.currentUsername),
+      ),
+    [selectedMessages, room.currentUserId, room.currentUsername],
+  );
+
+  const pinnableSelected = useMemo(
+    () => selectedMessages.filter((msg) => !msg.pinned),
+    [selectedMessages],
+  );
+
+  const unpinnableSelected = useMemo(
+    () => selectedMessages.filter((msg) => msg.pinned),
+    [selectedMessages],
+  );
+
+  const exitSelection = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelectMessage = useCallback((msg: ChatMessage | PendingMessage) => {
+    if ('clientId' in msg || msg.deletedAt) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(msg.id)) next.delete(msg.id);
+      else next.add(msg.id);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     setSearchIndex(0);
   }, [searchQuery]);
@@ -108,6 +159,16 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     setSearchQuery('');
     setSearchIndex(0);
   }, []);
+
+  const enterSelection = useCallback(
+    (message?: ChatMessage) => {
+      setSelectionMode(true);
+      setSelectedIds(message ? new Set([message.id]) : new Set());
+      setActiveMessage(null);
+      closeChatSearch();
+    },
+    [closeChatSearch],
+  );
 
   const scrollToSearchMatch = useCallback(
     (index: number) => {
@@ -206,11 +267,56 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const activeMediaUrl = activeMessage ? getMessageMediaUrl(activeMessage) : undefined;
 
   const openForward = (msg: ChatMessage | PendingMessage) => {
-    if ('clientId' in msg) return; // can't forward a not-yet-sent message
-    setForwardSource(msg);
+    if ('clientId' in msg) return;
+    setForwardSources([msg]);
     setForwardTargets(new Set());
     setForwardState({});
     setForwardOpen(true);
+  };
+
+  const openBulkForward = () => {
+    if (selectedMessages.length === 0) return;
+    setForwardSources(selectedMessages);
+    setForwardTargets(new Set());
+    setForwardState({});
+    setForwardOpen(true);
+  };
+
+  const copySelectedMessages = () => {
+    const text = selectedMessages
+      .map((msg) => messagePreview(msg))
+      .filter(Boolean)
+      .join('\n\n');
+    if (!text) return;
+    void navigator.clipboard.writeText(text);
+    haptic('light');
+    exitSelection();
+  };
+
+  const confirmDeleteSelected = async () => {
+    const ids = deletableSelected.map((msg) => msg.id);
+    if (ids.length === 0) return;
+    await room.deleteManyMessages(ids);
+    setDeleteSelectedOpen(false);
+    exitSelection();
+  };
+
+  const pinSelected = async () => {
+    await Promise.all(
+      pinnableSelected.map((msg) =>
+        room.pinMutation.mutateAsync({ messageId: msg.id, pinned: true }),
+      ),
+    );
+    exitSelection();
+  };
+
+  const unpinSelected = async () => {
+    await Promise.all(
+      unpinnableSelected.map((msg) =>
+        room.pinMutation.mutateAsync({ messageId: msg.id, pinned: false }),
+      ),
+    );
+    exitSelection();
   };
 
   const toggleForwardTarget = (id: string) => {
@@ -223,26 +329,25 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   };
 
   const runForward = async () => {
-    if (!forwardSource || forwardTargets.size === 0) return;
+    if (forwardSources.length === 0 || forwardTargets.size === 0) return;
     const targets = [...forwardTargets];
     setForwardState(Object.fromEntries(targets.map((id) => [id, 'sending'])));
     try {
-      const res = await room.forwardMessage(forwardSource.id, targets);
-      // The API returns per-target results; map them back for UI feedback.
-      const results = (res?.results ?? []) as {
-        conversationId: string;
-        ok: boolean;
-      }[];
-      const next: ForwardState = {};
-      for (const id of targets) {
-        const match = results.find((r) => r.conversationId === id);
-        next[id] = match?.ok ? 'ok' : 'failed';
+      const next: ForwardState = Object.fromEntries(targets.map((id) => [id, 'ok' as const]));
+      for (const source of forwardSources) {
+        const res = await room.forwardMessage(source.id, targets);
+        const results = (res?.results ?? []) as { conversationId: string; ok: boolean }[];
+        for (const id of targets) {
+          const match = results.find((r) => r.conversationId === id);
+          if (!match?.ok) next[id] = 'failed';
+        }
       }
       setForwardState(next);
-      // Close shortly after success so the user sees the checkmarks.
       setTimeout(() => {
         setForwardOpen(false);
+        setForwardSources([]);
         setActiveMessage(null);
+        exitSelection();
       }, 700);
     } catch {
       setForwardState(Object.fromEntries(targets.map((id) => [id, 'failed'])));
@@ -265,25 +370,35 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <ChatHeader
-        peer={room.peer}
-        online={peerOnline}
-        typingUsername={room.typingUsername}
-        lastSeenAt={peerLastSeen}
-        lastSeenHidden={peerLastSeenHidden}
-        muted={room.muted}
-        blockStatus={room.blockStatus}
-        searchOpen={searchOpen}
-        onOpenProfile={() => setProfileOpen(true)}
-        onOpenSearch={() => setSearchOpen(true)}
-        onToggleMute={() => void room.toggleMute()}
-        onBlock={() => void room.blockPeer()}
-        onUnblock={() => void room.unblockPeer()}
-        onReport={(reason) => void room.reportPeer(reason)}
-        onClearHistory={() => void room.clearHistory()}
-      />
+      {selectionMode ? (
+        <MessageSelectionHeader
+          count={selectedIds.size}
+          totalSelectable={selectableMessages.length}
+          onCancel={exitSelection}
+          onSelectAll={() => setSelectedIds(new Set(selectableMessages.map((m) => m.id)))}
+          onClearAll={() => setSelectedIds(new Set())}
+        />
+      ) : (
+        <ChatHeader
+          peer={room.peer}
+          online={peerOnline}
+          typingUsername={room.typingUsername}
+          lastSeenAt={peerLastSeen}
+          lastSeenHidden={peerLastSeenHidden}
+          muted={room.muted}
+          blockStatus={room.blockStatus}
+          searchOpen={searchOpen}
+          onOpenProfile={() => setProfileOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
+          onToggleMute={() => void room.toggleMute()}
+          onBlock={() => void room.blockPeer()}
+          onUnblock={() => void room.unblockPeer()}
+          onReport={(reason) => void room.reportPeer(reason)}
+          onClearHistory={() => void room.clearHistory()}
+        />
+      )}
 
-      {searchOpen ? (
+      {searchOpen && !selectionMode ? (
         <MessageSearchBar
           query={searchQuery}
           onQueryChange={setSearchQuery}
@@ -297,7 +412,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         />
       ) : null}
 
-      {room.pinnedMessages.length > 0 ? (
+      {room.pinnedMessages.length > 0 && !selectionMode ? (
         <PinnedMessageBanner
           messages={room.pinnedMessages}
           currentUserId={room.currentUserId}
@@ -360,8 +475,15 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               highlightMessageId={searchMatches[searchIndex]?.id}
               unreadLabel={t('unreadMessages')}
               loadingOlder={room.isFetchingOlder}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelectMessage}
+              onEnterSelection={enterSelection}
               onReply={room.setReplyTo}
-              onOpenActions={setActiveMessage}
+              onOpenActions={(msg) => {
+                if (selectionMode) toggleSelectMessage(msg);
+                else setActiveMessage(msg);
+              }}
               onCopy={copyMessage}
               onForward={openForward}
               onEdit={(msg) => {
@@ -426,6 +548,18 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
             </Button>
           </div>
         </div>
+      ) : selectionMode ? (
+        <MessageSelectionBar
+          count={selectedIds.size}
+          canDelete={deletableSelected.length}
+          canPin={pinnableSelected.length}
+          canUnpin={unpinnableSelected.length}
+          onCopy={copySelectedMessages}
+          onForward={openBulkForward}
+          onDelete={() => setDeleteSelectedOpen(true)}
+          onPin={() => void pinSelected()}
+          onUnpin={() => void unpinSelected()}
+        />
       ) : room.isBlocked && room.blockStatus ? (
         <ChatBlockedBar
           peerName={room.peer?.name ?? room.peer?.username}
@@ -518,7 +652,32 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               }
             : undefined
         }
+        onSelect={() => {
+          if (!activeMessage || 'clientId' in activeMessage) return;
+          enterSelection(activeMessage);
+        }}
       />
+
+      <Dialog open={deleteSelectedOpen} onOpenChange={setDeleteSelectedOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('deleteSelectedTitle')}</DialogTitle>
+            <DialogDescription>
+              {deletableSelected.length < selectedIds.size
+                ? t('deleteSelectedPartial', { count: deletableSelected.length })
+                : t('deleteSelectedDescription', { count: deletableSelected.length })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteSelectedOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={() => void confirmDeleteSelected()}>
+              {t('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <MediaViewerSheet
         open={mediaViewerOpen}

@@ -39,6 +39,10 @@ type VirtualMessageListProps = {
   onOpenMedia?: (msg: ChatMessage | PendingMessage) => void;
   unreadLabel: string;
   loadingOlder?: boolean;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (msg: ChatMessage | PendingMessage) => void;
+  onEnterSelection?: (msg: ChatMessage) => void;
 };
 
 export function buildVirtualRows(
@@ -91,6 +95,10 @@ export function VirtualMessageList({
   onOpenMedia,
   unreadLabel,
   loadingOlder,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
+  onEnterSelection,
 }: VirtualMessageListProps) {
   const rows = useMemo(
     () => buildVirtualRows(groupedMessages, firstUnreadId),
@@ -163,6 +171,10 @@ export function VirtualMessageList({
                 onPin={onPin}
                 onReact={onReact}
                 onOpenMedia={onOpenMedia}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+                onEnterSelection={onEnterSelection}
               />
             )}
           </div>

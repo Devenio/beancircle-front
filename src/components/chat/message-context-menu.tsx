@@ -2,6 +2,7 @@
 
 import {
   Copy,
+  CheckSquare,
   Forward,
   MessageSquareReply,
   Pencil,
@@ -30,6 +31,7 @@ type MessageContextMenuProps = {
   onDelete: () => void;
   onPin: () => void;
   onReact: (emoji: string) => void;
+  onSelect?: () => void;
 };
 
 export function MessageContextMenu({
@@ -43,6 +45,7 @@ export function MessageContextMenu({
   onDelete,
   onPin,
   onReact,
+  onSelect,
 }: MessageContextMenuProps) {
   if (message.deletedAt) return <>{children}</>;
 
@@ -76,6 +79,12 @@ export function MessageContextMenu({
           <Forward />
           Forward
         </ContextMenuItem>
+        {onSelect ? (
+          <ContextMenuItem onClick={onSelect}>
+            <CheckSquare />
+            Select
+          </ContextMenuItem>
+        ) : null}
         <ContextMenuItem onClick={onPin}>
           <Pin />
           {message.pinned ? 'Unpin' : 'Pin'}

@@ -561,6 +561,27 @@ export function useChatRoom(conversationId: string, locale: string) {
     onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
   });
 
+  const deleteManyMessages = useCallback(
+    async (messageIds: string[]) => {
+      const results = await Promise.allSettled(
+        messageIds.map((messageId) =>
+          api<ChatMessage>(`/conversations/${conversationId}/messages/${messageId}`, {
+            method: 'DELETE',
+            locale,
+          }),
+        ),
+      );
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          patchMessageInCache(result.value.id, () => result.value);
+        }
+      }
+      haptic('success');
+      return results.filter((r) => r.status === 'fulfilled').length;
+    },
+    [conversationId, locale, patchMessageInCache],
+  );
+
   const pinMutation = useMutation({
     mutationFn: ({ messageId, pinned }: { messageId: string; pinned: boolean }) =>
       api<ChatMessage>(`/conversations/${conversationId}/messages/${messageId}/pin`, {
@@ -1006,6 +1027,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     hasOlderMessages: Boolean(data?.nextCursor),
     editMutation,
     deleteMutation,
+    deleteManyMessages,
     pinMutation,
     scrollToBottom,
     isSending: sendMutation.isPending,

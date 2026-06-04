@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { animate, motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
-import { MessageSquareReply } from 'lucide-react';
+import { Check, MessageSquareReply } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import { MessageBodyContent } from '@/components/chat/message-content';
@@ -29,6 +29,10 @@ type MessageBubbleProps = {
   onPin: () => void;
   onReact: (emoji: string) => void;
   onOpenMedia?: () => void;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+  onSelect?: () => void;
 };
 
 function bubbleRadius(isMine: boolean, position: BubblePosition) {
@@ -64,6 +68,10 @@ export function MessageBubble({
   onPin,
   onReact,
   onOpenMedia,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
+  onSelect,
 }: MessageBubbleProps) {
   const reactions = message.reactions ?? [];
   const coarse = useCoarsePointer();
@@ -78,7 +86,8 @@ export function MessageBubble({
     () => {
       if (!coarse) return;
       haptic('medium');
-      onOpenActions();
+      if (selectionMode) onToggleSelect?.();
+      else onOpenActions();
     },
     { delay: 400 },
   );
@@ -120,8 +129,8 @@ export function MessageBubble({
 
   const bubble = (
     <motion.div
-      style={{ x }}
-      drag="x"
+      style={selectionMode ? undefined : { x }}
+      drag={selectionMode ? false : 'x'}
       dragConstraints={{ left: -88, right: 0 }}
       dragElastic={0.1}
       dragSnapToOrigin
@@ -144,11 +153,17 @@ export function MessageBubble({
         transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
         {...(isMedia ? mediaLongPress.bind() : longPress.bind())}
         onClick={
-          isMedia && !coarse
-            ? () => {
-                onOpenMedia?.();
+          selectionMode
+            ? (event) => {
+                event.stopPropagation();
+                haptic('selection');
+                onToggleSelect?.();
               }
-            : undefined
+            : isMedia && !coarse
+              ? () => {
+                  onOpenMedia?.();
+                }
+              : undefined
         }
         role={isMedia ? 'button' : undefined}
         tabIndex={isMedia ? 0 : undefined}
@@ -169,6 +184,7 @@ export function MessageBubble({
           isMine ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-foreground',
           pending === 'failed' && 'border border-destructive/40 bg-destructive/10 text-destructive',
           swipeReply && 'shadow-md',
+          selectionMode && selected && 'ring-2 ring-primary/50',
           'select-none',
         )}
         aria-label="Message"
@@ -244,6 +260,30 @@ export function MessageBubble({
     </motion.div>
   );
 
+  if (selectionMode) {
+    return (
+      <div className={cn('flex w-full items-end gap-2', isMine ? 'flex-row-reverse' : 'flex-row')}>
+        <button
+          type="button"
+          onClick={() => {
+            haptic('selection');
+            onToggleSelect?.();
+          }}
+          className={cn(
+            'mb-1 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+            selected
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-muted-foreground/40 bg-background',
+          )}
+          aria-label={selected ? 'Deselect message' : 'Select message'}
+        >
+          {selected ? <Check className="size-3" strokeWidth={3} /> : null}
+        </button>
+        {bubble}
+      </div>
+    );
+  }
+
   if (coarse) return bubble;
 
   return (
@@ -257,6 +297,7 @@ export function MessageBubble({
       onDelete={onDelete}
       onPin={onPin}
       onReact={onReact}
+      onSelect={onSelect}
     >
       {bubble}
     </MessageContextMenu>

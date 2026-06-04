@@ -33,6 +33,10 @@ type MessageGroupProps = {
   onPin: (msg: ChatMessage | PendingMessage) => void;
   onReact: (msg: ChatMessage | PendingMessage, emoji: string) => void;
   onOpenMedia?: (msg: ChatMessage | PendingMessage) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (msg: ChatMessage | PendingMessage) => void;
+  onEnterSelection?: (msg: ChatMessage) => void;
 };
 
 export function MessageGroup({
@@ -54,6 +58,10 @@ export function MessageGroup({
   onPin,
   onReact,
   onOpenMedia,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
+  onEnterSelection,
 }: MessageGroupProps) {
   const { isMine, messages } = group;
   const lastMessage = messages[messages.length - 1];
@@ -72,21 +80,27 @@ export function MessageGroup({
       <div className={cn('flex w-full max-w-[88%] flex-col gap-2', isMine ? 'items-end' : 'items-start')}>
         {messages.map((msg, index) => {
           const isLast = index === messages.length - 1;
+          const messageId = 'clientId' in msg ? undefined : msg.id;
+          const selectable = selectionMode && messageId && !msg.deletedAt;
           return (
             <div
               key={'clientId' in msg ? msg.clientId : msg.id}
-              data-message-id={'clientId' in msg ? undefined : msg.id}
+              data-message-id={messageId}
               className={cn(
                 'flex w-full gap-2 rounded-lg transition-colors',
                 isMine ? 'justify-end' : 'justify-start',
-                !('clientId' in msg) && msg.id === highlightMessageId && 'ring-2 ring-primary/50',
-                !('clientId' in msg) &&
+                !selectionMode &&
+                  !('clientId' in msg) &&
+                  msg.id === highlightMessageId &&
+                  'ring-2 ring-primary/50',
+                !selectionMode &&
+                  !('clientId' in msg) &&
                   unreadMessageId &&
                   msg.id === unreadMessageId &&
                   'bg-primary/5 -mx-1 px-1 py-0.5',
               )}
             >
-              {!isMine ? (
+              {!isMine && !selectionMode ? (
                 isLast ? (
                   <UserAvatar src={peerAvatar} name={peerName} online={peerOnline} size="sm" className="self-end" />
                 ) : (
@@ -109,6 +123,14 @@ export function MessageGroup({
                 onPin={() => onPin(msg)}
                 onReact={(emoji) => onReact(msg, emoji)}
                 onOpenMedia={onOpenMedia ? () => onOpenMedia(msg) : undefined}
+                selectionMode={selectable}
+                selected={messageId ? selectedIds?.has(messageId) : false}
+                onToggleSelect={selectable ? () => onToggleSelect?.(msg) : undefined}
+                onSelect={
+                  !('clientId' in msg) && onEnterSelection
+                    ? () => onEnterSelection(msg)
+                    : undefined
+                }
               />
             </div>
           );
