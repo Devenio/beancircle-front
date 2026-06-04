@@ -28,9 +28,16 @@ export function useSocket(onNotification?: (data: unknown) => void) {
       qc.invalidateQueries({ queryKey: ['notifications'] });
       onNotification?.(data);
     };
-    const handlePresence = (payload: { userId?: string; online?: boolean }) => {
+    const handlePresence = (payload: {
+      userId?: string;
+      online?: boolean;
+      lastSeenAt?: string;
+    }) => {
       if (payload.userId && typeof payload.online === 'boolean') {
-        setOnline(payload.userId, payload.online);
+        setOnline(payload.userId, payload.online, payload.lastSeenAt ?? null);
+        if (!payload.online && payload.lastSeenAt) {
+          useChatStore.getState().setLastSeen(payload.userId, payload.lastSeenAt);
+        }
       }
     };
     const handleConversationChanged = () => {

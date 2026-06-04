@@ -86,8 +86,10 @@ export function VoiceMessagePlayer({
       <button
         type="button"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors',
+          'flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
           isMine ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted hover:bg-muted/80',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'active:scale-95',
         )}
         onClick={(event) => {
           const audio = event.currentTarget.parentElement?.querySelector('audio');
@@ -130,24 +132,31 @@ export function LocationCard({
   label?: string;
   isMine?: boolean;
 }) {
+  const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+  const previewUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=14&size=400x180&markers=${lat},${lng},red-pushpin`;
+
   return (
     <a
-      href={`https://maps.google.com/?q=${lat},${lng}`}
+      href={mapsUrl}
       target="_blank"
       rel="noreferrer noopener"
       className={cn(
-        'mt-1 flex items-center gap-3 rounded-xl border p-3 transition-colors duration-200',
+        'mt-1 block overflow-hidden rounded-xl border transition-colors duration-200',
         isMine ? 'border-primary-foreground/20 bg-primary-foreground/10' : 'border-border bg-background',
       )}
     >
-      <div className={cn('flex size-10 items-center justify-center rounded-lg', isMine ? 'bg-primary-foreground/15' : 'bg-muted')}>
-        <MapPin className="size-5" />
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{label ?? 'Shared location'}</p>
-        <p className="text-xs opacity-70">
-          {lat.toFixed(4)}, {lng.toFixed(4)}
-        </p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={previewUrl} alt="" className="h-28 w-full object-cover" loading="lazy" />
+      <div className="flex items-center gap-3 p-3">
+        <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', isMine ? 'bg-primary-foreground/15' : 'bg-muted')}>
+          <MapPin className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{label ?? 'Shared location'}</p>
+          <p className="text-xs opacity-70">
+            {lat.toFixed(4)}, {lng.toFixed(4)} · Open in Google Maps
+          </p>
+        </div>
       </div>
     </a>
   );
@@ -178,6 +187,7 @@ export function MessageBodyContent({
   sticker,
   attachment,
   location,
+  imageUrl,
   isMine,
 }: {
   type: string;
@@ -185,18 +195,21 @@ export function MessageBodyContent({
   sticker?: string;
   attachment?: { url: string; name?: string; size?: number; durationSec?: number };
   location?: { lat: number; lng: number; label?: string };
+  imageUrl?: string;
   isMine?: boolean;
 }) {
   if (type === 'sticker') {
     return <p className="text-4xl leading-none">{sticker ?? '😀'}</p>;
   }
 
-  if (type === 'image' && attachment?.url) {
+  const mediaUrl = attachment?.url ?? imageUrl;
+
+  if (type === 'image' && mediaUrl) {
     return (
       <div className="overflow-hidden rounded-xl">
         <Image
-          src={attachment.url}
-          alt={attachment.name ?? 'Image'}
+          src={mediaUrl}
+          alt={attachment?.name ?? 'Image'}
           width={280}
           height={200}
           className="max-h-56 w-full object-cover transition-opacity duration-200"
@@ -205,8 +218,8 @@ export function MessageBodyContent({
     );
   }
 
-  if (type === 'video' && attachment?.url) {
-    return <video controls className="max-h-56 w-full rounded-xl" src={attachment.url} />;
+  if (type === 'video' && mediaUrl) {
+    return <video controls className="max-h-56 w-full rounded-xl" src={mediaUrl} />;
   }
 
   if (type === 'voice' && attachment?.url) {

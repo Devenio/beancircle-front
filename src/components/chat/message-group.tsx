@@ -22,6 +22,8 @@ type MessageGroupProps = {
   peerAvatar?: string | null;
   peerName?: string | null;
   peerOnline?: boolean;
+  highlightMessageId?: string;
+  unreadMessageId?: string | null;
   onReply: (msg: ChatMessage | PendingMessage) => void;
   onOpenActions: (msg: ChatMessage | PendingMessage) => void;
   onCopy: (msg: ChatMessage | PendingMessage) => void;
@@ -30,6 +32,7 @@ type MessageGroupProps = {
   onDelete: (msg: ChatMessage | PendingMessage) => void;
   onPin: (msg: ChatMessage | PendingMessage) => void;
   onReact: (msg: ChatMessage | PendingMessage, emoji: string) => void;
+  onOpenMedia?: (msg: ChatMessage | PendingMessage) => void;
 };
 
 export function MessageGroup({
@@ -40,6 +43,8 @@ export function MessageGroup({
   peerAvatar,
   peerName,
   peerOnline,
+  highlightMessageId,
+  unreadMessageId,
   onReply,
   onOpenActions,
   onCopy,
@@ -48,6 +53,7 @@ export function MessageGroup({
   onDelete,
   onPin,
   onReact,
+  onOpenMedia,
 }: MessageGroupProps) {
   const { isMine, messages } = group;
   const lastMessage = messages[messages.length - 1];
@@ -70,7 +76,15 @@ export function MessageGroup({
             <div
               key={'clientId' in msg ? msg.clientId : msg.id}
               data-message-id={'clientId' in msg ? undefined : msg.id}
-              className={cn('flex w-full gap-2', isMine ? 'justify-end' : 'justify-start')}
+              className={cn(
+                'flex w-full gap-2 rounded-lg transition-colors',
+                isMine ? 'justify-end' : 'justify-start',
+                !('clientId' in msg) && msg.id === highlightMessageId && 'ring-2 ring-primary/50',
+                !('clientId' in msg) &&
+                  unreadMessageId &&
+                  msg.id === unreadMessageId &&
+                  'bg-primary/5 -mx-1 px-1 py-0.5',
+              )}
             >
               {!isMine ? (
                 isLast ? (
@@ -94,6 +108,7 @@ export function MessageGroup({
                 onDelete={() => onDelete(msg)}
                 onPin={() => onPin(msg)}
                 onReact={(emoji) => onReact(msg, emoji)}
+                onOpenMedia={onOpenMedia ? () => onOpenMedia(msg) : undefined}
               />
             </div>
           );

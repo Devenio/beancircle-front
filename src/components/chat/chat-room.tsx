@@ -1,17 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { ArrowDown, Check, Loader2 } from 'lucide-react';
+import { ArrowDown, Check, Loader2, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChatHeader } from '@/components/chat/chat-header';
 import { ChatComposer } from '@/components/chat/composer';
-import { MessageGroup } from '@/components/chat/message-group';
+import { ChatIconButton } from '@/components/chat/chat-icon-button';
 import { PinnedMessageBanner } from '@/components/chat/pinned-message-banner';
 import { MessageActionsSheet } from '@/components/chat/message-actions-sheet';
-import { DateSeparator } from '@/components/chat/date-separator';
+import { MediaViewerSheet } from '@/components/chat/attachment-picker-sheet';
+import { ForwardPickerSheet } from '@/components/chat/forward-picker-sheet';
 import { TypingIndicator } from '@/components/chat/typing-indicator';
+import { ChatProfileSheet } from '@/components/chat/chat-profile-sheet';
+import { MediaComposerModal } from '@/components/chat/media-composer-modal';
+import { LocationPickerModal } from '@/components/chat/location-picker-modal';
+import { MessageSearchBar } from '@/components/chat/message-search-bar';
+import { VirtualMessageList } from '@/components/chat/virtual-message-list';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, Conversation, PendingMessage } from '@/components/chat/types';
@@ -28,6 +34,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import { cn } from '@/lib/utils';
+import { haptic } from '@/lib/mobile/haptics';
+import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 
@@ -51,6 +59,18 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const [forwardTargets, setForwardTargets] = useState<Set<string>>(new Set());
   const [forwardState, setForwardState] = useState<ForwardState>({});
   const [showJumpToUnread, setShowJumpToUnread] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchIndex, setSearchIndex] = useState(0);
+  const [listScrolling, setListScrolling] = useState(false);
+  const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
+  const [mediaViewer, setMediaViewer] = useState<{
+    url: string;
+    type: 'image' | 'video';
+  } | null>(null);
+  const getLastSeen = useChatStore((s) => s.getLastSeen);
+  const coarse = useCoarsePointer();
 
   const { data: conversations } = useQuery({
     queryKey: ['conversations', locale],
@@ -63,7 +83,60 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     [room.messages, room.currentUserId, room.currentUsername],
   );
 
-  const peerOnline = room.peer?.id ? onlineUserIds.has(room.peer.id) : false;
+  const peerOnline = room.peer?.id ? onlineUserIds.has(room.peer.id) : (room.peerPresence?.online ?? false);
+  const peerLastSeen = room.peer?.id
+    ? getLastSeen(room.peer.id)?.lastSeenAt ?? room.peerPresence?.lastSeenAt
+    : room.peerPresence?.lastSeenAt;
+  const peerLastSeenHidden = room.peer?.id
+    ? getLastSeen(room.peer.id)?.hidden ?? room.peerPresence?.hidden
+    : room.peerPresence?.hidden;
+
+  const searchMatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return room.messages.filter(
+      (msg) => msg.body?.toLowerCase().includes(q) && !msg.deletedAt,
+    );
+  }, [room.messages, searchQuery]);
+
+  useEffect(() => {
+    setSearchIndex(0);
+  }, [searchQuery]);
+
+  const scrollToSearchMatch = useCallback(
+    (index: number) => {
+      const msg = searchMatches[index];
+      if (!msg || 'clientId' in msg) return;
+      const el = room.listRef.current?.querySelector(`[data-message-id="${msg.id}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+    [searchMatches, room.listRef],
+  );
+
+  useEffect(() => {
+    if (searchMatches.length > 0) scrollToSearchMatch(searchIndex);
+  }, [searchIndex, searchMatches.length, scrollToSearchMatch]);
+
+  useEffect(() => {
+    const node = room.listRef.current;
+    if (!node) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const onScroll = () => {
+      setListScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setListScrolling(false), 800);
+      const nearBottom = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+      if (nearBottom) room.acknowledgeUnread();
+      if (node.scrollTop < 80 && room.hasOlderMessages && !room.isFetchingOlder) {
+        void room.loadOlderMessages();
+      }
+    };
+    node.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      node.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
+    };
+  }, [room.listRef, room.acknowledgeUnread, room.hasOlderMessages, room.isFetchingOlder, room.loadOlderMessages]);
 
   const pinnedPreview =
     room.pinnedMessages.length > 0
@@ -76,9 +149,60 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       msg.sticker ||
       (msg.location ? `${msg.location.lat}, ${msg.location.lng}` : '') ||
       msg.attachment?.url ||
+      msg.imageUrl ||
       '';
-    if (text) void navigator.clipboard.writeText(text);
+    if (text) {
+      void navigator.clipboard.writeText(text);
+      haptic('light');
+    }
   };
+
+  const getMessageMediaUrl = (msg: ChatMessage | PendingMessage) =>
+    msg.imageUrl ?? msg.attachment?.url;
+
+  const openMediaViewer = (msg: ChatMessage | PendingMessage) => {
+    const url = getMessageMediaUrl(msg);
+    if (!url) return;
+    setMediaViewer({ url, type: msg.type === 'video' ? 'video' : 'image' });
+    setMediaViewerOpen(true);
+  };
+
+  const saveMediaFromUrl = async (url: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = url.split('/').pop()?.split('?')[0] ?? 'media';
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+      haptic('success');
+    } catch {
+      haptic('error');
+    }
+  };
+
+  const shareMediaFromUrl = async (url: string) => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ url, title: 'Media' });
+        haptic('success');
+      } catch {
+        /* user cancelled */
+      }
+    } else {
+      void navigator.clipboard.writeText(url);
+      haptic('light');
+    }
+  };
+
+  const copyMediaLink = (url: string) => {
+    void navigator.clipboard.writeText(url);
+    haptic('light');
+  };
+
+  const activeMediaUrl = activeMessage ? getMessageMediaUrl(activeMessage) : undefined;
 
   const openForward = (msg: ChatMessage | PendingMessage) => {
     if ('clientId' in msg) return; // can't forward a not-yet-sent message
@@ -130,17 +254,63 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     const el = node.querySelector(`[data-message-id="${room.firstUnreadId}"]`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setShowJumpToUnread(false);
+    room.acknowledgeUnread();
+  };
+
+  const openReportFromProfile = () => {
+    setProfileOpen(false);
+    void room.reportPeer('Reported from chat profile');
   };
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <ChatHeader peer={room.peer} online={peerOnline} typingUsername={room.typingUsername} />
+      <ChatHeader
+        peer={room.peer}
+        online={peerOnline}
+        typingUsername={room.typingUsername}
+        lastSeenAt={peerLastSeen}
+        lastSeenHidden={peerLastSeenHidden}
+        muted={room.muted}
+        onOpenProfile={() => setProfileOpen(true)}
+        onToggleMute={() => void room.toggleMute()}
+        onBlock={() => void room.blockPeer()}
+        onReport={(reason) => void room.reportPeer(reason)}
+        onClearHistory={() => void room.clearHistory()}
+      />
+
+      {searchOpen ? (
+        <MessageSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          matchCount={searchMatches.length}
+          activeIndex={searchIndex}
+          onNext={() => setSearchIndex((i) => (i + 1) % Math.max(searchMatches.length, 1))}
+          onPrev={() =>
+            setSearchIndex((i) => (i - 1 + Math.max(searchMatches.length, 1)) % Math.max(searchMatches.length, 1))
+          }
+        />
+      ) : null}
+
+      <div className="absolute right-3 top-[max(3.5rem,calc(env(safe-area-inset-top)+3rem))] z-30">
+        <ChatIconButton
+          icon={Search}
+          label={t('searchInChat')}
+          variant={searchOpen ? 'primary' : 'muted'}
+          onClick={() => setSearchOpen((v) => !v)}
+        />
+      </div>
 
       {pinnedPreview ? (
         <PinnedMessageBanner preview={pinnedPreview} scrollContainerRef={room.listRef} />
       ) : null}
 
-      <div ref={room.listRef} className="relative flex-1 overflow-y-auto px-3 py-3">
+      <div
+        ref={room.listRef}
+        className={cn(
+          'relative flex-1 overflow-y-auto overscroll-contain px-3 py-3 chat-scrollbar',
+          listScrolling && 'is-scrolling',
+        )}
+      >
         {/* Self-contained wallpaper (never 404s): layered gradients + dot grid. */}
         <div
           aria-hidden
@@ -169,41 +339,37 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               <p className="max-w-xs text-sm text-muted-foreground">{t('emptyChatBody')}</p>
             </div>
           ) : (
-            <div className="flex flex-col pb-2">
-              {groupedMessages.map((dateGroup) => (
-                <div key={dateGroup.date}>
-                  <DateSeparator date={dateGroup.date} />
-                  {dateGroup.senderGroups.map((senderGroup) => (
-                    <MessageGroup
-                      key={`${dateGroup.date}-${senderGroup.senderId}-${senderGroup.messages[0]?.id}`}
-                      group={senderGroup}
-                      currentUserId={room.currentUserId}
-                      currentUsername={room.currentUsername}
-                      peerId={room.peer?.id}
-                      peerAvatar={room.peer?.avatarUrl}
-                      peerName={room.peer?.name ?? room.peer?.username}
-                      peerOnline={peerOnline}
-                      onReply={room.setReplyTo}
-                      onOpenActions={setActiveMessage}
-                      onCopy={copyMessage}
-                      onForward={openForward}
-                      onEdit={(msg) => {
-                        setEditingMessageId(msg.id);
-                        setEditingDraft(msg.body ?? '');
-                      }}
-                      onDelete={(msg) => room.deleteMutation.mutate(msg.id)}
-                      onPin={(msg) =>
-                        room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
-                      }
-                      onReact={(msg, emoji) => {
-                        if ('clientId' in msg) return;
-                        room.toggleReaction(msg.id, emoji);
-                      }}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
+            <VirtualMessageList
+              groupedMessages={groupedMessages}
+              firstUnreadId={room.firstUnreadId}
+              listRef={room.listRef}
+              currentUserId={room.currentUserId}
+              currentUsername={room.currentUsername}
+              peerId={room.peer?.id}
+              peerAvatar={room.peer?.avatarUrl}
+              peerName={room.peer?.name ?? room.peer?.username}
+              peerOnline={peerOnline}
+              highlightMessageId={searchMatches[searchIndex]?.id}
+              unreadLabel={t('unreadMessages')}
+              loadingOlder={room.isFetchingOlder}
+              onReply={room.setReplyTo}
+              onOpenActions={setActiveMessage}
+              onCopy={copyMessage}
+              onForward={openForward}
+              onEdit={(msg) => {
+                setEditingMessageId(msg.id);
+                setEditingDraft(msg.body ?? '');
+              }}
+              onDelete={(msg) => room.deleteMutation.mutate(msg.id)}
+              onPin={(msg) =>
+                room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
+              }
+              onReact={(msg, emoji) => {
+                if ('clientId' in msg) return;
+                room.toggleReaction(msg.id, emoji);
+              }}
+              onOpenMedia={openMediaViewer}
+            />
           )}
 
           <AnimatePresence>
@@ -260,21 +426,46 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           onTyping={room.emitTyping}
           replyTo={room.replyTo}
           onCancelReply={() => room.setReplyTo(null)}
-          onPickImage={(files) => void room.handlePickFiles(files, 'image')}
-          onPickFile={(files) => void room.handlePickFiles(files, 'file')}
-          onPickVideo={(files) => void room.handlePickFiles(files, 'video')}
-          onSendLocation={room.sendLocation}
+          onPickImage={(files) => room.handlePickFiles(files, 'image')}
+          onPickFile={(files) => room.handlePickFiles(files, 'file')}
+          onPickVideo={(files) => room.handlePickFiles(files, 'video')}
+          onOpenLocation={() => room.setLocationPickerOpen(true)}
           recordingMode={room.recordingMode}
           recordingElapsedSec={room.recordingElapsedSec}
           onStartRecording={room.startRecording}
           onStopRecording={room.stopRecording}
           composerError={room.composerError}
           uploading={room.uploadingCount > 0}
-          validationHint={t('invalidMessage')}
           placeholder={t('typeMessage')}
           disabled={room.isSending}
+          inputRef={room.composerInputRef}
         />
       )}
+
+      <MediaComposerModal
+        open={room.mediaComposerOpen}
+        items={room.mediaComposerItems}
+        onOpenChange={room.setMediaComposerOpen}
+        onSend={room.sendMediaFromComposer}
+        uploading={room.uploadingCount > 0}
+      />
+
+      <LocationPickerModal
+        open={room.locationPickerOpen}
+        onOpenChange={room.setLocationPickerOpen}
+        onSend={room.sendLocationFromPicker}
+      />
+
+      <ChatProfileSheet
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        conversationId={conversationId}
+        locale={locale}
+        peer={room.peer}
+        onMute={() => void room.toggleMute()}
+        onBlock={() => void room.blockPeer()}
+        onReport={openReportFromProfile}
+      />
 
       <MessageActionsSheet
         open={Boolean(activeMessage)}
@@ -298,8 +489,46 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           if (!activeMessage || 'clientId' in activeMessage) return;
           room.toggleReaction(activeMessage.id, emoji);
         }}
+        onSaveMedia={
+          activeMediaUrl ? () => void saveMediaFromUrl(activeMediaUrl) : undefined
+        }
+        onShareMedia={
+          activeMediaUrl ? () => void shareMediaFromUrl(activeMediaUrl) : undefined
+        }
+        onCopyLink={activeMediaUrl ? () => copyMediaLink(activeMediaUrl) : undefined}
+        onOpenDetails={
+          activeMediaUrl
+            ? () => {
+                openMediaViewer(activeMessage!);
+                setActiveMessage(null);
+              }
+            : undefined
+        }
       />
 
+      <MediaViewerSheet
+        open={mediaViewerOpen}
+        onOpenChange={setMediaViewerOpen}
+        url={mediaViewer?.url}
+        type={mediaViewer?.type}
+        onSave={mediaViewer?.url ? () => void saveMediaFromUrl(mediaViewer.url) : undefined}
+        onShare={mediaViewer?.url ? () => void shareMediaFromUrl(mediaViewer.url) : undefined}
+        onCopyLink={mediaViewer?.url ? () => copyMediaLink(mediaViewer.url) : undefined}
+      />
+
+      {coarse ? (
+        <ForwardPickerSheet
+          open={forwardOpen}
+          onOpenChange={setForwardOpen}
+          conversations={conversations}
+          currentConversationId={conversationId}
+          forwardTargets={forwardTargets}
+          forwardState={forwardState}
+          isForwarding={room.isForwarding}
+          onToggleTarget={toggleForwardTarget}
+          onForward={() => void runForward()}
+        />
+      ) : (
       <Dialog open={forwardOpen} onOpenChange={setForwardOpen}>
         <DialogContent>
           <DialogHeader>
@@ -359,6 +588,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </div>
   );
 }

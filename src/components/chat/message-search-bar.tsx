@@ -1,0 +1,78 @@
+'use client';
+
+import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Input } from '@/components/ui/input';
+import { ChatIconButton } from '@/components/chat/chat-icon-button';
+import { cn } from '@/lib/utils';
+
+type MessageSearchBarProps = {
+  query: string;
+  onQueryChange: (value: string) => void;
+  matchCount?: number;
+  activeIndex?: number;
+  onNext?: () => void;
+  onPrev?: () => void;
+  className?: string;
+};
+
+export function MessageSearchBar({
+  query,
+  onQueryChange,
+  matchCount = 0,
+  activeIndex = 0,
+  onNext,
+  onPrev,
+  className,
+}: MessageSearchBarProps) {
+  const t = useTranslations('messages');
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 border-b border-border/60 bg-background/95 px-3 py-2 backdrop-blur-md',
+        className,
+      )}
+    >
+      <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <Input
+        value={query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        placeholder={t('searchInChat')}
+        className="h-11 min-h-11 border-0 bg-muted/60 shadow-none focus-visible:ring-1"
+        aria-label={t('searchInChat')}
+      />
+      {query ? (
+        <>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {matchCount > 0 ? `${activeIndex + 1}/${matchCount}` : t('noSearchResults')}
+          </span>
+          {matchCount > 1 ? (
+            <div className="flex shrink-0 gap-0.5">
+              <ChatIconButton icon={ChevronUp} label={t('previousMatch')} onClick={onPrev} />
+              <ChatIconButton icon={ChevronDown} label={t('nextMatch')} onClick={onNext} />
+            </div>
+          ) : null}
+          <ChatIconButton
+            icon={X}
+            label={t('clearSearch')}
+            onClick={() => onQueryChange('')}
+          />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+export function highlightSearchText(text: string, query: string) {
+  if (!query.trim()) return [{ text, match: false }];
+  const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'gi'));
+  return parts.filter(Boolean).map((part) => ({
+    text: part,
+    match: part.toLowerCase() === query.toLowerCase(),
+  }));
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

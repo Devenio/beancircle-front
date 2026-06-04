@@ -20,6 +20,39 @@ export type MessageValidationResult =
   | { valid: true }
   | { valid: false; reason: 'empty' | 'spam' };
 
+export function formatLastSeen(
+  lastSeenAt: string | null | undefined,
+  hidden?: boolean,
+  locale?: string,
+): string | null {
+  if (hidden) return 'recently';
+  if (!lastSeenAt) return null;
+
+  const date = new Date(lastSeenAt);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+
+  if (diffMin < 1) return 'just_now';
+  if (diffMin < 60) return `${diffMin}m`;
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const timeStr = date.toLocaleTimeString(locale ?? undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (date.toDateString() === today.toDateString()) return `today:${timeStr}`;
+  if (date.toDateString() === yesterday.toDateString()) return 'yesterday';
+  return date.toLocaleDateString(locale ?? undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export function formatTime(value: string) {
   return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }

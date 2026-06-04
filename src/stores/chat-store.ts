@@ -14,18 +14,23 @@ import { create } from 'zustand';
  */
 
 type TypingState = Record<string, string | null>;
+type LastSeenState = Record<string, { lastSeenAt: string | null; hidden?: boolean }>;
 
 type ChatStore = {
   typingByConversation: TypingState;
   onlineUserIds: Set<string>;
+  lastSeenByUser: LastSeenState;
   setTyping: (conversationId: string, username: string | null) => void;
-  setOnline: (userId: string, online: boolean) => void;
+  setOnline: (userId: string, online: boolean, lastSeenAt?: string | null) => void;
+  setLastSeen: (userId: string, lastSeenAt: string | null, hidden?: boolean) => void;
   isOnline: (userId?: string | null) => boolean;
+  getLastSeen: (userId?: string | null) => { lastSeenAt: string | null; hidden?: boolean } | null;
 };
 
 export const useChatStore = create<ChatStore>()((set, get) => ({
   typingByConversation: {},
   onlineUserIds: new Set<string>(),
+  lastSeenByUser: {},
 
   setTyping: (conversationId, username) =>
     set((state) => {
@@ -38,15 +43,31 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
       };
     }),
 
-  setOnline: (userId, online) =>
+  setOnline: (userId, online, lastSeenAt) =>
     set((state) => {
       const has = state.onlineUserIds.has(userId);
-      if (online === has) return state;
-      const next = new Set(state.onlineUserIds);
-      if (online) next.add(userId);
-      else next.delete(userId);
-      return { onlineUserIds: next };
+      const nextOnline = new Set(state.onlineUserIds);
+      if (online) nextOnline.add(userId);
+      else nextOnline.delete(userId);
+
+      const nextLastSeen = { ...state.lastSeenByUser };
+      if (!online && lastSeenAt) {
+        nextLastSeen[userId] = { lastSeenAt, hidden: nextLastSeen[userId]?.hidden };
+      }
+
+      if (online === has && !lastSeenAt) return state;
+      return { onlineUserIds: nextOnline, lastSeenByUser: nextLastSeen };
     }),
 
+  setLastSeen: (userId, lastSeenAt, hidden) =>
+    set((state) => ({
+      lastSeenByUser: {
+        ...state.lastSeenByUser,
+        [userId]: { lastSeenAt, hidden },
+      },
+    })),
+
   isOnline: (userId) => (userId ? get().onlineUserIds.has(userId) : false),
+
+  getLastSeen: (userId) => (userId ? get().lastSeenByUser[userId] ?? null : null),
 }));

@@ -124,6 +124,34 @@
   }
 }
 
+@utility chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+    border-radius: 9999px;
+    transition: background-color 0.2s ease;
+  }
+
+  &.is-scrolling::-webkit-scrollbar-thumb,
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+  }
+
+  &.is-scrolling {
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 55%, transparent) transparent;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -134,4 +162,15 @@
   html {
     @apply font-sans;
     }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
