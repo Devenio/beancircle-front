@@ -3,17 +3,17 @@
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
-import { SettingsProfileHeader, SettingsHubSkeleton } from '@/components/settings/settings-profile-header';
+import { Gift, LayoutDashboard } from 'lucide-react';
+import { SettingsAccountRow } from '@/components/settings/settings-account-row';
+import { SettingsHubMenu } from '@/components/settings/settings-hub-menu';
+import { SettingsHubHeader } from '@/components/settings/settings-shell';
 import { SettingsSearch } from '@/components/settings/settings-search';
-import { SettingsSectionNav } from '@/components/settings/settings-section-nav';
+import { SettingsHubSkeleton } from '@/components/settings/settings-profile-header';
+import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { ReferralPanel } from '@/components/growth/referral-panel';
-import { Link } from '@/i18n/navigation';
 import { useAuthStore } from '@/stores/auth-store';
-import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api/client';
 import { useRouter } from '@/i18n/navigation';
-import { Gift, LayoutDashboard, Shield } from 'lucide-react';
-import { SettingsGroup, SettingsRow } from '@/components/settings/settings-row';
 
 function SettingsHubContent() {
   const t = useTranslations('settings');
@@ -32,55 +32,42 @@ function SettingsHubContent() {
   }
 
   return (
-    <div className="min-h-dvh pb-24 md:pb-8">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-md md:static md:border-0 md:bg-transparent md:px-6 md:pt-6">
-        <h1 className="text-xl font-bold md:text-2xl">{t('title')}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground md:block">{t('hubSubtitle')}</p>
-        <div className="mt-3 md:max-w-xl">
-          <SettingsSearch />
-        </div>
-      </header>
+    <div className="flex min-h-dvh flex-col">
+      <SettingsHubHeader>
+        <SettingsSearch />
+      </SettingsHubHeader>
 
-      <div className="mx-auto max-w-2xl space-y-6 p-4 md:px-6">
-        <SettingsProfileHeader locale={locale} />
+      <SettingsAccountRow locale={locale} />
+      <SettingsHubMenu />
 
-        <div>
-          <h2 className="mb-2 px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            {t('browseSections')}
-          </h2>
-          <SettingsSectionNav />
-        </div>
-
-        {(user?.role === 'ADMIN' || user?.role === 'OWNER') && (
-          <SettingsGroup title={t('quickLinks')}>
+      {(user?.role === 'ADMIN' || user?.role === 'OWNER') && (
+        <>
+          <SettingsSectionLabel>{t('quickLinks')}</SettingsSectionLabel>
+          <SettingsList>
             {user?.role === 'ADMIN' ? (
-              <SettingsRow
-                icon={<Shield className="size-5" />}
-                label="Admin panel"
-                href="/admin"
-              />
+              <SettingsRow label="Admin panel" href="/admin" />
             ) : null}
-            <SettingsRow
-              icon={<LayoutDashboard className="size-5" />}
-              label={t('ownerDashboard')}
-              href="/owner"
-            />
-          </SettingsGroup>
-        )}
+            <SettingsRow label={t('ownerDashboard')} href="/owner" icon={<LayoutDashboard className="size-5" />} />
+          </SettingsList>
+        </>
+      )}
 
+      <div className="px-4 py-4">
         <ReferralPanel locale={locale} />
+      </div>
 
-        <SettingsGroup>
-          <SettingsRow
-            icon={<Gift className="size-5" />}
-            label={t('giftCoffee')}
-            href="/gift"
-          />
-        </SettingsGroup>
+      <SettingsList className="mt-2">
+        <SettingsRow label={t('giftCoffee')} href="/gift" icon={<Gift className="size-5" />} />
+      </SettingsList>
 
-        <Button variant="destructive" className="min-h-12 w-full" onClick={handleLogout}>
+      <div className="mt-6 px-4 pb-8">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="min-h-[52px] w-full text-[15px] font-medium text-destructive active:opacity-70"
+        >
           {t('logout')}
-        </Button>
+        </button>
       </div>
     </div>
   );

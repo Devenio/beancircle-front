@@ -366,6 +366,15 @@
     "searchPlaceholder": "جستجو در تنظیمات…",
     "clearSearch": "پاک کردن جستجو",
     "searchEmpty": "تنظیمی پیدا نشد",
+    "home": "خانه",
+    "accountsCenterHint": "مرکز حساب‌ها، پروفایل و بیشتر",
+    "unblock": "رفع مسدودیت",
+    "navGroups": {
+      "accountCenter": "حساب شما",
+      "preferences": "نحوه استفاده از BeanCircle",
+      "data": "داده و ذخیره‌سازی",
+      "support": "اطلاعات و پشتیبانی"
+    },
     "browseSections": "مرور بخش‌ها",
     "quickLinks": "دسترسی سریع",
     "back": "بازگشت",
@@ -442,6 +451,8 @@
       "storageDesc": "کش، دانلود و مصرف",
       "support": "پشتیبانی",
       "supportDesc": "راهنما، گزارش و قوانین",
+      "help": "راهنما",
+      "helpDesc": "مرکز راهنما و تماس",
       "about": "درباره",
       "aboutDesc": "نسخه و مجوزها"
     },

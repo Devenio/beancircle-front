@@ -30,17 +30,19 @@ export function ThemeToggle() {
   ] as const;
 
   return (
-    <div className="flex gap-2">
+    <div className="flex w-full">
       {options.map(({ value, label, icon: Icon }) => (
-        <Button
+        <button
           key={value}
-          variant={theme === value ? 'default' : 'outline'}
+          type="button"
           onClick={() => setTheme(value)}
-          className="flex flex-1 flex-col gap-1 py-3"
+          className={`flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
+            theme === value ? 'text-primary' : 'text-muted-foreground active:bg-muted/60'
+          }`}
         >
-          <Icon className="size-4" />
-          <span className="text-xs">{label}</span>
-        </Button>
+          <Icon className="size-5" strokeWidth={1.75} />
+          <span>{label}</span>
+        </button>
       ))}
     </div>
   );

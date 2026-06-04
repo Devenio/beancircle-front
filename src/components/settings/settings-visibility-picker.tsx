@@ -16,17 +16,15 @@ export function SettingsVisibilityPicker({
   const t = useTranslations('settings');
 
   return (
-    <div className="flex flex-wrap gap-2 px-3 pb-3">
+    <div className="flex gap-0 border-t border-border/80">
       {OPTIONS.map((opt) => (
         <button
           key={opt}
           type="button"
           onClick={() => onChange(opt)}
           className={cn(
-            'min-h-10 rounded-full border px-4 text-sm font-medium transition-colors',
-            value === opt
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-border bg-background hover:bg-muted',
+            'min-h-[44px] flex-1 text-sm font-medium transition-colors',
+            value === opt ? 'text-primary' : 'text-muted-foreground active:bg-muted/60',
           )}
         >
           {t(`visibility.${opt}`)}

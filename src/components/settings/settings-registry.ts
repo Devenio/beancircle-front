@@ -9,6 +9,63 @@ export type SettingsSectionId =
   | 'support'
   | 'about';
 
+export type SettingsHubItem = {
+  id: SettingsSectionId;
+  href: string;
+  labelKey: string;
+};
+
+export type SettingsHubGroup = {
+  id: string;
+  labelKey: string;
+  items: SettingsHubItem[];
+};
+
+/** Instagram-style hub: grouped rows, one tap per nested screen */
+export const SETTINGS_HUB_GROUPS: SettingsHubGroup[] = [
+  {
+    id: 'account-center',
+    labelKey: 'navGroups.accountCenter',
+    items: [
+      { id: 'account', href: '/settings/account', labelKey: 'sections.account' },
+      { id: 'privacy', href: '/settings/privacy', labelKey: 'sections.privacy' },
+      { id: 'security', href: '/settings/security', labelKey: 'sections.security' },
+    ],
+  },
+  {
+    id: 'preferences',
+    labelKey: 'navGroups.preferences',
+    items: [
+      { id: 'notifications', href: '/settings/notifications', labelKey: 'sections.notifications' },
+      { id: 'appearance', href: '/settings/appearance', labelKey: 'sections.appearance' },
+      { id: 'chat', href: '/settings/chat', labelKey: 'sections.chat' },
+    ],
+  },
+  {
+    id: 'data',
+    labelKey: 'navGroups.data',
+    items: [{ id: 'storage', href: '/settings/storage', labelKey: 'sections.storage' }],
+  },
+  {
+    id: 'support',
+    labelKey: 'navGroups.support',
+    items: [
+      { id: 'support', href: '/settings/support', labelKey: 'sections.help' },
+      { id: 'about', href: '/settings/about', labelKey: 'sections.about' },
+    ],
+  },
+];
+
+export const SETTINGS_SECTIONS = SETTINGS_HUB_GROUPS.flatMap((g) =>
+  g.items.map((item) => ({
+    id: item.id,
+    href: item.href,
+    labelKey: item.labelKey,
+    descriptionKey: `${item.labelKey}Desc`,
+    icon: 'info',
+  })),
+);
+
 export type SettingsSearchItem = {
   id: string;
   section: SettingsSectionId;
@@ -17,24 +74,6 @@ export type SettingsSearchItem = {
   descriptionKey: string;
   keywords: string[];
 };
-
-export const SETTINGS_SECTIONS: {
-  id: SettingsSectionId;
-  href: string;
-  labelKey: string;
-  descriptionKey: string;
-  icon: string;
-}[] = [
-  { id: 'account', href: '/settings/account', labelKey: 'sections.account', descriptionKey: 'sections.accountDesc', icon: 'user' },
-  { id: 'privacy', href: '/settings/privacy', labelKey: 'sections.privacy', descriptionKey: 'sections.privacyDesc', icon: 'shield' },
-  { id: 'notifications', href: '/settings/notifications', labelKey: 'sections.notifications', descriptionKey: 'sections.notificationsDesc', icon: 'bell' },
-  { id: 'appearance', href: '/settings/appearance', labelKey: 'sections.appearance', descriptionKey: 'sections.appearanceDesc', icon: 'palette' },
-  { id: 'chat', href: '/settings/chat', labelKey: 'sections.chat', descriptionKey: 'sections.chatDesc', icon: 'message' },
-  { id: 'security', href: '/settings/security', labelKey: 'sections.security', descriptionKey: 'sections.securityDesc', icon: 'lock' },
-  { id: 'storage', href: '/settings/storage', labelKey: 'sections.storage', descriptionKey: 'sections.storageDesc', icon: 'database' },
-  { id: 'support', href: '/settings/support', labelKey: 'sections.support', descriptionKey: 'sections.supportDesc', icon: 'life-buoy' },
-  { id: 'about', href: '/settings/about', labelKey: 'sections.about', descriptionKey: 'sections.aboutDesc', icon: 'info' },
-];
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchItem[] = [
   { id: 'profile', section: 'account', href: '/settings/account', labelKey: 'items.profile', descriptionKey: 'items.profileDesc', keywords: ['profile', 'name', 'bio', 'avatar', 'پروفایل'] },
@@ -59,7 +98,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchItem[] = [
   { id: 'language', section: 'account', href: '/settings/account', labelKey: 'language', descriptionKey: 'items.languageDesc', keywords: ['language', 'locale', 'زبان'] },
 ];
 
-export function filterSettingsSearch(query: string, locale: string) {
+export function filterSettingsSearch(query: string) {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   return SETTINGS_SEARCH_INDEX.filter(
@@ -68,4 +107,16 @@ export function filterSettingsSearch(query: string, locale: string) {
       item.id.includes(q) ||
       item.section.includes(q),
   ).slice(0, 12);
+}
+
+export function isSettingsHubPath(pathname: string) {
+  const normalized = pathname.replace(/^\/(fa|en)/, '') || pathname;
+  return normalized === '/settings' || normalized.endsWith('/settings');
+}
+
+export function settingsPathDepth(pathname: string) {
+  const normalized = pathname.replace(/^\/(fa|en)/, '') || pathname;
+  if (isSettingsHubPath(pathname)) return 0;
+  if (normalized.startsWith('/settings/')) return 1;
+  return 0;
 }

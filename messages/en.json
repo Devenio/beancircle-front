@@ -367,6 +367,15 @@
     "searchPlaceholder": "Search settings…",
     "clearSearch": "Clear search",
     "searchEmpty": "No settings found",
+    "home": "Home",
+    "accountsCenterHint": "Accounts Center, profile and more",
+    "unblock": "Unblock",
+    "navGroups": {
+      "accountCenter": "Your account",
+      "preferences": "How you use BeanCircle",
+      "data": "Data and storage",
+      "support": "More info and support"
+    },
     "browseSections": "Browse",
     "quickLinks": "Quick links",
     "back": "Back",
@@ -443,6 +452,8 @@
       "storageDesc": "Cache, downloads, and usage",
       "support": "Support",
       "supportDesc": "Help, reports, and policies",
+      "help": "Help",
+      "helpDesc": "Help center and contact",
       "about": "About",
       "aboutDesc": "Version and licenses"
     },

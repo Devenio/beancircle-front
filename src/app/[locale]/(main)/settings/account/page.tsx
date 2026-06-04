@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { AtSign, Globe, Mail, Phone, Plug } from 'lucide-react';
+import { AtSign, Globe } from 'lucide-react';
 import { api } from '@/lib/api/client';
-import { SettingsPageWrap } from '@/components/settings/settings-shell';
-import { SettingsGroup, SettingsRow } from '@/components/settings/settings-row';
+import { SettingsScreen } from '@/components/settings/settings-shell';
+import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
+import { Plug } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Me = {
   username?: string | null;
@@ -58,9 +60,7 @@ export default function SettingsAccountPage() {
         body: JSON.stringify({ name, username, bio }),
         locale,
       }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['me'] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
   });
 
   function switchLocale(newLocale: string) {
@@ -68,54 +68,47 @@ export default function SettingsAccountPage() {
     window.location.href = path || `/${newLocale}/settings/account`;
   }
 
+  if (isLoading) {
+    return (
+      <SettingsScreen title={t('sections.account')}>
+        <Skeleton className="h-64 w-full" />
+      </SettingsScreen>
+    );
+  }
+
   return (
-    <SettingsPageWrap title={t('sections.account')} description={t('sections.accountDesc')}>
-      <SettingsGroup title={t('items.profile')}>
-        <div className="space-y-3 p-3">
-          <label className="text-xs font-medium text-muted-foreground">{t('displayName')}</label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="min-h-12"
-            disabled={isLoading}
-          />
-          <label className="text-xs font-medium text-muted-foreground">{t('items.username')}</label>
-          <div className="relative">
-            <AtSign className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="min-h-12 ps-9"
-              disabled={isLoading}
-            />
-          </div>
-          <label className="text-xs font-medium text-muted-foreground">{t('bio')}</label>
-          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} disabled={isLoading} />
-          <Button
-            className="min-h-12 w-full"
-            disabled={saveMutation.isPending || isLoading}
-            onClick={() => saveMutation.mutate()}
-          >
-            {saveMutation.isPending ? t('saving') : t('saveChanges')}
-          </Button>
+    <SettingsScreen title={t('sections.account')}>
+      <SettingsSectionLabel>{t('items.profile')}</SettingsSectionLabel>
+      <div className="space-y-3 border-y border-border/80 bg-card px-4 py-4">
+        <div>
+          <label className="text-xs text-muted-foreground">{t('displayName')}</label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 min-h-11" />
         </div>
-      </SettingsGroup>
+        <div>
+          <label className="text-xs text-muted-foreground">{t('items.username')}</label>
+          <div className="relative mt-1">
+            <AtSign className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={username} onChange={(e) => setUsername(e.target.value)} className="min-h-11 ps-9" />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">{t('bio')}</label>
+          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" />
+        </div>
+        <Button className="min-h-11 w-full" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+          {saveMutation.isPending ? t('saving') : t('saveChanges')}
+        </Button>
+      </div>
 
-      <SettingsGroup title={t('contactInfo')}>
-        <SettingsRow
-          icon={<Mail className="size-5" />}
-          label={t('items.email')}
-          description={me?.email ?? t('notSet')}
-        />
-        <SettingsRow
-          icon={<Phone className="size-5" />}
-          label={t('items.phone')}
-          description={me?.phone ?? t('notSet')}
-        />
-      </SettingsGroup>
+      <SettingsSectionLabel>{t('contactInfo')}</SettingsSectionLabel>
+      <SettingsList>
+        <SettingsRow label={t('items.email')} value={me?.email ?? t('notSet')} showChevron={false} />
+        <SettingsRow label={t('items.phone')} value={me?.phone ?? t('notSet')} showChevron={false} />
+      </SettingsList>
 
-      <SettingsGroup title={t('items.connectedAccounts')}>
-        <Empty className="border-0 bg-transparent py-6">
+      <SettingsSectionLabel>{t('items.connectedAccounts')}</SettingsSectionLabel>
+      <div className="border-y border-border/80 bg-card px-4 py-6">
+        <Empty className="border-0 bg-transparent p-0">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Plug className="size-5" />
@@ -129,28 +122,29 @@ export default function SettingsAccountPage() {
             </Button>
           </EmptyContent>
         </Empty>
-      </SettingsGroup>
+      </div>
 
-      <SettingsGroup title={t('language')}>
-        <div className="flex gap-2 p-3">
-          <Button
-            variant={locale === 'fa' ? 'default' : 'outline'}
-            className="min-h-12 flex-1"
-            onClick={() => switchLocale('fa')}
-          >
-            <Globe className="size-4" />
-            فارسی
-          </Button>
-          <Button
-            variant={locale === 'en' ? 'default' : 'outline'}
-            className="min-h-12 flex-1"
-            onClick={() => switchLocale('en')}
-          >
-            <Globe className="size-4" />
-            English
-          </Button>
-        </div>
-      </SettingsGroup>
-    </SettingsPageWrap>
+      <SettingsSectionLabel>{t('language')}</SettingsSectionLabel>
+      <SettingsList>
+        <button
+          type="button"
+          onClick={() => switchLocale('fa')}
+          className="flex min-h-[52px] w-full items-center gap-2 px-4 text-[15px] active:bg-muted/80"
+        >
+          <Globe className="size-5" />
+          فارسی
+          {locale === 'fa' ? <span className="ms-auto text-primary">✓</span> : null}
+        </button>
+        <button
+          type="button"
+          onClick={() => switchLocale('en')}
+          className="flex min-h-[52px] w-full items-center gap-2 px-4 text-[15px] active:bg-muted/80"
+        >
+          <Globe className="size-5" />
+          English
+          {locale === 'en' ? <span className="ms-auto text-primary">✓</span> : null}
+        </button>
+      </SettingsList>
+    </SettingsScreen>
   );
 }

@@ -1,105 +1,126 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Ban, Eye, EyeOff, ShieldAlert, UserX, VolumeX } from 'lucide-react';
-import { SettingsPageWrap } from '@/components/settings/settings-shell';
-import { SettingsGroup, SettingsRow, SettingsToggleRow } from '@/components/settings/settings-row';
+import { useParams } from 'next/navigation';
+import { api } from '@/lib/api/client';
+import { SettingsScreen } from '@/components/settings/settings-shell';
+import { SettingsList, SettingsRow, SettingsSectionLabel, SettingsToggleRow } from '@/components/settings/settings-row';
 import { SettingsVisibilityPicker } from '@/components/settings/settings-visibility-picker';
-import { useSettingsStore } from '@/stores/settings-store';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { useBlockedUsers, useMutedUsers, useSettingsApi } from '@/hooks/use-settings-api';
+import { ProfileAvatar } from '@/components/chat/user-avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { VisibilityOption } from '@/stores/settings-store';
 
 export default function SettingsPrivacyPage() {
   const t = useTranslations('settings');
-  const store = useSettingsStore();
+  const { locale } = useParams<{ locale: string }>();
+  const { settings, isLoading, update } = useSettingsApi();
+  const blocked = useBlockedUsers();
+  const muted = useMutedUsers();
+  const qc = useQueryClient();
+
+  const unblock = useMutation({
+    mutationFn: (userId: string) => api(`/users/${userId}/block`, { method: 'DELETE', locale }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings-blocked'] }),
+  });
+
+  if (isLoading || !settings) {
+    return (
+      <SettingsScreen title={t('sections.privacy')}>
+        <Skeleton className="h-40 w-full" />
+      </SettingsScreen>
+    );
+  }
+
+  const setVisibility = (
+    key: 'lastSeenVisibility' | 'onlineStatusVisibility' | 'profileVisibility',
+    v: VisibilityOption,
+  ) => update({ [key]: v });
 
   return (
-    <SettingsPageWrap title={t('sections.privacy')} description={t('privacyCenterDesc')}>
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-        <p className="text-sm leading-relaxed text-muted-foreground">{t('privacyCenterHint')}</p>
-      </div>
+    <SettingsScreen title={t('sections.privacy')}>
+      <p className="px-4 pt-3 pb-1 text-xs leading-relaxed text-muted-foreground">{t('privacyCenterHint')}</p>
 
-      <SettingsGroup title={t('whoCanSee')}>
-        <SettingsRow
-          icon={<Eye className="size-5" />}
-          label={t('items.lastSeen')}
-          description={t('items.lastSeenDesc')}
-        />
-        <SettingsVisibilityPicker
-          value={store.lastSeenVisibility}
-          onChange={(v) => store.set('lastSeenVisibility', v)}
-        />
-        <SettingsRow
-          icon={<EyeOff className="size-5" />}
-          label={t('items.onlineStatus')}
-          description={t('items.onlineStatusDesc')}
-        />
-        <SettingsVisibilityPicker
-          value={store.onlineStatusVisibility}
-          onChange={(v) => store.set('onlineStatusVisibility', v)}
-        />
-        <SettingsRow
-          icon={<ShieldAlert className="size-5" />}
-          label={t('items.profileVisibility')}
-          description={t('items.profileVisibilityDesc')}
-        />
-        <SettingsVisibilityPicker
-          value={store.profileVisibility}
-          onChange={(v) => store.set('profileVisibility', v)}
-        />
-      </SettingsGroup>
+      <SettingsSectionLabel>{t('whoCanSee')}</SettingsSectionLabel>
+      <SettingsList>
+        <div>
+          <SettingsRow label={t('items.lastSeen')} showChevron={false} />
+          <SettingsVisibilityPicker
+            value={settings.lastSeenVisibility}
+            onChange={(v) => setVisibility('lastSeenVisibility', v)}
+          />
+        </div>
+        <div>
+          <SettingsRow label={t('items.onlineStatus')} showChevron={false} />
+          <SettingsVisibilityPicker
+            value={settings.onlineStatusVisibility}
+            onChange={(v) => setVisibility('onlineStatusVisibility', v)}
+          />
+        </div>
+        <div>
+          <SettingsRow label={t('items.profileVisibility')} showChevron={false} />
+          <SettingsVisibilityPicker
+            value={settings.profileVisibility}
+            onChange={(v) => setVisibility('profileVisibility', v)}
+          />
+        </div>
+      </SettingsList>
 
-      <SettingsGroup title={t('messaging')}>
+      <SettingsSectionLabel>{t('messaging')}</SettingsSectionLabel>
+      <SettingsList>
         <SettingsToggleRow
-          icon={<Eye className="size-5" />}
           label={t('items.readReceipts')}
           description={t('items.readReceiptsDesc')}
-          checked={store.readReceipts}
-          onCheckedChange={(v) => store.set('readReceipts', v)}
+          checked={settings.readReceipts}
+          onCheckedChange={(v) => update({ readReceipts: v })}
         />
-      </SettingsGroup>
+      </SettingsList>
 
-      <SettingsGroup title={t('people')}>
-        <SettingsRow
-          icon={<Ban className="size-5" />}
-          label={t('items.blocked')}
-          description={t('items.blockedDesc')}
-        />
-        <Empty className="border-0 py-8">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <UserX className="size-5" />
-            </EmptyMedia>
-            <EmptyTitle>{t('empty.blockedTitle')}</EmptyTitle>
-            <EmptyDescription>{t('empty.blockedBody')}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-        <SettingsRow
-          icon={<VolumeX className="size-5" />}
-          label={t('items.muted')}
-          description={t('items.mutedDesc')}
-        />
-        <Empty className="border-0 py-6">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <VolumeX className="size-5" />
-            </EmptyMedia>
-            <EmptyTitle>{t('empty.mutedTitle')}</EmptyTitle>
-            <EmptyDescription>{t('empty.mutedBody')}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-        <SettingsRow
-          icon={<ShieldAlert className="size-5" />}
-          label={t('items.reporting')}
-          description={t('items.reportingDesc')}
-          href="/settings/support"
-        />
-      </SettingsGroup>
-    </SettingsPageWrap>
+      <SettingsSectionLabel>{t('people')}</SettingsSectionLabel>
+      <SettingsList>
+        {blocked.isLoading ? (
+          <Skeleton className="m-4 h-12 rounded-lg" />
+        ) : blocked.data?.length ? (
+          blocked.data.map((u) => (
+            <div key={u.id} className="flex min-h-[52px] items-center gap-3 px-4 py-2">
+              <ProfileAvatar src={u.avatarUrl} name={u.name ?? u.username} className="size-10" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px]">{u.name ?? u.username}</p>
+                {u.username ? <p className="text-xs text-muted-foreground">@{u.username}</p> : null}
+              </div>
+              <button
+                type="button"
+                className="text-sm font-medium text-primary"
+                onClick={() => unblock.mutate(u.id)}
+              >
+                {t('unblock')}
+              </button>
+            </div>
+          ))
+        ) : (
+          <SettingsRow label={t('empty.blockedTitle')} description={t('empty.blockedBody')} showChevron={false} />
+        )}
+      </SettingsList>
+
+      <SettingsSectionLabel>{t('items.muted')}</SettingsSectionLabel>
+      <SettingsList>
+        {muted.isLoading ? (
+          <Skeleton className="m-4 h-12 rounded-lg" />
+        ) : muted.data?.length ? (
+          muted.data.map((u) => (
+            <SettingsRow
+              key={u.id}
+              href={`/messages/${u.conversationId}`}
+              label={u.name ?? u.username ?? ''}
+              value={u.username ? `@${u.username}` : undefined}
+            />
+          ))
+        ) : (
+          <SettingsRow label={t('empty.mutedTitle')} description={t('empty.mutedBody')} showChevron={false} />
+        )}
+        <SettingsRow label={t('items.reporting')} href="/settings/support" />
+      </SettingsList>
+    </SettingsScreen>
   );
 }
