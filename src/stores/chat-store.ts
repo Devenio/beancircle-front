@@ -1,109 +1,52 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { MessageReaction } from '@/components/chat/types';
+
+/**
+ * Ephemeral, presentation-only realtime state.
+ *
+ * Everything that must be consistent between users (unread counts, reactions,
+ * read/seen state, pins, mutes) is now SERVER-AUTHORITATIVE and read from the
+ * REST/React-Query cache + socket events. This store only holds transient UI
+ * signals that are inherently local to the current session:
+ *  - who is currently online (presence)
+ *  - who is currently typing in which conversation
+ */
 
 type TypingState = Record<string, string | null>;
 
 type ChatStore = {
-  pinnedConversationIds: string[];
-  unreadByConversation: Record<string, number>;
   typingByConversation: TypingState;
   onlineUserIds: Set<string>;
-  reactionsByMessage: Record<string, MessageReaction[]>;
-  totalUnread: () => number;
-  togglePinConversation: (id: string) => void;
   setTyping: (conversationId: string, username: string | null) => void;
   setOnline: (userId: string, online: boolean) => void;
-  incrementUnread: (conversationId: string) => void;
-  clearUnread: (conversationId: string) => void;
-  addReaction: (messageId: string, reaction: MessageReaction) => void;
-  removeReaction: (messageId: string, userId: string) => void;
+  isOnline: (userId?: string | null) => boolean;
 };
 
-export const useChatStore = create<ChatStore>()(
-  persist(
-    (set, get) => ({
-      pinnedConversationIds: [],
-      unreadByConversation: {},
-      typingByConversation: {},
-      onlineUserIds: new Set<string>(),
-      reactionsByMessage: {},
+export const useChatStore = create<ChatStore>()((set, get) => ({
+  typingByConversation: {},
+  onlineUserIds: new Set<string>(),
 
-      totalUnread: () =>
-        Object.values(get().unreadByConversation).reduce((sum, n) => sum + n, 0),
-
-      togglePinConversation: (id) =>
-        set((state) => ({
-          pinnedConversationIds: state.pinnedConversationIds.includes(id)
-            ? state.pinnedConversationIds.filter((item) => item !== id)
-            : [...state.pinnedConversationIds, id],
-        })),
-
-      setTyping: (conversationId, username) =>
-        set((state) => ({
-          typingByConversation: { ...state.typingByConversation, [conversationId]: username },
-        })),
-
-      setOnline: (userId, online) =>
-        set((state) => {
-          const next = new Set(state.onlineUserIds);
-          if (online) next.add(userId);
-          else next.delete(userId);
-          return { onlineUserIds: next };
-        }),
-
-      incrementUnread: (conversationId) =>
-        set((state) => ({
-          unreadByConversation: {
-            ...state.unreadByConversation,
-            [conversationId]: (state.unreadByConversation[conversationId] ?? 0) + 1,
-          },
-        })),
-
-      clearUnread: (conversationId) =>
-        set((state) => ({
-          unreadByConversation: { ...state.unreadByConversation, [conversationId]: 0 },
-        })),
-
-      addReaction: (messageId, reaction) =>
-        set((state) => {
-          const existing = state.reactionsByMessage[messageId] ?? [];
-          const filtered = existing.filter((item) => item.userId !== reaction.userId);
-          return {
-            reactionsByMessage: {
-              ...state.reactionsByMessage,
-              [messageId]: [...filtered, reaction],
-            },
-          };
-        }),
-
-      removeReaction: (messageId, userId) =>
-        set((state) => ({
-          reactionsByMessage: {
-            ...state.reactionsByMessage,
-            [messageId]: (state.reactionsByMessage[messageId] ?? []).filter(
-              (item) => item.userId !== userId,
-            ),
-          },
-        })),
+  setTyping: (conversationId, username) =>
+    set((state) => {
+      if (state.typingByConversation[conversationId] === username) return state;
+      return {
+        typingByConversation: {
+          ...state.typingByConversation,
+          [conversationId]: username,
+        },
+      };
     }),
-    {
-      name: 'beancircle-chat',
-      partialize: (state) => ({
-        pinnedConversationIds: state.pinnedConversationIds,
-        reactionsByMessage: state.reactionsByMessage,
-        unreadByConversation: state.unreadByConversation,
-      }),
-      merge: (persisted, current) => {
-        const merged = { ...current, ...(persisted as Partial<ChatStore>) };
-        return {
-          ...merged,
-          onlineUserIds: new Set<string>(),
-          typingByConversation: {},
-        };
-      },
-    },
-  ),
-);
+
+  setOnline: (userId, online) =>
+    set((state) => {
+      const has = state.onlineUserIds.has(userId);
+      if (online === has) return state;
+      const next = new Set(state.onlineUserIds);
+      if (online) next.add(userId);
+      else next.delete(userId);
+      return { onlineUserIds: next };
+    }),
+
+  isOnline: (userId) => (userId ? get().onlineUserIds.has(userId) : false),
+}));

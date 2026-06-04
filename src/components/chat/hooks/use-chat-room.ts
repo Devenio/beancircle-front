@@ -2,27 +2,36 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { io, type Socket } from 'socket.io-client';
 import { api } from '@/lib/api/client';
 import { useChatStore } from '@/stores/chat-store';
+import { getSocket, currentConnectionState } from '@/lib/realtime/socket';
+import { uploadMessageFile } from '@/lib/api/uploads';
 import type {
   ChatMessage,
+  Conversation,
   ConnectionState,
   MessagePayload,
   PendingMessage,
+  ReactionGroup,
 } from '@/components/chat/types';
-import { fileToDataUrl, isMineMessage, messagePreview, validateMessageText } from '@/components/chat/utils';
+import {
+  isMineMessage,
+  messagePreview,
+  validateMessageText,
+} from '@/components/chat/utils';
 
 const LIVE_CHAT_STORAGE_KEY = 'messages.live.enabled';
-const RECONNECT_BACKOFF_MAX_MS = 30000;
 
 type MessageListResponse = { data: ChatMessage[] };
 
 export function useChatRoom(conversationId: string, locale: string) {
   const qc = useQueryClient();
-  const clearUnread = useChatStore((s) => s.clearUnread);
   const setTypingStore = useChatStore((s) => s.setTyping);
-  const incrementUnread = useChatStore((s) => s.incrementUnread);
+
+  const messagesKey = useMemo(
+    () => ['messages', conversationId, locale] as const,
+    [conversationId, locale],
+  );
 
   const [draft, setDraft] = useState('');
   const [liveEnabled, setLiveEnabled] = useState(() => {
@@ -30,11 +39,10 @@ export function useChatRoom(conversationId: string, locale: string) {
     const saved = localStorage.getItem(LIVE_CHAT_STORAGE_KEY);
     return saved === null ? true : saved === 'true';
   });
-  const [connectionState, setConnectionState] = useState<ConnectionState>(
-    liveEnabled ? 'connecting' : 'offline',
+  const [connectionState, setConnectionState] = useState<ConnectionState>(() =>
+    liveEnabled ? currentConnectionState() : 'offline',
   );
   const [typingUsername, setTypingUsername] = useState<string | null>(null);
-  const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
   const [localUsername] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -44,12 +52,13 @@ export function useChatRoom(conversationId: string, locale: string) {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [recordingMode, setRecordingMode] = useState<'none' | 'voice' | 'video'>('none');
   const [recordingElapsedSec, setRecordingElapsedSec] = useState(0);
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   const listRef = useRef<HTMLDivElement | null>(null);
-  const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const seenSentRef = useRef<Set<string>>(new Set());
+  const lastReadSentRef = useRef<string | null>(null);
+  const entryReadIdRef = useRef<string | null | undefined>(undefined);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
@@ -57,12 +66,19 @@ export function useChatRoom(conversationId: string, locale: string) {
 
   const { data: me } = useQuery({
     queryKey: ['me'],
-    queryFn: () => api<{ id?: string; username?: string; name?: string; avatarUrl?: string }>('/users/me', { locale }),
+    queryFn: () =>
+      api<{ id?: string; username?: string; name?: string; avatarUrl?: string }>(
+        '/users/me',
+        { locale },
+      ),
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['messages', conversationId, locale],
-    queryFn: () => api<MessageListResponse>(`/conversations/${conversationId}/messages`, { locale }),
+    queryKey: messagesKey,
+    queryFn: () =>
+      api<MessageListResponse>(`/conversations/${conversationId}/messages`, {
+        locale,
+      }),
   });
 
   const currentUserId = me?.id;
@@ -70,12 +86,18 @@ export function useChatRoom(conversationId: string, locale: string) {
 
   const peer = useMemo(() => {
     const all = data?.data ?? [];
-    return all.find((item) => item.sender.id && item.sender.id !== currentUserId)?.sender;
+    return all.find((item) => item.sender.id && item.sender.id !== currentUserId)
+      ?.sender;
   }, [data?.data, currentUserId]);
 
+  // Capture the server read cursor at entry time (for the jump-to-unread divider)
+  // before we mark the thread as read.
   useEffect(() => {
-    clearUnread(conversationId);
-  }, [clearUnread, conversationId]);
+    if (entryReadIdRef.current !== undefined) return;
+    const conversations = qc.getQueryData<Conversation[]>(['conversations', locale]);
+    const conv = conversations?.find((c) => c.id === conversationId);
+    if (conv) entryReadIdRef.current = conv.lastReadMessageId ?? null;
+  }, [qc, conversationId, locale]);
 
   useEffect(() => {
     localStorage.setItem(LIVE_CHAT_STORAGE_KEY, String(liveEnabled));
@@ -87,108 +109,222 @@ export function useChatRoom(conversationId: string, locale: string) {
     node.scrollTo({ top: node.scrollHeight, behavior });
   }, []);
 
+  // ---- Cache patch helpers (server is source of truth) --------------------
+
+  const patchMessageInCache = useCallback(
+    (messageId: string, updater: (msg: ChatMessage) => ChatMessage) => {
+      qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          data: prev.data.map((m) => (m.id === messageId ? updater(m) : m)),
+        };
+      });
+    },
+    [qc, messagesKey],
+  );
+
+  const appendMessageToCache = useCallback(
+    (msg: ChatMessage) => {
+      qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
+        if (!prev) return { data: [msg] };
+        if (prev.data.some((m) => m.id === msg.id)) {
+          return {
+            ...prev,
+            data: prev.data.map((m) => (m.id === msg.id ? msg : m)),
+          };
+        }
+        return { ...prev, data: [...prev.data, msg] };
+      });
+    },
+    [qc, messagesKey],
+  );
+
+  // ---- Recording elapsed timer --------------------------------------------
+
   useEffect(() => {
     if (recordingMode === 'none') {
       setRecordingElapsedSec(0);
       return;
     }
-    const tick = () => {
+    const tick = () =>
       setRecordingElapsedSec(
         Math.max(0, Math.floor((Date.now() - recordingStartedAtRef.current) / 1000)),
       );
-    };
     tick();
     const interval = setInterval(tick, 250);
     return () => clearInterval(interval);
   }, [recordingMode]);
 
+  // ---- Mark read (server authoritative) -----------------------------------
+
+  const markRead = useCallback(
+    (lastMessageId?: string) => {
+      if (!lastMessageId || lastReadSentRef.current === lastMessageId) return;
+      lastReadSentRef.current = lastMessageId;
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit('message:read', { conversationId, lastMessageId });
+      } else {
+        void api(`/conversations/${conversationId}/read`, {
+          method: 'POST',
+          body: JSON.stringify({ lastMessageId }),
+          locale,
+        }).catch(() => {
+          lastReadSentRef.current = null;
+        });
+      }
+      qc.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    [conversationId, locale, qc],
+  );
+
+  // ---- Single shared socket subscription ----------------------------------
+
   useEffect(() => {
     if (!liveEnabled) {
-      socketRef.current = null;
+      setConnectionState('offline');
       return;
     }
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
+    const socket = getSocket();
+    if (!socket) return;
 
-    const socket = io(process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:3001', {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: RECONNECT_BACKOFF_MAX_MS,
-      timeout: 10000,
-    });
-    socketRef.current = socket;
+    setConnectionState(socket.connected ? 'online' : 'connecting');
     socket.emit('conversation:join', conversationId);
 
-    socket.on('connect', () => setConnectionState('online'));
-    socket.on('disconnect', () => setConnectionState('offline'));
-    socket.on('reconnect_attempt', () => setConnectionState('connecting'));
+    const onConnect = () => {
+      setConnectionState('online');
+      socket.emit('conversation:join', conversationId);
+    };
+    const onDisconnect = () => setConnectionState('offline');
+    const onReconnectAttempt = () => setConnectionState('connecting');
 
-    socket.on('message:new', (msg: ChatMessage) => {
+    const onNew = (msg: ChatMessage) => {
+      appendMessageToCache(msg);
       const mine = isMineMessage(msg, currentUserId, currentUsername);
-      if (!mine) incrementUnread(conversationId);
-      setLiveMessages((prev) => (prev.some((item) => item.id === msg.id) ? prev : [...prev, msg]));
-      qc.invalidateQueries({ queryKey: ['messages', conversationId, locale] });
-    });
+      if (!mine) markRead(msg.id);
+      requestAnimationFrame(() => scrollToBottom('smooth'));
+    };
 
-    socket.on(
-      'conversation:typing',
-      (payload: { username?: string; userId?: string; typing?: boolean }) => {
-        if (payload.username && payload.username === currentUsername) return;
-        if (payload.typing === false) {
-          setTypingUsername(null);
-          setTypingStore(conversationId, null);
-          return;
-        }
-        const actor = payload.username ?? 'Someone';
-        setTypingUsername(actor);
-        setTypingStore(conversationId, actor);
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = setTimeout(() => {
-          setTypingUsername(null);
-          setTypingStore(conversationId, null);
-        }, 3000);
-      },
-    );
+    const onEdited = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
+    const onDeleted = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
+    const onPinned = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
 
-    const patchMessage = (msg: ChatMessage) =>
-      setLiveMessages((prev) => prev.map((item) => (item.id === msg.id ? msg : item)));
-
-    socket.on('message:edited', patchMessage);
-    socket.on('message:deleted', patchMessage);
-    socket.on('message:pinned', patchMessage);
-    socket.on('message:seen', (payload: { message?: ChatMessage; messageId?: string; userId?: string }) => {
+    const onSeen = (payload: {
+      message?: ChatMessage;
+      messageId?: string;
+      userId?: string;
+    }) => {
       if (payload.message) {
-        patchMessage(payload.message);
+        patchMessageInCache(payload.message.id, () => payload.message as ChatMessage);
         return;
       }
       if (!payload.messageId) return;
-      setLiveMessages((prev) =>
-        prev.map((item) =>
-          item.id === payload.messageId
-            ? { ...item, seenBy: [...new Set([...(item.seenBy ?? []), payload.userId ?? ''])] }
-            : item,
-        ),
-      );
-    });
+      patchMessageInCache(payload.messageId, (m) => ({
+        ...m,
+        seenBy: [...new Set([...(m.seenBy ?? []), payload.userId ?? ''])],
+      }));
+    };
+
+    const onReaction = (payload: {
+      messageId?: string;
+      reactions?: ReactionGroup[];
+    }) => {
+      if (!payload.messageId) return;
+      patchMessageInCache(payload.messageId, (m) => ({
+        ...m,
+        reactions: payload.reactions ?? [],
+      }));
+    };
+
+    const onRead = (payload: { userId?: string; lastReadMessageId?: string }) => {
+      if (!payload.userId || payload.userId === currentUserId) return;
+      const uid = payload.userId;
+      // Peer read up to lastReadMessageId -> mark all of MY messages up to and
+      // including that point as seen by them. Cache data is chronological asc.
+      qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
+        if (!prev) return prev;
+        let reached = false;
+        const data = prev.data.map((m) => {
+          if (reached) return m;
+          const mine = isMineMessage(m, currentUserId, currentUsername);
+          const updated =
+            mine && !(m.seenBy ?? []).includes(uid)
+              ? { ...m, seenBy: [...(m.seenBy ?? []), uid] }
+              : m;
+          if (m.id === payload.lastReadMessageId) reached = true;
+          return updated;
+        });
+        return { ...prev, data };
+      });
+    };
+
+    const onTyping = (payload: {
+      username?: string;
+      userId?: string;
+      typing?: boolean;
+    }) => {
+      if (payload.userId && payload.userId === currentUserId) return;
+      if (payload.username && payload.username === currentUsername) return;
+      if (payload.typing === false) {
+        setTypingUsername(null);
+        setTypingStore(conversationId, null);
+        return;
+      }
+      const actor = payload.username ?? 'Someone';
+      setTypingUsername(actor);
+      setTypingStore(conversationId, actor);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        setTypingUsername(null);
+        setTypingStore(conversationId, null);
+      }, 4000);
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('reconnect_attempt', onReconnectAttempt);
+    socket.on('message:new', onNew);
+    socket.on('message:edited', onEdited);
+    socket.on('message:deleted', onDeleted);
+    socket.on('message:pinned', onPinned);
+    socket.on('message:seen', onSeen);
+    socket.on('message:reaction', onReaction);
+    socket.on('message:read', onRead);
+    socket.on('conversation:typing', onTyping);
 
     return () => {
       socket.emit('conversation:leave', conversationId);
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('reconnect_attempt', onReconnectAttempt);
+      socket.off('message:new', onNew);
+      socket.off('message:edited', onEdited);
+      socket.off('message:deleted', onDeleted);
+      socket.off('message:pinned', onPinned);
+      socket.off('message:seen', onSeen);
+      socket.off('message:reaction', onReaction);
+      socket.off('message:read', onRead);
+      socket.off('conversation:typing', onTyping);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      setTypingUsername(null);
+      setTypingStore(conversationId, null);
     };
   }, [
     conversationId,
     currentUserId,
     currentUsername,
-    incrementUnread,
     liveEnabled,
-    locale,
-    qc,
+    messagesKey,
+    appendMessageToCache,
+    patchMessageInCache,
+    markRead,
+    scrollToBottom,
     setTypingStore,
+    qc,
   ]);
+
+  // ---- Mutations ----------------------------------------------------------
 
   const sendMutation = useMutation({
     mutationFn: (payload: MessagePayload) =>
@@ -200,7 +336,10 @@ export function useChatRoom(conversationId: string, locale: string) {
     onMutate: async (payload) => {
       const text = (payload.body ?? '').trim();
       const hasContent =
-        Boolean(text) || Boolean(payload.attachment?.url) || Boolean(payload.location) || Boolean(payload.sticker);
+        Boolean(text) ||
+        Boolean(payload.attachment?.url) ||
+        Boolean(payload.location) ||
+        Boolean(payload.sticker);
       if (!hasContent) return { clientId: '' };
       const clientId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const optimistic: PendingMessage = {
@@ -211,6 +350,7 @@ export function useChatRoom(conversationId: string, locale: string) {
         createdAt: new Date().toISOString(),
         type: payload.type,
         attachment: payload.attachment,
+        imageUrl: payload.imageUrl,
         location: payload.location,
         sticker: payload.sticker,
         replyToId: payload.replyToId,
@@ -221,19 +361,27 @@ export function useChatRoom(conversationId: string, locale: string) {
       setPendingMessages((prev) => [...prev, optimistic]);
       setDraft('');
       setReplyTo(null);
-      scrollToBottom('smooth');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(8); // subtle haptic tick on send
+      }
+      requestAnimationFrame(() => scrollToBottom('smooth'));
       return { clientId };
     },
     onSuccess: (created, _vars, context) => {
-      setPendingMessages((prev) => prev.filter((item) => item.clientId !== context?.clientId));
-      setLiveMessages((prev) => (prev.some((item) => item.id === created.id) ? prev : [...prev, created]));
-      qc.invalidateQueries({ queryKey: ['messages', conversationId, locale] });
-      scrollToBottom('smooth');
+      setPendingMessages((prev) =>
+        prev.filter((item) => item.clientId !== context?.clientId),
+      );
+      appendMessageToCache(created);
+      lastReadSentRef.current = created.id;
+      qc.invalidateQueries({ queryKey: ['conversations'] });
+      requestAnimationFrame(() => scrollToBottom('smooth'));
     },
     onError: (_error, payload, context) => {
       setPendingMessages((prev) =>
         prev.map((item) =>
-          item.clientId === context?.clientId ? { ...item, ...payload, status: 'failed' } : item,
+          item.clientId === context?.clientId
+            ? { ...item, ...payload, status: 'failed' }
+            : item,
         ),
       );
     },
@@ -246,10 +394,7 @@ export function useChatRoom(conversationId: string, locale: string) {
         body: JSON.stringify({ body }),
         locale,
       }),
-    onSuccess: (updated) => {
-      setLiveMessages((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-      qc.invalidateQueries({ queryKey: ['messages', conversationId, locale] });
-    },
+    onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
   });
 
   const deleteMutation = useMutation({
@@ -258,10 +403,7 @@ export function useChatRoom(conversationId: string, locale: string) {
         method: 'DELETE',
         locale,
       }),
-    onSuccess: (updated) => {
-      setLiveMessages((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-      qc.invalidateQueries({ queryKey: ['messages', conversationId, locale] });
-    },
+    onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
   });
 
   const pinMutation = useMutation({
@@ -271,62 +413,85 @@ export function useChatRoom(conversationId: string, locale: string) {
         body: JSON.stringify({ pinned }),
         locale,
       }),
-    onSuccess: (updated) => {
-      setLiveMessages((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-      qc.invalidateQueries({ queryKey: ['messages', conversationId, locale] });
-    },
+    onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
   });
 
-  const seenMutation = useMutation({
-    mutationFn: (messageId: string) =>
-      api<{ seen: boolean }>(`/conversations/${conversationId}/messages/${messageId}/seen`, {
-        method: 'POST',
-        locale,
-      }),
+  const reactionMutation = useMutation({
+    mutationFn: ({ messageId, emoji }: { messageId: string; emoji: string }) =>
+      api<{ messageId: string; reactions: ReactionGroup[] }>(
+        `/conversations/${conversationId}/messages/${messageId}/reactions`,
+        { method: 'POST', body: JSON.stringify({ emoji }), locale },
+      ),
+    onSuccess: (res) =>
+      patchMessageInCache(res.messageId, (m) => ({
+        ...m,
+        reactions: res.reactions,
+      })),
   });
+
+  const forwardMutation = useMutation({
+    mutationFn: ({
+      messageId,
+      targetConversationIds,
+    }: {
+      messageId: string;
+      targetConversationIds: string[];
+    }) =>
+      api<{ delivered: number; failed: number; results: unknown[] }>(
+        '/messages/forward',
+        {
+          method: 'POST',
+          body: JSON.stringify({ messageId, targetConversationIds }),
+          locale,
+        },
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['conversations'] }),
+  });
+
+  // ---- Derived message list ----------------------------------------------
 
   const messages = useMemo(() => {
-    const merged = [...(data?.data ?? []), ...liveMessages, ...pendingMessages];
+    const base = data?.data ?? [];
     const byId = new Map<string, ChatMessage | PendingMessage>();
-    for (const msg of merged) {
-      const key = 'clientId' in msg ? (msg as PendingMessage).clientId : msg.id;
-      byId.set(key, msg);
-    }
+    for (const msg of base) byId.set(msg.id, msg);
+    for (const msg of pendingMessages) byId.set(msg.clientId, msg);
     return [...byId.values()].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
-  }, [data?.data, liveMessages, pendingMessages]);
+  }, [data?.data, pendingMessages]);
 
   const pinnedMessages = useMemo(
     () => messages.filter((item) => !item.deletedAt && item.pinned),
     [messages],
   );
 
-  useEffect(() => {
-    if (!messages.length || isLoading) return;
-    const frame = requestAnimationFrame(() => {
-      scrollToBottom(messages.length > 8 ? 'smooth' : 'auto');
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [messages, isLoading, scrollToBottom]);
+  // First unread message id captured at entry (for the jump-to-unread divider).
+  const firstUnreadId = useMemo(() => {
+    const entryReadId = entryReadIdRef.current;
+    if (entryReadId === undefined) return null;
+    let passedRead = entryReadId === null; // null => nothing read yet
+    for (const msg of messages) {
+      if (!passedRead) {
+        if (msg.id === entryReadId) passedRead = true;
+        continue;
+      }
+      if (isMineMessage(msg, currentUserId, currentUsername)) continue;
+      if (msg.deletedAt) continue;
+      return msg.id;
+    }
+    return null;
+  }, [messages, currentUserId, currentUsername]);
+
+  // ---- Mark the latest message read whenever the thread updates -----------
 
   useEffect(() => {
-    if (typingUsername) scrollToBottom('smooth');
-  }, [typingUsername, scrollToBottom]);
+    if (isLoading || !messages.length) return;
+    const last = messages[messages.length - 1];
+    if ('clientId' in last) return; // optimistic, not yet persisted
+    markRead(last.id);
+  }, [messages, isLoading, markRead]);
 
-  useEffect(() => {
-    const unseen = [...messages].reverse().find((msg) => {
-      if (msg.deletedAt) return false;
-      if (isMineMessage(msg, currentUserId, currentUsername)) return false;
-      const seen =
-        (currentUserId ? msg.seenBy?.includes(currentUserId) : false) ||
-        (currentUsername ? msg.seenBy?.includes(currentUsername) : false);
-      return !seen;
-    });
-    if (!unseen || seenSentRef.current.has(unseen.id)) return;
-    seenSentRef.current.add(unseen.id);
-    seenMutation.mutate(unseen.id);
-  }, [currentUserId, currentUsername, messages, seenMutation]);
+  // ---- Actions ------------------------------------------------------------
 
   const sendPayload = useCallback(
     (payload: MessagePayload) => {
@@ -335,6 +500,34 @@ export function useChatRoom(conversationId: string, locale: string) {
     },
     [sendMutation],
   );
+
+  // ---- Typing (debounced, with reliable stop) -----------------------------
+
+  const stopTyping = useCallback(() => {
+    if (typingDebounceRef.current) {
+      clearTimeout(typingDebounceRef.current);
+      typingDebounceRef.current = null;
+    }
+    const socket = getSocket();
+    if (socket?.connected) {
+      socket.emit('conversation:typing', { conversationId, typing: false });
+    }
+  }, [conversationId]);
+
+  const emitTyping = useCallback(() => {
+    if (!liveEnabled) return;
+    const socket = getSocket();
+    if (!socket?.connected) return;
+    if (!typingDebounceRef.current) {
+      socket.emit('conversation:typing', { conversationId, typing: true });
+    }
+    if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+    // After 2.5s of no keystrokes, tell the peer we stopped typing.
+    typingDebounceRef.current = setTimeout(() => {
+      typingDebounceRef.current = null;
+      socket.emit('conversation:typing', { conversationId, typing: false });
+    }, 2500);
+  }, [conversationId, liveEnabled]);
 
   const sendText = useCallback(() => {
     const trimmed = draft.trim();
@@ -346,13 +539,14 @@ export function useChatRoom(conversationId: string, locale: string) {
       return;
     }
     setComposerError('');
+    stopTyping();
     sendPayload({
       body: trimmed,
       type: 'text',
       replyToId: replyTo?.id,
       replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
     });
-  }, [draft, replyTo, sendPayload]);
+  }, [draft, replyTo, sendPayload, stopTyping]);
 
   const retryFailed = useCallback(
     (clientId: string) => {
@@ -363,6 +557,7 @@ export function useChatRoom(conversationId: string, locale: string) {
         body: failed.body,
         type: failed.type,
         attachment: failed.attachment,
+        imageUrl: failed.imageUrl,
         location: failed.location,
         sticker: failed.sticker,
         replyToId: failed.replyToId,
@@ -372,27 +567,49 @@ export function useChatRoom(conversationId: string, locale: string) {
     [pendingMessages, sendPayload],
   );
 
-  const emitTyping = useCallback(() => {
-    if (!liveEnabled || !socketRef.current?.connected) return;
-    if (typingDebounceRef.current) return;
-    typingDebounceRef.current = setTimeout(() => {
-      typingDebounceRef.current = null;
-    }, 2000);
-    socketRef.current.emit('conversation:typing', { conversationId, typing: true });
-  }, [conversationId, liveEnabled]);
+  const toggleReaction = useCallback(
+    (messageId: string, emoji: string) => {
+      reactionMutation.mutate({ messageId, emoji });
+    },
+    [reactionMutation],
+  );
+
+  const forwardMessage = useCallback(
+    (messageId: string, targetConversationIds: string[]) =>
+      forwardMutation.mutateAsync({ messageId, targetConversationIds }),
+    [forwardMutation],
+  );
+
+  // ---- Media (presigned upload, no base64) --------------------------------
 
   const handlePickFiles = useCallback(
     async (files: FileList | null, forcedType: 'image' | 'file' | 'video') => {
       if (!files?.length) return;
+      setComposerError('');
       for (const file of Array.from(files)) {
-        const url = await fileToDataUrl(file);
-        sendPayload({
-          type: forcedType,
-          body: file.name,
-          attachment: { url, name: file.name, mimeType: file.type, size: file.size },
-          replyToId: replyTo?.id,
-          replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
-        });
+        setUploadingCount((c) => c + 1);
+        try {
+          const uploaded = await uploadMessageFile(file);
+          sendPayload({
+            type: forcedType,
+            body: forcedType === 'file' ? file.name : undefined,
+            imageUrl: forcedType === 'image' ? uploaded.url : undefined,
+            attachment: {
+              url: uploaded.url,
+              name: uploaded.name,
+              mimeType: uploaded.mimeType,
+              size: uploaded.size,
+            },
+            replyToId: replyTo?.id,
+            replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
+          });
+        } catch (err) {
+          setComposerError(
+            err instanceof Error ? err.message : 'Upload failed. Please try again.',
+          );
+        } finally {
+          setUploadingCount((c) => Math.max(0, c - 1));
+        }
       }
     },
     [replyTo, sendPayload],
@@ -442,20 +659,37 @@ export function useChatRoom(conversationId: string, locale: string) {
           const blob = new Blob(mediaChunksRef.current, {
             type: mode === 'voice' ? 'audio/webm' : 'video/webm',
           });
-          const file = new File([blob], `${mode}-${Date.now()}.webm`, { type: blob.type });
-          const url = await fileToDataUrl(file);
+          const file = new File([blob], `${mode}-${Date.now()}.webm`, {
+            type: blob.type,
+          });
           const durationSec = Math.max(
             1,
             Math.round((Date.now() - recordingStartedAtRef.current) / 1000),
           );
-          sendPayload({
-            type: mode,
-            body: mode === 'voice' ? 'Voice message' : 'Video message',
-            attachment: { url, name: file.name, mimeType: blob.type, size: blob.size, durationSec },
-            replyToId: replyTo?.id,
-            replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
-          });
           setRecordingMode('none');
+          setUploadingCount((c) => c + 1);
+          try {
+            const uploaded = await uploadMessageFile(file);
+            sendPayload({
+              type: mode,
+              body: mode === 'voice' ? 'Voice message' : 'Video message',
+              attachment: {
+                url: uploaded.url,
+                name: uploaded.name,
+                mimeType: uploaded.mimeType,
+                size: uploaded.size,
+                durationSec,
+              },
+              replyToId: replyTo?.id,
+              replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
+            });
+          } catch (err) {
+            setComposerError(
+              err instanceof Error ? err.message : 'Upload failed.',
+            );
+          } finally {
+            setUploadingCount((c) => Math.max(0, c - 1));
+          }
         };
         recorder.start();
       } catch {
@@ -480,6 +714,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     peer,
     messages,
     pinnedMessages,
+    firstUnreadId,
     isLoading,
     listRef,
     draft,
@@ -495,10 +730,14 @@ export function useChatRoom(conversationId: string, locale: string) {
     typingUsername,
     currentUserId,
     currentUsername,
+    uploadingCount,
     sendText,
     sendPayload,
     retryFailed,
     emitTyping,
+    stopTyping,
+    toggleReaction,
+    forwardMessage,
     handlePickFiles,
     sendLocation,
     startRecording,
@@ -508,5 +747,6 @@ export function useChatRoom(conversationId: string, locale: string) {
     pinMutation,
     scrollToBottom,
     isSending: sendMutation.isPending,
+    isForwarding: forwardMutation.isPending,
   };
 }

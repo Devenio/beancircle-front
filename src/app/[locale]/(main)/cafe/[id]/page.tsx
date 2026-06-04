@@ -6,6 +6,10 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { WorkReportSection } from '@/components/cafe/work-report-section';
+import { CheckinSheet } from '@/components/checkin/checkin-sheet';
+import { ReportDialog } from '@/components/report/report-dialog';
+import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
 
 export default function CafePage() {
@@ -14,6 +18,7 @@ export default function CafePage() {
   const qc = useQueryClient();
   const [rating, setRating] = useState(5);
   const [reviewBody, setReviewBody] = useState('');
+  const [checkinMessage, setCheckinMessage] = useState('');
 
   const { data: cafe } = useQuery({
     queryKey: ['cafe', id, locale],
@@ -24,6 +29,7 @@ export default function CafePage() {
         address: string;
         avgRating: number;
         isFollowing?: boolean;
+        checkinCode?: string | null;
         photos?: { url: string }[];
         reviews?: unknown[];
       }>(`/cafes/${id}`, { locale }),
@@ -35,12 +41,7 @@ export default function CafePage() {
         method: cafe?.isFollowing ? 'DELETE' : 'POST',
         locale,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cafe', id] }),
-  });
-
-  const checkinMutation = useMutation({
-    mutationFn: () => api(`/cafes/${id}/checkins`, { method: 'POST', locale }),
-    onSuccess: () => alert('Checked in!'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cafe', id, locale] }),
   });
 
   const reviewMutation = useMutation({
@@ -52,7 +53,7 @@ export default function CafePage() {
       }),
     onSuccess: () => {
       setReviewBody('');
-      qc.invalidateQueries({ queryKey: ['cafe', id] });
+      qc.invalidateQueries({ queryKey: ['cafe', id, locale] });
     },
   });
 
@@ -68,17 +69,48 @@ export default function CafePage() {
         <h1 className="text-xl font-bold">{cafe.name}</h1>
         <p className="text-sm text-neutral-500">{cafe.address}</p>
         <p className="mt-1 text-sm">★ {cafe.avgRating.toFixed(1)}</p>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant={cafe.isFollowing ? 'outline' : 'default'}
             onClick={() => followMutation.mutate()}
           >
             {cafe.isFollowing ? t('unfollow') : t('follow')}
           </Button>
-          <Button variant="outline" onClick={() => checkinMutation.mutate()}>
-            {t('checkin')}
-          </Button>
+          <CheckinSheet
+            cafeId={id}
+            locale={locale}
+            onDone={() => setCheckinMessage(t('checkinSuccess'))}
+            trigger={
+              <Button variant="default" type="button">
+                {t('checkin')}
+              </Button>
+            }
+          />
+          <ReportDialog
+            targetType="CAFE"
+            targetId={id}
+            locale={locale}
+            trigger={
+              <Button type="button" variant="ghost" className="text-destructive">
+                {t('report')}
+              </Button>
+            }
+          />
         </div>
+        {checkinMessage ? (
+          <p className="mt-2 text-sm text-green-600" role="status">
+            {checkinMessage}
+          </p>
+        ) : null}
+        {cafe.checkinCode ? (
+          <p className="mt-3 rounded-lg bg-muted px-3 py-2 font-mono text-xs">
+            {t('checkinCode')}: {cafe.checkinCode}
+            <Link href={`/passport?code=${cafe.checkinCode}`} className="ms-2 text-primary">
+              {t('useInPassport')}
+            </Link>
+          </p>
+        ) : null}
+        <WorkReportSection cafeId={id} locale={locale} />
         <section className="mt-6">
           <h2 className="font-semibold">{t('writeReview')}</h2>
           <Input

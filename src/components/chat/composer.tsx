@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { MapPin, Mic, Plus, SendHorizontal, Square, Video, ImageIcon, Paperclip } from 'lucide-react';
+import { Loader2, MapPin, Mic, Plus, SendHorizontal, Square, Video, ImageIcon, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -31,6 +31,7 @@ type ChatComposerProps = {
   onStartRecording: (mode: 'voice' | 'video') => void;
   onStopRecording: () => void;
   composerError?: string;
+  uploading?: boolean;
   validationHint?: string;
   placeholder: string;
   disabled?: boolean;
@@ -52,6 +53,7 @@ export function ChatComposer({
   onStartRecording,
   onStopRecording,
   composerError,
+  uploading,
   validationHint,
   placeholder,
   disabled,
@@ -78,6 +80,12 @@ export function ChatComposer({
         </div>
       ) : null}
 
+      {uploading ? (
+        <p className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="size-3 animate-spin" />
+          Uploading…
+        </p>
+      ) : null}
       {composerError ? <p className="mb-1.5 text-xs text-destructive">{composerError}</p> : null}
       {!validation.valid && draft.trim() && validationHint ? (
         <p className="mb-1.5 text-xs text-muted-foreground">{validationHint}</p>

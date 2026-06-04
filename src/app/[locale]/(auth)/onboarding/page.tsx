@@ -19,6 +19,7 @@ export default function OnboardingPage() {
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [cityId, setCityId] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,6 +58,17 @@ export default function OnboardingPage() {
         locale,
       });
       setUser({ ...(user as object), needsOnboarding: false } as never);
+      if (referralCode.trim().length >= 4) {
+        try {
+          await api('/growth/referrals/apply', {
+            method: 'POST',
+            body: JSON.stringify({ code: referralCode.trim() }),
+            locale,
+          });
+        } catch {
+          /* optional */
+        }
+      }
       router.replace('/');
     } catch (e) {
       setError(e instanceof Error ? e.message : t('usernameInvalid'));
@@ -101,6 +113,13 @@ export default function OnboardingPage() {
           Could not load cities. Is the API running on port 3001?
         </p>
       )}
+      <Input
+        value={referralCode}
+        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+        placeholder={t('referralCode')}
+        dir="ltr"
+        className="font-mono text-start"
+      />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button
         onClick={submit}

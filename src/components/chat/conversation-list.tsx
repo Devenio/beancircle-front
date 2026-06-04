@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { MessageCircle, Pin, Search } from 'lucide-react';
+import { BellOff, MessageCircle, Pin, Search } from 'lucide-react';
 import {
   Empty,
   EmptyDescription,
@@ -12,6 +12,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { api } from '@/lib/api/client';
 import { Link } from '@/i18n/navigation';
 import { Input } from '@/components/ui/input';
@@ -60,73 +66,118 @@ function ConversationEmpty({ query }: { query: string }) {
 
 function ConversationRow({
   conversation,
-  unread,
   typingLabel,
-  isPinned,
   online,
+  onTogglePin,
+  onToggleMute,
 }: {
   conversation: Conversation;
-  unread: number;
   typingLabel?: string | null;
-  isPinned: boolean;
   online?: boolean;
+  onTogglePin: (conv: Conversation) => void;
+  onToggleMute: (conv: Conversation) => void;
 }) {
+  const t = useTranslations('messages');
   const member = conversation.otherMember;
   const displayName = member?.name ?? member?.username ?? 'Unknown';
   const preview = typingLabel ?? previewFromLastMessage(conversation.lastMessage);
+  const unread = conversation.unreadCount ?? 0;
+  const muted = conversation.muted ?? false;
+  const pinned = conversation.pinned ?? false;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Link
-        href={`/messages/${conversation.id}`}
-        className={cn(
-          'flex items-center gap-3 rounded-2xl px-3 py-3 transition-colors duration-200',
-          'hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          unread > 0 && 'bg-primary/5',
-        )}
-      >
-        <UserAvatar src={member?.avatarUrl} name={displayName} online={online} size="lg" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className={cn('truncate text-sm font-semibold', unread > 0 && 'text-foreground')}>
-              {displayName}
-            </p>
-            {isPinned ? <Pin className="size-3 shrink-0 text-muted-foreground" /> : null}
-          </div>
-          <p
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Link
+            href={`/messages/${conversation.id}`}
             className={cn(
-              'truncate text-sm',
-              typingLabel ? 'text-primary' : 'text-muted-foreground',
-              unread > 0 && !typingLabel && 'font-medium text-foreground',
+              'flex items-center gap-3 rounded-2xl px-3 py-3 transition-colors duration-200',
+              'hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              unread > 0 && !muted && 'bg-primary/5',
             )}
           >
-            {preview}
-          </p>
-        </div>
-        {unread > 0 ? (
-          <Badge className="min-w-5 justify-center rounded-full px-1.5">{unread > 99 ? '99+' : unread}</Badge>
-        ) : null}
-      </Link>
-    </motion.div>
+            <UserAvatar src={member?.avatarUrl} name={displayName} online={online} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className={cn('truncate text-sm font-semibold', unread > 0 && 'text-foreground')}>
+                  {displayName}
+                </p>
+                {pinned ? <Pin className="size-3 shrink-0 text-muted-foreground" /> : null}
+                {muted ? <BellOff className="size-3 shrink-0 text-muted-foreground" /> : null}
+              </div>
+              <p
+                className={cn(
+                  'truncate text-sm',
+                  typingLabel ? 'text-primary' : 'text-muted-foreground',
+                  unread > 0 && !typingLabel && !muted && 'font-medium text-foreground',
+                )}
+              >
+                {preview}
+              </p>
+            </div>
+            {unread > 0 ? (
+              <Badge
+                className={cn(
+                  'min-w-5 justify-center rounded-full px-1.5',
+                  muted && 'bg-muted text-muted-foreground',
+                )}
+              >
+                {unread > 99 ? '99+' : unread}
+              </Badge>
+            ) : null}
+          </Link>
+        </motion.div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-40">
+        <ContextMenuItem onClick={() => onTogglePin(conversation)}>
+          <Pin />
+          {pinned ? t('unpin') : t('pin')}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onToggleMute(conversation)}>
+          <BellOff />
+          {muted ? t('unmute') : t('mute')}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
 export function ConversationList({ locale }: { locale: string }) {
   const t = useTranslations('messages');
+  const qc = useQueryClient();
   const [query, setQuery] = useState('');
-  const pinnedIds = useChatStore((s) => s.pinnedConversationIds);
-  const unreadMap = useChatStore((s) => s.unreadByConversation);
   const typingMap = useChatStore((s) => s.typingByConversation);
   const onlineUserIds = useChatStore((s) => s.onlineUserIds);
 
   const { data, isLoading } = useQuery({
     queryKey: ['conversations', locale],
     queryFn: () => api<Conversation[]>('/conversations', { locale }),
+  });
+
+  const pinMutation = useMutation({
+    mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) =>
+      api(`/conversations/${id}/pin`, {
+        method: 'POST',
+        body: JSON.stringify({ pinned }),
+        locale,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['conversations'] }),
+  });
+
+  const muteMutation = useMutation({
+    mutationFn: ({ id, muted }: { id: string; muted: boolean }) =>
+      api(`/conversations/${id}/mute`, {
+        method: 'POST',
+        body: JSON.stringify({ muted }),
+        locale,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['conversations'] }),
   });
 
   const filtered = useMemo(() => {
@@ -141,20 +192,23 @@ export function ConversationList({ locale }: { locale: string }) {
       : list;
 
     return [...searched].sort((a, b) => {
-      const aPinned = pinnedIds.includes(a.id);
-      const bPinned = pinnedIds.includes(b.id);
-      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      if (Boolean(a.pinned) !== Boolean(b.pinned)) return a.pinned ? -1 : 1;
       return conversationSortKey(b) - conversationSortKey(a);
     });
-  }, [data, pinnedIds, query]);
+  }, [data, query]);
+
+  const totalUnread = useMemo(
+    () => (data ?? []).reduce((sum, c) => sum + (c.muted ? 0 : c.unreadCount ?? 0), 0),
+    [data],
+  );
 
   return (
     <div className="flex h-full min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-md">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          {Object.values(unreadMap).reduce((sum, n) => sum + n, 0) > 0 ? (
-            <Badge variant="secondary">{Object.values(unreadMap).reduce((sum, n) => sum + n, 0)}</Badge>
+          {totalUnread > 0 ? (
+            <Badge variant="secondary">{totalUnread > 99 ? '99+' : totalUnread}</Badge>
           ) : null}
         </div>
         <div className="relative">
@@ -179,10 +233,18 @@ export function ConversationList({ locale }: { locale: string }) {
             <ConversationRow
               key={conversation.id}
               conversation={conversation}
-              unread={unreadMap[conversation.id] ?? 0}
               typingLabel={typingMap[conversation.id]}
-              isPinned={pinnedIds.includes(conversation.id)}
-              online={conversation.otherMember?.id ? onlineUserIds.has(conversation.otherMember.id) : false}
+              online={
+                conversation.otherMember?.id
+                  ? onlineUserIds.has(conversation.otherMember.id)
+                  : false
+              }
+              onTogglePin={(conv) =>
+                pinMutation.mutate({ id: conv.id, pinned: !conv.pinned })
+              }
+              onToggleMute={(conv) =>
+                muteMutation.mutate({ id: conv.id, muted: !conv.muted })
+              }
             />
           ))}
         </div>

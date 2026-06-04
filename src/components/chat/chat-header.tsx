@@ -1,6 +1,8 @@
 'use client';
 
 import { ArrowLeft, MoreVertical } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import type { ChatMember } from '@/components/chat/types';
@@ -14,6 +16,7 @@ type ChatHeaderProps = {
 };
 
 export function ChatHeader({ peer, online, typingUsername }: ChatHeaderProps) {
+  const t = useTranslations('messages');
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur-md">
       <div className="flex items-center gap-2 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -36,9 +39,29 @@ export function ChatHeader({ peer, online, typingUsername }: ChatHeaderProps) {
             <p className="truncate text-[15px] font-semibold leading-tight">
               {peer?.name ?? peer?.username ?? 'Chat'}
             </p>
-            {typingUsername ? (
-              <p className="truncate text-xs text-primary">{typingUsername} is typing…</p>
-            ) : null}
+            <AnimatePresence mode="wait" initial={false}>
+              {typingUsername ? (
+                <motion.p
+                  key="typing"
+                  initial={{ opacity: 0, y: -2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -2 }}
+                  className="truncate text-xs text-primary"
+                >
+                  {t('typing', { name: typingUsername })}
+                </motion.p>
+              ) : online ? (
+                <motion.p
+                  key="online"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="truncate text-xs text-emerald-500"
+                >
+                  {t('online')}
+                </motion.p>
+              ) : null}
+            </AnimatePresence>
           </div>
         </div>
 
