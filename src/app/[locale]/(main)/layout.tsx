@@ -32,7 +32,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             ? 'h-dvh overflow-hidden'
             : isSettings
               ? 'min-h-dvh'
-              : 'pb-20'
+              : 'pb-[calc(5.25rem+env(safe-area-inset-bottom))]'
         }
       >
         <PageTransition>{children}</PageTransition>

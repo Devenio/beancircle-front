@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Filter, Search, Sparkles, X } from 'lucide-react';
+import { ChevronLeft, Filter, Search, Sparkles, X } from 'lucide-react';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,6 @@ import {
 } from '@/components/ui/dialog';
 import { useChatStore } from '@/stores/chat-store';
 import { useChatArchiveStore, getDisplayUnread } from '@/stores/chat-archive-store';
-import { MessagesInboxTabs, type InboxTab } from '@/components/chat/messages-inbox-tabs';
 import { ArchivePreviewSection } from '@/components/chat/archive-preview-section';
 import { MessagesEmptyState } from '@/components/chat/messages-empty-state';
 import { ArchivedEmptyPanel } from '@/components/chat/archived-empty-panel';
@@ -51,16 +51,12 @@ function ListSkeleton() {
   );
 }
 
-export function MessagesHub({
-  locale,
-  initialTab = 'chats',
-}: {
-  locale: string;
-  initialTab?: InboxTab;
-}) {
+export function MessagesHub({ locale }: { locale: string }) {
   const t = useTranslations('messages');
   const qc = useQueryClient();
-  const [tab, setTab] = useState<InboxTab>(initialTab);
+  const router = useRouter();
+  const pathname = usePathname();
+  const isArchivedView = pathname.startsWith('/messages/archived');
   const [query, setQuery] = useState('');
   const [archiveCollapsed, setArchiveCollapsed] = useState(true);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilterId>('all');
@@ -119,12 +115,12 @@ export function MessagesHub({
   const filteredArchived = useMemo(
     () =>
       filterArchivedList(archivedChats, {
-        query: tab === 'archived' ? query : '',
+        query: isArchivedView ? query : '',
         filter: archiveFilter,
         archivedAt,
         forceUnreadIds,
       }),
-    [archivedChats, query, tab, archiveFilter, archivedAt, forceUnreadIds],
+    [archivedChats, query, isArchivedView, archiveFilter, archivedAt, forceUnreadIds],
   );
 
   const chatsUnread = useMemo(
@@ -202,8 +198,8 @@ export function MessagesHub({
 
   const unarchiveAll = useCallback(() => {
     archivedChats.forEach((c) => unarchive(c.id));
-    setTab('chats');
-  }, [archivedChats, unarchive]);
+    router.push('/messages');
+  }, [archivedChats, router, unarchive]);
 
   const markAllArchivedRead = useCallback(async () => {
     await Promise.all(
@@ -240,7 +236,8 @@ export function MessagesHub({
     haptic('success');
   }, [deleteTarget, locale, qc, unarchive]);
 
-  const searchPlaceholder = tab === 'chats' ? t('search') : t('searchArchivedPlaceholder');
+  const searchPlaceholder = isArchivedView ? t('searchArchivedPlaceholder') : t('search');
+  const goToArchived = useCallback(() => router.push('/messages/archived'), [router]);
 
   const renderArchivedList = () => {
     if (isLoading) return <ListSkeleton />;
@@ -310,25 +307,28 @@ export function MessagesHub({
 
   return (
     <div className="flex h-full min-h-dvh flex-col bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          {tab === 'chats' && chatsUnread > 0 ? (
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-md">
+        <div className="flex items-center gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+          {isArchivedView ? (
+            <button
+              type="button"
+              onClick={() => router.push('/messages')}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-foreground active:bg-muted"
+              aria-label={t('backToConversations')}
+            >
+              <ChevronLeft className="size-5 rtl:rotate-180" />
+            </button>
+          ) : null}
+          <h1 className="min-w-0 flex-1 text-2xl font-bold tracking-tight">
+            {isArchivedView ? t('inboxTabArchived') : t('title')}
+          </h1>
+          {!isArchivedView && chatsUnread > 0 ? (
             <Badge variant="secondary">{chatsUnread > 99 ? '99+' : chatsUnread}</Badge>
+          ) : isArchivedView && archivedUnread > 0 ? (
+            <Badge variant="secondary">{archivedUnread > 99 ? '99+' : archivedUnread}</Badge>
           ) : null}
         </div>
-        <div className="px-4 pb-3">
-          <MessagesInboxTabs
-            value={tab}
-            onChange={(next) => {
-              setTab(next);
-              setQuery('');
-            }}
-            chatsUnread={chatsUnread}
-            archivedUnread={archivedUnread}
-          />
-        </div>
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-4">
           <div className="flex h-11 items-center gap-2 rounded-2xl border border-border bg-muted/40 px-3 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
             <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
             <input
@@ -351,7 +351,7 @@ export function MessagesHub({
             ) : null}
           </div>
         </div>
-        {tab === 'archived' ? (
+        {isArchivedView ? (
           <div className="flex items-center justify-between px-4 pb-2">
             <p className="text-xs text-muted-foreground">
               {archiveFilter !== 'all'
@@ -372,17 +372,17 @@ export function MessagesHub({
 
       <div className="relative flex min-h-0 flex-1 flex-col">
         <AnimatePresence mode="wait" initial={false}>
-          {tab === 'chats' ? (
+          {!isArchivedView ? (
             <motion.div
               key="chats"
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 12 }}
               transition={{ duration: 0.15 }}
-              className="flex min-h-0 flex-1 flex-col"
+              className="flex min-h-0 flex-1 flex-col gap-3 pt-3"
             >
               {inactiveSuggestion[0] && !query ? (
-                <div className="mx-3 mt-2 flex items-start gap-2 rounded-2xl border border-border/80 bg-muted/40 px-3 py-2.5">
+                <div className="mx-3 flex items-start gap-2 rounded-2xl border border-border/80 bg-muted/40 px-3 py-2.5">
                   <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium">{t('archiveSuggestionTitle')}</p>
@@ -412,7 +412,7 @@ export function MessagesHub({
                 archivedAt={archivedAt}
                 collapsed={archiveCollapsed}
                 onCollapsedChange={setArchiveCollapsed}
-                onViewAll={() => setTab('archived')}
+                onViewAll={goToArchived}
                 onUnarchive={handleUnarchive}
                 onUnarchiveAll={unarchiveAll}
                 onMarkAllRead={() => void markAllArchivedRead()}
@@ -425,7 +425,7 @@ export function MessagesHub({
                 <MessagesEmptyState
                   query={query}
                   archivedCount={archivedCount}
-                  onViewArchived={() => setTab('archived')}
+                  onViewArchived={goToArchived}
                 />
               ) : (
                 <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2 pb-24 chat-scrollbar">
@@ -467,7 +467,7 @@ export function MessagesHub({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.15 }}
-              className="flex min-h-0 flex-1 flex-col"
+              className="flex min-h-0 flex-1 flex-col pt-3"
             >
               {archivedCount > 0 ? (
                 <button

@@ -48,7 +48,7 @@ export function ArchivePreviewSection({
   });
 
   return (
-    <section className="mx-2 mb-2 rounded-2xl border border-border/80 bg-muted/30">
+    <section className="mx-3 rounded-2xl border border-border/80 bg-muted/30">
       <button
         type="button"
         {...longPress.bind()}
