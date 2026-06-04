@@ -1,8 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { SettingsScreen } from '@/components/settings/settings-shell';
-import { SettingsList, SettingsSectionLabel } from '@/components/settings/settings-row';
+import { SettingsFieldHeader, SettingsList, SettingsOptionRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useSettingsApi } from '@/hooks/use-settings-api';
 import { ACCENT_PRESETS } from '@/stores/settings-store';
@@ -15,6 +16,7 @@ const WALLPAPERS = ['default', 'warm', 'cool', 'minimal'] as const;
 
 export default function SettingsAppearancePage() {
   const t = useTranslations('settings');
+  const { theme } = useTheme();
   const { settings, isLoading, update } = useSettingsApi();
 
   if (isLoading || !settings) {
@@ -25,24 +27,32 @@ export default function SettingsAppearancePage() {
     );
   }
 
+  const themeHint =
+    theme === 'light' ? t('themeLightDesc') : theme === 'dark' ? t('themeDarkDesc') : t('themeSystemDesc');
+
   return (
     <SettingsScreen title={t('sections.appearance')}>
       <SettingsSectionLabel>{t('theme')}</SettingsSectionLabel>
-      <div className="border-y border-border/80 bg-card px-4 py-4">
-        <ThemeToggle />
+      <div className="border-y border-border/80 bg-card">
+        <SettingsFieldHeader label={t('theme')} description={themeHint || t('themeDesc')} className="pb-0" />
+        <div className="px-4 pb-4">
+          <ThemeToggle />
+        </div>
       </div>
 
       <SettingsSectionLabel>{t('items.accent')}</SettingsSectionLabel>
+      <p className="px-4 pb-2 text-xs text-muted-foreground">{t('items.accentDesc')}</p>
       <div className="flex flex-wrap gap-3 border-y border-border/80 bg-card px-4 py-4">
         {ACCENT_PRESETS.map((preset) => (
           <button
             key={preset.id}
             type="button"
             aria-label={t(preset.labelKey)}
+            title={t(preset.labelKey)}
             onClick={() => update({ accentColor: preset.value })}
             className={cn(
               'size-11 rounded-full border-2',
-              settings.accentColor === preset.value ? 'border-foreground scale-105' : 'border-transparent',
+              settings.accentColor === preset.value ? 'scale-105 border-foreground' : 'border-transparent',
             )}
             style={{ background: preset.value }}
           />
@@ -50,53 +60,43 @@ export default function SettingsAppearancePage() {
       </div>
 
       <SettingsSectionLabel>{t('items.fontSize')}</SettingsSectionLabel>
+      <p className="px-4 pb-1 text-xs text-muted-foreground">{t('items.fontSizeDesc')}</p>
       <SettingsList>
         {FONT_OPTIONS.map((opt) => (
-          <button
+          <SettingsOptionRow
             key={opt}
-            type="button"
+            label={t(`fontSize.${opt}`)}
+            description={t(`fontSizeHints.${opt}`)}
+            selected={settings.fontSize === opt}
             onClick={() => update({ fontSize: opt })}
-            className={cn(
-              'flex min-h-[52px] w-full items-center px-4 text-[15px] active:bg-muted/80',
-              settings.fontSize === opt && 'font-semibold text-primary',
-            )}
-          >
-            {t(`fontSize.${opt}`)}
-          </button>
+          />
         ))}
       </SettingsList>
 
       <SettingsSectionLabel>{t('items.messageDensity')}</SettingsSectionLabel>
+      <p className="px-4 pb-1 text-xs text-muted-foreground">{t('items.messageDensityDesc')}</p>
       <SettingsList>
         {DENSITY_OPTIONS.map((opt) => (
-          <button
+          <SettingsOptionRow
             key={opt}
-            type="button"
+            label={t(`density.${opt}`)}
+            description={t(`densityHints.${opt}`)}
+            selected={settings.messageDensity === opt}
             onClick={() => update({ messageDensity: opt })}
-            className={cn(
-              'flex min-h-[52px] w-full items-center px-4 text-[15px] active:bg-muted/80',
-              settings.messageDensity === opt && 'font-semibold text-primary',
-            )}
-          >
-            {t(`density.${opt}`)}
-          </button>
+          />
         ))}
       </SettingsList>
 
       <SettingsSectionLabel>{t('items.wallpaper')}</SettingsSectionLabel>
       <SettingsList>
         {WALLPAPERS.map((wp) => (
-          <button
+          <SettingsOptionRow
             key={wp}
-            type="button"
+            label={t(`wallpaper.${wp}`)}
+            description={t(`wallpaperHints.${wp}`)}
+            selected={settings.chatWallpaper === wp}
             onClick={() => update({ chatWallpaper: wp })}
-            className={cn(
-              'flex min-h-[52px] w-full items-center justify-between px-4 text-[15px] active:bg-muted/80',
-              settings.chatWallpaper === wp && 'font-semibold text-primary',
-            )}
-          >
-            {t(`wallpaper.${wp}`)}
-          </button>
+          />
         ))}
       </SettingsList>
     </SettingsScreen>

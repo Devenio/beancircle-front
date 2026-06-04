@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Archive, Bell, BellOff, CheckCheck } from 'lucide-react';
+import { ArchiveRestore, Bell, BellOff, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ConversationListItem } from '@/components/chat/conversation-list-item';
@@ -16,28 +16,26 @@ import { haptic } from '@/lib/mobile/haptics';
 import type { Conversation } from '@/components/chat/types';
 import { cn } from '@/lib/utils';
 
-type SwipeableConversationRowProps = {
+type SwipeableArchivedRowProps = {
   conversation: Conversation;
   typingLabel?: string | null;
   online?: boolean;
   onLongPress: () => void;
-  onMarkRead: () => void;
+  onUnarchive: () => void;
   onMute: () => void;
-  onArchive: () => void;
+  onDelete: () => void;
 };
 
-export function SwipeableConversationRow({
+export function SwipeableArchivedRow({
   conversation,
   typingLabel,
   online,
   onLongPress,
-  onMarkRead,
+  onUnarchive,
   onMute,
-  onArchive,
-}: SwipeableConversationRowProps) {
+  onDelete,
+}: SwipeableArchivedRowProps) {
   const t = useTranslations('messages');
-  const unread = conversation.unreadCount ?? 0;
-  const canMarkRead = unread > 0;
   const muted = conversation.muted ?? false;
 
   const {
@@ -53,7 +51,6 @@ export function SwipeableConversationRow({
   } = useSnapSwipeRow({
       rightWidth: SWIPE_ACTION_WIDTH,
       leftWidth: SWIPE_ACTION_WIDTH * 2,
-      enableRight: true,
     });
 
   const longPress = useLongPress(onLongPress);
@@ -67,14 +64,13 @@ export function SwipeableConversationRow({
       <div className="absolute inset-0 flex items-stretch">
         <div className="flex shrink-0 items-stretch" style={{ width: SWIPE_ACTION_WIDTH }}>
           <SwipeActionButton
-            tone={canMarkRead ? 'read' : 'readDisabled'}
-            disabled={!canMarkRead}
-            icon={<CheckCheck />}
-            label={t('read')}
+            tone="unarchive"
+            icon={<ArchiveRestore />}
+            label={t('unarchive')}
             className="w-full"
             onClick={() => {
               haptic('success');
-              runAction(onMarkRead);
+              runAction(onUnarchive);
             }}
           />
         </div>
@@ -90,12 +86,12 @@ export function SwipeableConversationRow({
             }}
           />
           <SwipeActionButton
-            tone="archive"
-            icon={<Archive />}
-            label={t('archive')}
+            tone="delete"
+            icon={<Trash2 />}
+            label={t('deleteChat')}
             onClick={() => {
               haptic('light');
-              runAction(onArchive);
+              runAction(onDelete);
             }}
           />
         </div>
@@ -112,14 +108,15 @@ export function SwipeableConversationRow({
         onClick={() => {
           if (revealed) reset();
         }}
+        layout
+        exit={{ opacity: 0, x: 48, transition: { duration: 0.2 } }}
         {...longPress.bind()}
         className={cn('relative bg-background', dragging && 'shadow-sm', revealed && 'cursor-pointer')}
       >
         <Link
           href={`/messages/${conversation.id}`}
           className={cn(
-            'block border-0 transition-colors duration-200',
-            'hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none',
+            'block border-0 transition-colors hover:bg-muted/70 focus-visible:outline-none',
             (dragging || revealed) && 'pointer-events-none',
           )}
           draggable={false}

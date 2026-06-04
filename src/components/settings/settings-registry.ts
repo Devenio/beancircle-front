@@ -13,6 +13,7 @@ export type SettingsHubItem = {
   id: SettingsSectionId;
   href: string;
   labelKey: string;
+  descriptionKey: string;
 };
 
 export type SettingsHubGroup = {
@@ -27,31 +28,43 @@ export const SETTINGS_HUB_GROUPS: SettingsHubGroup[] = [
     id: 'account-center',
     labelKey: 'navGroups.accountCenter',
     items: [
-      { id: 'account', href: '/settings/account', labelKey: 'sections.account' },
-      { id: 'privacy', href: '/settings/privacy', labelKey: 'sections.privacy' },
-      { id: 'security', href: '/settings/security', labelKey: 'sections.security' },
+      { id: 'account', href: '/settings/account', labelKey: 'sections.account', descriptionKey: 'sections.accountDesc' },
+      { id: 'privacy', href: '/settings/privacy', labelKey: 'sections.privacy', descriptionKey: 'sections.privacyDesc' },
+      { id: 'security', href: '/settings/security', labelKey: 'sections.security', descriptionKey: 'sections.securityDesc' },
     ],
   },
   {
     id: 'preferences',
     labelKey: 'navGroups.preferences',
     items: [
-      { id: 'notifications', href: '/settings/notifications', labelKey: 'sections.notifications' },
-      { id: 'appearance', href: '/settings/appearance', labelKey: 'sections.appearance' },
-      { id: 'chat', href: '/settings/chat', labelKey: 'sections.chat' },
+      {
+        id: 'notifications',
+        href: '/settings/notifications',
+        labelKey: 'sections.notifications',
+        descriptionKey: 'sections.notificationsDesc',
+      },
+      {
+        id: 'appearance',
+        href: '/settings/appearance',
+        labelKey: 'sections.appearance',
+        descriptionKey: 'sections.appearanceDesc',
+      },
+      { id: 'chat', href: '/settings/chat', labelKey: 'sections.chat', descriptionKey: 'sections.chatDesc' },
     ],
   },
   {
     id: 'data',
     labelKey: 'navGroups.data',
-    items: [{ id: 'storage', href: '/settings/storage', labelKey: 'sections.storage' }],
+    items: [
+      { id: 'storage', href: '/settings/storage', labelKey: 'sections.storage', descriptionKey: 'sections.storageDesc' },
+    ],
   },
   {
     id: 'support',
     labelKey: 'navGroups.support',
     items: [
-      { id: 'support', href: '/settings/support', labelKey: 'sections.help' },
-      { id: 'about', href: '/settings/about', labelKey: 'sections.about' },
+      { id: 'support', href: '/settings/support', labelKey: 'sections.help', descriptionKey: 'sections.helpDesc' },
+      { id: 'about', href: '/settings/about', labelKey: 'sections.about', descriptionKey: 'sections.aboutDesc' },
     ],
   },
 ];
@@ -96,6 +109,13 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchItem[] = [
   { id: 'sessions', section: 'security', href: '/settings/security', labelKey: 'items.sessions', descriptionKey: 'items.sessionsDesc', keywords: ['session', 'device', 'logout', 'دستگاه'] },
   { id: 'cache', section: 'storage', href: '/settings/storage', labelKey: 'items.cache', descriptionKey: 'items.cacheDesc', keywords: ['cache', 'clear', 'storage', 'کش'] },
   { id: 'language', section: 'account', href: '/settings/account', labelKey: 'language', descriptionKey: 'items.languageDesc', keywords: ['language', 'locale', 'زبان'] },
+  { id: 'profileVisibility', section: 'privacy', href: '/settings/privacy', labelKey: 'items.profileVisibility', descriptionKey: 'items.profileVisibilityDesc', keywords: ['profile', 'visibility', 'پروفایل'] },
+  { id: 'marketing', section: 'notifications', href: '/settings/notifications', labelKey: 'items.marketing', descriptionKey: 'items.marketingDesc', keywords: ['marketing', 'email', 'بازاریابی'] },
+  { id: 'messageNotifications', section: 'notifications', href: '/settings/notifications', labelKey: 'items.messageNotifications', descriptionKey: 'items.messageNotificationsDesc', keywords: ['message', 'dm', 'پیام'] },
+  { id: 'autoDownload', section: 'chat', href: '/settings/chat', labelKey: 'items.autoDownload', descriptionKey: 'items.autoDownloadDesc', keywords: ['download', 'media', 'wifi', 'دانلود'] },
+  { id: 'typing', section: 'chat', href: '/settings/chat', labelKey: 'items.typingIndicators', descriptionKey: 'items.typingIndicatorsDesc', keywords: ['typing', 'تایپ'] },
+  { id: 'autoCleanup', section: 'storage', href: '/settings/storage', labelKey: 'autoCleanup', descriptionKey: 'autoCleanupDesc', keywords: ['cleanup', 'storage', 'پاک'] },
+  { id: 'density', section: 'appearance', href: '/settings/appearance', labelKey: 'items.messageDensity', descriptionKey: 'items.messageDensityDesc', keywords: ['density', 'spacing', 'تراکم'] },
 ];
 
 export function filterSettingsSearch(query: string) {

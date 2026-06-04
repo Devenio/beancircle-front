@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { ConversationList } from '@/components/chat/conversation-list';
+import { MessagesHub } from '@/components/chat/messages-hub';
 
 export default function MessagesPage() {
   const { locale } = useParams<{ locale: string }>();
-  return <ConversationList locale={locale} />;
+  return <MessagesHub locale={locale} initialTab="chats" />;
 }

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatStore } from '@/stores/chat-store';
+import { useChatArchiveStore } from '@/stores/chat-archive-store';
 import { getSocket } from '@/lib/realtime/socket';
 
 /**
@@ -44,15 +45,22 @@ export function useSocket(onNotification?: (data: unknown) => void) {
       qc.invalidateQueries({ queryKey: ['conversations'] });
     };
 
+    const handleConversationBump = (payload: { conversationId?: string }) => {
+      if (payload?.conversationId) {
+        useChatArchiveStore.getState().maybeAutoUnarchive(payload.conversationId);
+      }
+      handleConversationChanged();
+    };
+
     socket.on('notification:new', handleNotification);
     socket.on('presence', handlePresence);
-    socket.on('conversation:bump', handleConversationChanged);
+    socket.on('conversation:bump', handleConversationBump);
     socket.on('conversation:read', handleConversationChanged);
 
     return () => {
       socket.off('notification:new', handleNotification);
       socket.off('presence', handlePresence);
-      socket.off('conversation:bump', handleConversationChanged);
+      socket.off('conversation:bump', handleConversationBump);
       socket.off('conversation:read', handleConversationChanged);
     };
   }, [qc, setOnline, onNotification]);

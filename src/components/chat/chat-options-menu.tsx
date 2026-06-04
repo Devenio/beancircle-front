@@ -8,6 +8,7 @@ import {
   Eraser,
   Flag,
   MoreVertical,
+  Search,
   User,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -32,7 +33,9 @@ import { cn } from '@/lib/utils';
 
 type ChatOptionsMenuProps = {
   muted?: boolean;
+  searchActive?: boolean;
   onViewProfile: () => void;
+  onOpenSearch: () => void;
   onToggleMute: () => void;
   onBlock: () => void;
   onReport: (reason: string) => void;
@@ -41,7 +44,9 @@ type ChatOptionsMenuProps = {
 
 export function ChatOptionsMenu({
   muted,
+  searchActive,
   onViewProfile,
+  onOpenSearch,
   onToggleMute,
   onBlock,
   onReport,
@@ -67,7 +72,7 @@ export function ChatOptionsMenu({
         >
           <MoreVertical className="size-5" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="bottom" className="w-52">
+        <DropdownMenuContent align="end" side="bottom" className="w-56">
           <DropdownMenuItem
             onClick={() => {
               closeMenu();
@@ -77,6 +82,17 @@ export function ChatOptionsMenu({
             <User className="size-4" />
             {t('viewProfile')}
           </DropdownMenuItem>
+          {!searchActive ? (
+            <DropdownMenuItem
+              onClick={() => {
+                closeMenu();
+                onOpenSearch();
+              }}
+            >
+              <Search className="size-4" />
+              {t('searchInChat')}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             onClick={() => {
               closeMenu();

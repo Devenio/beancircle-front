@@ -45,9 +45,19 @@ function SettingsHubContent() {
           <SettingsSectionLabel>{t('quickLinks')}</SettingsSectionLabel>
           <SettingsList>
             {user?.role === 'ADMIN' ? (
-              <SettingsRow label="Admin panel" href="/admin" />
+              <SettingsRow
+                label={t('adminPanel')}
+                description={t('adminPanelDesc')}
+                href="/admin"
+                icon={<LayoutDashboard className="size-5" />}
+              />
             ) : null}
-            <SettingsRow label={t('ownerDashboard')} href="/owner" icon={<LayoutDashboard className="size-5" />} />
+            <SettingsRow
+              label={t('ownerDashboard')}
+              description={t('ownerDashboardDesc')}
+              href="/owner"
+              icon={<LayoutDashboard className="size-5" />}
+            />
           </SettingsList>
         </>
       )}
@@ -57,16 +67,22 @@ function SettingsHubContent() {
       </div>
 
       <SettingsList className="mt-2">
-        <SettingsRow label={t('giftCoffee')} href="/gift" icon={<Gift className="size-5" />} />
+        <SettingsRow
+          label={t('giftCoffee')}
+          description={t('giftCoffeeDesc')}
+          href="/gift"
+          icon={<Gift className="size-5" />}
+        />
       </SettingsList>
 
       <div className="mt-6 px-4 pb-8">
         <button
           type="button"
           onClick={handleLogout}
-          className="min-h-[52px] w-full text-[15px] font-medium text-destructive active:opacity-70"
+          className="min-h-[52px] w-full text-start active:opacity-70"
         >
-          {t('logout')}
+          <span className="block text-[15px] font-medium text-destructive">{t('logout')}</span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">{t('logoutHint')}</span>
         </button>
       </div>
     </div>

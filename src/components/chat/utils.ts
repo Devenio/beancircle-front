@@ -20,6 +20,49 @@ export type MessageValidationResult =
   | { valid: true }
   | { valid: false; reason: 'empty' | 'spam' };
 
+export type PresenceStatusTone = 'typing' | 'online' | 'offline';
+
+/** Maps presence state to a translation key + optional params (messages namespace). */
+export function resolvePresenceStatus(
+  opts: {
+    online?: boolean;
+    typingUsername?: string | null;
+    lastSeenAt?: string | null;
+    lastSeenHidden?: boolean;
+    locale?: string;
+  },
+): { tone: PresenceStatusTone; key: string; params?: Record<string, string | number> } {
+  if (opts.typingUsername) {
+    return { tone: 'typing', key: 'typing', params: { name: opts.typingUsername } };
+  }
+  if (opts.online) {
+    return { tone: 'online', key: 'online' };
+  }
+
+  const lastSeenKey = formatLastSeen(opts.lastSeenAt, opts.lastSeenHidden, opts.locale);
+  if (lastSeenKey === 'recently') return { tone: 'offline', key: 'lastSeenRecently' };
+  if (lastSeenKey === 'just_now') return { tone: 'offline', key: 'lastSeenJustNow' };
+  if (lastSeenKey === 'yesterday') return { tone: 'offline', key: 'lastSeenYesterday' };
+  if (lastSeenKey?.startsWith('today:')) {
+    return {
+      tone: 'offline',
+      key: 'lastSeenToday',
+      params: { time: lastSeenKey.split(':')[1] ?? '' },
+    };
+  }
+  if (lastSeenKey?.endsWith('m')) {
+    return {
+      tone: 'offline',
+      key: 'lastSeenMinutes',
+      params: { count: parseInt(lastSeenKey, 10) || 0 },
+    };
+  }
+  if (lastSeenKey) {
+    return { tone: 'offline', key: 'lastSeenDate', params: { date: lastSeenKey } };
+  }
+  return { tone: 'offline', key: 'lastSeenRecently' };
+}
+
 export function formatLastSeen(
   lastSeenAt: string | null | undefined,
   hidden?: boolean,
@@ -55,6 +98,22 @@ export function formatLastSeen(
 
 export function formatTime(value: string) {
   return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/** Short label for conversation list rows (today → time, else date). */
+export function formatConversationTimestamp(iso?: string): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) {
+    return formatTime(iso);
+  }
+  if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  }
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export function formatDateLabel(value: string) {

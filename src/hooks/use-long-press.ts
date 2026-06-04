@@ -75,11 +75,6 @@ export function useLongPress(
       },
       onMouseUp: end,
       onMouseLeave: end,
-      onContextMenu: (e: React.MouseEvent) => {
-        e.preventDefault();
-        if (hapticOnTrigger) haptic('medium');
-        onLongPress();
-      },
     }),
     [end, hapticOnTrigger, move, onLongPress, start],
   );

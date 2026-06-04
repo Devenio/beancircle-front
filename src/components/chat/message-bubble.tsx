@@ -76,6 +76,7 @@ export function MessageBubble({
 
   const longPress = useLongPress(
     () => {
+      if (!coarse) return;
       haptic('medium');
       onOpenActions();
     },
@@ -86,7 +87,7 @@ export function MessageBubble({
     () => {
       haptic('medium');
       if (isMedia) onOpenMedia?.();
-      else onOpenActions();
+      else if (coarse) onOpenActions();
     },
     { delay: 400 },
   );
@@ -142,22 +143,28 @@ export function MessageBubble({
         animate={{ opacity: pending === 'sending' ? 0.7 : 1, y: 0, scale: 1 }}
         transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
         {...(isMedia ? mediaLongPress.bind() : longPress.bind())}
-        onClick={() => {
-          if (coarse) return;
-          if (isMedia) onOpenMedia?.();
-          else onOpenActions();
-        }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpenActions();
-          }
-        }}
+        onClick={
+          isMedia && !coarse
+            ? () => {
+                onOpenMedia?.();
+              }
+            : undefined
+        }
+        role={isMedia ? 'button' : undefined}
+        tabIndex={isMedia ? 0 : undefined}
+        onKeyDown={
+          isMedia
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOpenMedia?.();
+                }
+              }
+            : undefined
+        }
         className={cn(
           'group w-full px-3 py-2 text-left transition-shadow duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          isMedia && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           bubbleRadius(isMine, position),
           isMine ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-foreground',
           pending === 'failed' && 'border border-destructive/40 bg-destructive/10 text-destructive',

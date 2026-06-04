@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { ArrowDown, Check, Loader2, Search } from 'lucide-react';
+import { ArrowDown, Check, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChatHeader } from '@/components/chat/chat-header';
 import { ChatComposer } from '@/components/chat/composer';
@@ -101,6 +101,12 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   useEffect(() => {
     setSearchIndex(0);
   }, [searchQuery]);
+
+  const closeChatSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSearchIndex(0);
+  }, []);
 
   const scrollToSearchMatch = useCallback(
     (index: number) => {
@@ -270,7 +276,9 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         lastSeenAt={peerLastSeen}
         lastSeenHidden={peerLastSeenHidden}
         muted={room.muted}
+        searchOpen={searchOpen}
         onOpenProfile={() => setProfileOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
         onToggleMute={() => void room.toggleMute()}
         onBlock={() => void room.blockPeer()}
         onReport={(reason) => void room.reportPeer(reason)}
@@ -281,6 +289,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         <MessageSearchBar
           query={searchQuery}
           onQueryChange={setSearchQuery}
+          onClose={closeChatSearch}
           matchCount={searchMatches.length}
           activeIndex={searchIndex}
           onNext={() => setSearchIndex((i) => (i + 1) % Math.max(searchMatches.length, 1))}
@@ -289,19 +298,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           }
         />
       ) : null}
-
-      <div className="absolute right-3 top-[max(3.5rem,calc(env(safe-area-inset-top)+3rem))] z-30">
-        <Button
-          type="button"
-          size="icon-sm"
-          variant={searchOpen ? 'default' : 'secondary'}
-          className="rounded-full shadow-sm"
-          onClick={() => setSearchOpen((v) => !v)}
-          aria-label={t('searchInChat')}
-        >
-          <Search className="size-4" />
-        </Button>
-      </div>
 
       {pinnedPreview ? (
         <PinnedMessageBanner preview={pinnedPreview} scrollContainerRef={room.listRef} />

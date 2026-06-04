@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { AtSign, Globe } from 'lucide-react';
+import { AtSign, Globe, Mail, Phone, Plug } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
@@ -20,7 +20,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { Plug } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Me = {
@@ -30,6 +29,15 @@ type Me = {
   email?: string | null;
   phone?: string | null;
 };
+
+function FieldLabel({ label, hint }: { label: string; hint: string }) {
+  return (
+    <div className="mb-1">
+      <span className="block text-[15px] text-foreground">{label}</span>
+      <span className="mt-0.5 block text-xs text-muted-foreground">{hint}</span>
+    </div>
+  );
+}
 
 export default function SettingsAccountPage() {
   const t = useTranslations('settings');
@@ -79,21 +87,22 @@ export default function SettingsAccountPage() {
   return (
     <SettingsScreen title={t('sections.account')}>
       <SettingsSectionLabel>{t('items.profile')}</SettingsSectionLabel>
-      <div className="space-y-3 border-y border-border/80 bg-card px-4 py-4">
+      <p className="px-4 pb-2 text-xs text-muted-foreground">{t('items.profileDesc')}</p>
+      <div className="space-y-4 border-y border-border/80 bg-card px-4 py-4">
         <div>
-          <label className="text-xs text-muted-foreground">{t('displayName')}</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 min-h-11" />
+          <FieldLabel label={t('displayName')} hint={t('items.profileDesc')} />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="min-h-11" />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">{t('items.username')}</label>
-          <div className="relative mt-1">
+          <FieldLabel label={t('items.username')} hint={t('items.usernameDesc')} />
+          <div className="relative">
             <AtSign className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={username} onChange={(e) => setUsername(e.target.value)} className="min-h-11 ps-9" />
           </div>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">{t('bio')}</label>
-          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" />
+          <FieldLabel label={t('bio')} hint={t('items.profileDesc')} />
+          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
         </div>
         <Button className="min-h-11 w-full" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
           {saveMutation.isPending ? t('saving') : t('saveChanges')}
@@ -102,8 +111,20 @@ export default function SettingsAccountPage() {
 
       <SettingsSectionLabel>{t('contactInfo')}</SettingsSectionLabel>
       <SettingsList>
-        <SettingsRow label={t('items.email')} value={me?.email ?? t('notSet')} showChevron={false} />
-        <SettingsRow label={t('items.phone')} value={me?.phone ?? t('notSet')} showChevron={false} />
+        <SettingsRow
+          icon={<Mail className="size-5" />}
+          label={t('items.email')}
+          description={t('items.emailDesc')}
+          value={me?.email ?? t('notSet')}
+          showChevron={false}
+        />
+        <SettingsRow
+          icon={<Phone className="size-5" />}
+          label={t('items.phone')}
+          description={t('items.phoneDesc')}
+          value={me?.phone ?? t('notSet')}
+          showChevron={false}
+        />
       </SettingsList>
 
       <SettingsSectionLabel>{t('items.connectedAccounts')}</SettingsSectionLabel>
@@ -117,6 +138,7 @@ export default function SettingsAccountPage() {
             <EmptyDescription>{t('empty.connectedBody')}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
+            <p className="mb-3 text-center text-xs text-muted-foreground">{t('hints.connectGoogleSoon')}</p>
             <Button variant="outline" className="min-h-11" disabled>
               {t('connectGoogle')}
             </Button>
@@ -125,24 +147,31 @@ export default function SettingsAccountPage() {
       </div>
 
       <SettingsSectionLabel>{t('language')}</SettingsSectionLabel>
+      <p className="px-4 pb-1 text-xs text-muted-foreground">{t('items.languageDesc')}</p>
       <SettingsList>
         <button
           type="button"
           onClick={() => switchLocale('fa')}
-          className="flex min-h-[52px] w-full items-center gap-2 px-4 text-[15px] active:bg-muted/80"
+          className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-start active:bg-muted/80"
         >
-          <Globe className="size-5" />
-          فارسی
-          {locale === 'fa' ? <span className="ms-auto text-primary">✓</span> : null}
+          <Globe className="size-5 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px]">فارسی</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{t('languageFaDesc')}</span>
+          </span>
+          {locale === 'fa' ? <span className="text-primary">✓</span> : null}
         </button>
         <button
           type="button"
           onClick={() => switchLocale('en')}
-          className="flex min-h-[52px] w-full items-center gap-2 px-4 text-[15px] active:bg-muted/80"
+          className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-start active:bg-muted/80"
         >
-          <Globe className="size-5" />
-          English
-          {locale === 'en' ? <span className="ms-auto text-primary">✓</span> : null}
+          <Globe className="size-5 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px]">English</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{t('languageEnDesc')}</span>
+          </span>
+          {locale === 'en' ? <span className="text-primary">✓</span> : null}
         </button>
       </SettingsList>
     </SettingsScreen>

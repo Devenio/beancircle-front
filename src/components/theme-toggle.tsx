@@ -24,19 +24,21 @@ export function ThemeToggle() {
   }
 
   const options = [
-    { value: 'light', label: t('themeLight'), icon: Sun },
-    { value: 'dark', label: t('themeDark'), icon: Moon },
-    { value: 'system', label: t('themeSystem'), icon: Monitor },
+    { value: 'light', label: t('themeLight'), hint: t('themeLightDesc'), icon: Sun },
+    { value: 'dark', label: t('themeDark'), hint: t('themeDarkDesc'), icon: Moon },
+    { value: 'system', label: t('themeSystem'), hint: t('themeSystemDesc'), icon: Monitor },
   ] as const;
 
   return (
     <div className="flex w-full">
-      {options.map(({ value, label, icon: Icon }) => (
+      {options.map(({ value, label, hint, icon: Icon }) => (
         <button
           key={value}
           type="button"
           onClick={() => setTheme(value)}
-          className={`flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
+          title={hint}
+          aria-label={`${label}. ${hint}`}
+          className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium transition-colors ${
             theme === value ? 'text-primary' : 'text-muted-foreground active:bg-muted/60'
           }`}
         >

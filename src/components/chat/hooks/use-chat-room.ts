@@ -22,6 +22,7 @@ import {
   validateMessageText,
 } from '@/components/chat/utils';
 import { haptic } from '@/lib/mobile/haptics';
+import { useChatArchiveStore } from '@/stores/chat-archive-store';
 
 const LIVE_CHAT_STORAGE_KEY = 'messages.live.enabled';
 const draftStorageKey = (conversationId: string) => `chat.draft.${conversationId}`;
@@ -107,24 +108,58 @@ export function useChatRoom(conversationId: string, locale: string) {
       }),
   });
 
+  const { data: conversations } = useQuery({
+    queryKey: ['conversations', locale],
+    queryFn: () => api<Conversation[]>('/conversations', { locale }),
+  });
+
   const currentUserId = me?.id;
   const currentUsername = me?.username ?? localUsername;
 
   const peer = useMemo(() => {
-    const all = data?.data ?? [];
-    return all.find((item) => item.sender.id && item.sender.id !== currentUserId)
-      ?.sender;
-  }, [data?.data, currentUserId]);
+    const fromMessages = (data?.data ?? []).find(
+      (item) => item.sender.id && item.sender.id !== currentUserId,
+    )?.sender;
+    if (fromMessages) return fromMessages;
+    const conv = conversations?.find((c) => c.id === conversationId);
+    return conv?.otherMember;
+  }, [conversationId, conversations, currentUserId, data?.data]);
+
+  const refreshPeerPresence = useCallback(async () => {
+    if (!peer?.id) return;
+    try {
+      const p = await api<{
+        online: boolean;
+        lastSeenAt: string | null;
+        hidden?: boolean;
+      }>(`/users/${peer.id}/presence`, { locale });
+      setPeerPresence({
+        online: p.online,
+        lastSeenAt: p.lastSeenAt,
+        hidden: p.hidden,
+      });
+      const { setOnline, setLastSeen } = useChatStore.getState();
+      setOnline(peer.id, p.online, p.lastSeenAt);
+      if (!p.online && p.lastSeenAt) {
+        setLastSeen(peer.id, p.lastSeenAt, p.hidden);
+      } else if (p.hidden) {
+        setLastSeen(peer.id, null, true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [locale, peer?.id]);
 
   useEffect(() => {
-    if (!peer?.id) return;
-    void api<{ online: boolean; lastSeenAt: string | null; hidden?: boolean }>(
-      `/users/${peer.id}/presence`,
-      { locale },
-    )
-      .then(setPeerPresence)
-      .catch(() => undefined);
-  }, [peer?.id, locale]);
+    useChatArchiveStore.getState().recordOpened(conversationId);
+    useChatArchiveStore.getState().clearForceUnread(conversationId);
+  }, [conversationId]);
+
+  useEffect(() => {
+    void refreshPeerPresence();
+    const timer = setInterval(() => void refreshPeerPresence(), 30_000);
+    return () => clearInterval(timer);
+  }, [refreshPeerPresence]);
 
   // Capture the server read cursor at entry time (for the jump-to-unread divider)
   // before we mark the thread as read.

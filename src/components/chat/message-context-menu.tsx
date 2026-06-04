@@ -49,13 +49,13 @@ export function MessageContextMenu({
   return (
     <ContextMenu>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <div className="flex items-center justify-between gap-0.5 px-1 py-1.5">
+      <ContextMenuContent className="w-56">
+        <div className="flex items-center justify-between gap-1 px-1 py-2">
           {REACTIONS.map((emoji) => (
             <button
               key={emoji}
               type="button"
-              className="flex size-8 items-center justify-center rounded-md text-base transition-colors hover:bg-accent"
+              className="flex size-10 items-center justify-center rounded-md text-lg transition-colors hover:bg-accent active:scale-95"
               onClick={() => onReact(emoji)}
               aria-label={`React with ${emoji}`}
             >

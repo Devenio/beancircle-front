@@ -2,11 +2,20 @@
 
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import { Clock, Eye, ShieldBan, UserCircle } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { SettingsScreen } from '@/components/settings/settings-shell';
-import { SettingsList, SettingsRow, SettingsSectionLabel, SettingsToggleRow } from '@/components/settings/settings-row';
+import {
+  SettingsFieldHeader,
+  SettingsLearnMore,
+  SettingsList,
+  SettingsRow,
+  SettingsSectionLabel,
+  SettingsToggleRow,
+} from '@/components/settings/settings-row';
 import { SettingsVisibilityPicker } from '@/components/settings/settings-visibility-picker';
 import { useBlockedUsers, useMutedUsers, useSettingsApi } from '@/hooks/use-settings-api';
+import { visibilityActiveHint, readReceiptsHint } from '@/lib/settings-hints';
 import { ProfileAvatar } from '@/components/chat/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -45,21 +54,36 @@ export default function SettingsPrivacyPage() {
       <SettingsSectionLabel>{t('whoCanSee')}</SettingsSectionLabel>
       <SettingsList>
         <div>
-          <SettingsRow label={t('items.lastSeen')} showChevron={false} />
+          <SettingsFieldHeader
+            icon={<Clock className="size-5" />}
+            label={t('items.lastSeen')}
+            description={visibilityActiveHint(t, 'lastSeen', settings.lastSeenVisibility)}
+            learnMore={
+              <SettingsLearnMore label={t('learnMore')}>{t('learnMoreCopy.visibility')}</SettingsLearnMore>
+            }
+          />
           <SettingsVisibilityPicker
             value={settings.lastSeenVisibility}
             onChange={(v) => setVisibility('lastSeenVisibility', v)}
           />
         </div>
         <div>
-          <SettingsRow label={t('items.onlineStatus')} showChevron={false} />
+          <SettingsFieldHeader
+            icon={<Eye className="size-5" />}
+            label={t('items.onlineStatus')}
+            description={visibilityActiveHint(t, 'onlineStatus', settings.onlineStatusVisibility)}
+          />
           <SettingsVisibilityPicker
             value={settings.onlineStatusVisibility}
             onChange={(v) => setVisibility('onlineStatusVisibility', v)}
           />
         </div>
         <div>
-          <SettingsRow label={t('items.profileVisibility')} showChevron={false} />
+          <SettingsFieldHeader
+            icon={<UserCircle className="size-5" />}
+            label={t('items.profileVisibility')}
+            description={visibilityActiveHint(t, 'profileVisibility', settings.profileVisibility)}
+          />
           <SettingsVisibilityPicker
             value={settings.profileVisibility}
             onChange={(v) => setVisibility('profileVisibility', v)}
@@ -71,9 +95,12 @@ export default function SettingsPrivacyPage() {
       <SettingsList>
         <SettingsToggleRow
           label={t('items.readReceipts')}
-          description={t('items.readReceiptsDesc')}
+          description={readReceiptsHint(t, settings.readReceipts)}
           checked={settings.readReceipts}
           onCheckedChange={(v) => update({ readReceipts: v })}
+          learnMore={
+            <SettingsLearnMore label={t('learnMore')}>{t('learnMoreCopy.readReceipts')}</SettingsLearnMore>
+          }
         />
       </SettingsList>
 
@@ -91,19 +118,25 @@ export default function SettingsPrivacyPage() {
               </div>
               <button
                 type="button"
-                className="text-sm font-medium text-primary"
+                className="text-end text-sm font-medium text-primary"
                 onClick={() => unblock.mutate(u.id)}
+                title={t('unblockHint')}
               >
                 {t('unblock')}
               </button>
             </div>
           ))
         ) : (
-          <SettingsRow label={t('empty.blockedTitle')} description={t('empty.blockedBody')} showChevron={false} />
+          <SettingsRow
+            label={t('empty.blockedTitle')}
+            description={t('empty.blockedBody')}
+            showChevron={false}
+          />
         )}
       </SettingsList>
 
       <SettingsSectionLabel>{t('items.muted')}</SettingsSectionLabel>
+      <p className="px-4 pb-1 text-xs text-muted-foreground">{t('items.mutedDesc')}</p>
       <SettingsList>
         {muted.isLoading ? (
           <Skeleton className="m-4 h-12 rounded-lg" />
@@ -113,13 +146,18 @@ export default function SettingsPrivacyPage() {
               key={u.id}
               href={`/messages/${u.conversationId}`}
               label={u.name ?? u.username ?? ''}
-              value={u.username ? `@${u.username}` : undefined}
+              description={u.username ? `@${u.username}` : undefined}
             />
           ))
         ) : (
           <SettingsRow label={t('empty.mutedTitle')} description={t('empty.mutedBody')} showChevron={false} />
         )}
-        <SettingsRow label={t('items.reporting')} href="/settings/support" />
+        <SettingsRow
+          label={t('items.reporting')}
+          description={t('items.reportingDesc')}
+          href="/settings/support"
+          icon={<ShieldBan className="size-5" />}
+        />
       </SettingsList>
     </SettingsScreen>
   );

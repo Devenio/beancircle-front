@@ -14,7 +14,12 @@ export function SettingsHubMenu() {
           <SettingsSectionLabel>{t(group.labelKey)}</SettingsSectionLabel>
           <SettingsList>
             {group.items.map((item) => (
-              <SettingsRow key={item.id} href={item.href} label={t(item.labelKey)} />
+              <SettingsRow
+                key={item.id}
+                href={item.href}
+                label={t(item.labelKey)}
+                description={t(item.descriptionKey)}
+              />
             ))}
           </SettingsList>
         </section>

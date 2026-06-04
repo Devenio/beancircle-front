@@ -2,12 +2,19 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { HardDrive, Trash2 } from 'lucide-react';
 import { SettingsScreen } from '@/components/settings/settings-shell';
-import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
+import {
+  SettingsFieldHeader,
+  SettingsLearnMore,
+  SettingsList,
+  SettingsOptionRow,
+  SettingsRow,
+  SettingsSectionLabel,
+} from '@/components/settings/settings-row';
 import { useSettingsApi } from '@/hooks/use-settings-api';
 import { estimateStorageUsage } from '@/stores/settings-store';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -15,13 +22,16 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function StorageBar({ label, value, total }: { label: string; value: number; total: number }) {
+function StorageBar({ label, hint, value, total }: { label: string; hint: string; value: number; total: number }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div className="px-4 py-3">
-      <div className="flex justify-between text-sm">
-        <span>{label}</span>
-        <span className="text-muted-foreground">
+      <div className="flex justify-between gap-2 text-sm">
+        <div className="min-w-0">
+          <span className="block">{label}</span>
+          <span className="text-xs text-muted-foreground">{hint}</span>
+        </div>
+        <span className="shrink-0 text-muted-foreground">
           {formatBytes(value)} · {pct}%
         </span>
       </div>
@@ -56,36 +66,53 @@ export default function SettingsStoragePage() {
   return (
     <SettingsScreen title={t('sections.storage')}>
       <div className="border-b border-border/80 bg-card">
-        <div className="px-4 py-4">
-          <p className="text-sm text-muted-foreground">{t('totalStorage')}</p>
-          <p className="text-2xl font-semibold">{formatBytes(usage.total)}</p>
-        </div>
-        <StorageBar label={t('storageImages')} value={usage.images} total={usage.total} />
-        <StorageBar label={t('storageVideos')} value={usage.videos} total={usage.total} />
-        <StorageBar label={t('storageFiles')} value={usage.files} total={usage.total} />
-        <StorageBar label={t('storageCache')} value={usage.cache} total={usage.total} />
+        <SettingsFieldHeader
+          icon={<HardDrive className="size-5" />}
+          label={t('totalStorage')}
+          description={t('totalStorageDesc')}
+          className="pb-2"
+        />
+        <p className="px-4 pb-4 text-2xl font-semibold">{formatBytes(usage.total)}</p>
+        <StorageBar label={t('storageImages')} hint={t('storageImagesDesc')} value={usage.images} total={usage.total} />
+        <StorageBar label={t('storageVideos')} hint={t('storageVideosDesc')} value={usage.videos} total={usage.total} />
+        <StorageBar label={t('storageFiles')} hint={t('storageFilesDesc')} value={usage.files} total={usage.total} />
+        <StorageBar label={t('storageCache')} hint={t('storageCacheDesc')} value={usage.cache} total={usage.total} />
       </div>
 
       <SettingsSectionLabel>{t('actions')}</SettingsSectionLabel>
       <SettingsList>
-        <SettingsRow label={t('clearCache')} onClick={clearLocalCache} />
-        <SettingsRow label={t('removeDownloads')} onClick={clearLocalCache} />
+        <SettingsRow
+          icon={<Trash2 className="size-5" />}
+          label={t('clearCache')}
+          description={t('clearCacheDesc')}
+          onClick={clearLocalCache}
+        />
+        <SettingsRow
+          label={t('removeDownloads')}
+          description={t('removeDownloadsDesc')}
+          onClick={clearLocalCache}
+        />
       </SettingsList>
+      <p className="px-4 pt-1 text-xs text-muted-foreground">{t('hints.clearCacheConfirm')}</p>
 
       <SettingsSectionLabel>{t('autoCleanup')}</SettingsSectionLabel>
+      <SettingsFieldHeader
+        label={t('autoCleanup')}
+        description={t('autoCleanupDesc')}
+        learnMore={
+          <SettingsLearnMore label={t('learnMore')}>{t('learnMoreCopy.autoCleanup')}</SettingsLearnMore>
+        }
+        className="border-b border-border/80 bg-card"
+      />
       <SettingsList>
-        {[7, 30, 90].map((days) => (
-          <button
+        {([7, 30, 90] as const).map((days) => (
+          <SettingsOptionRow
             key={days}
-            type="button"
+            label={t('autoCleanupDays', { days })}
+            description={t(`autoCleanupHints.${days}`)}
+            selected={settings.autoCleanupDays === days}
             onClick={() => update({ autoCleanupDays: days })}
-            className={cn(
-              'flex min-h-[52px] w-full items-center px-4 text-[15px] active:bg-muted/80',
-              settings.autoCleanupDays === days && 'font-semibold text-primary',
-            )}
-          >
-            {t('autoCleanupDays', { days })}
-          </button>
+          />
         ))}
       </SettingsList>
     </SettingsScreen>

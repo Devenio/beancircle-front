@@ -8,6 +8,8 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api/client';
 import type { Conversation } from '@/components/chat/types';
+import { useChatArchiveStore } from '@/stores/chat-archive-store';
+import { getDisplayUnread } from '@/stores/chat-archive-store';
 
 const tabs = [
   { href: '/', icon: Home, key: 'home' as const },
@@ -21,15 +23,17 @@ export function BottomNav() {
   const t = useTranslations('nav');
   const locale = useLocale();
   const pathname = usePathname();
+  const archivedAt = useChatArchiveStore((s) => s.archivedAt);
   const { data: conversations } = useQuery({
     queryKey: ['conversations', locale],
     queryFn: () => api<Conversation[]>('/conversations', { locale }),
     staleTime: 30_000,
   });
-  const totalUnread = (conversations ?? []).reduce(
-    (sum, c) => sum + (c.muted ? 0 : c.unreadCount ?? 0),
-    0,
-  );
+  const totalUnread = (conversations ?? []).reduce((sum, c) => {
+    if (archivedAt[c.id]) return sum;
+    const unread = getDisplayUnread(c.id, c.unreadCount ?? 0);
+    return sum + (c.muted ? 0 : unread);
+  }, 0);
 
   return (
     <nav className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[430px] -translate-x-1/2 items-center justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-md">

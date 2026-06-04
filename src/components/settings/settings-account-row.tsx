@@ -41,9 +41,12 @@ export function SettingsAccountRow({ locale }: { locale: string }) {
       <ProfileAvatar src={me?.avatarUrl} name={me?.name ?? me?.username} className="size-14" />
       <span className="min-w-0 flex-1 text-start">
         <span className="block text-[15px] font-semibold">{me?.name ?? t('addYourName')}</span>
-        <span className="mt-0.5 block text-sm text-muted-foreground">
+        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
           {me?.username ? `@${me.username}` : t('accountsCenterHint')}
         </span>
+        {!me?.username ? (
+          <span className="mt-0.5 block text-xs text-muted-foreground/90">{t('sections.accountDesc')}</span>
+        ) : null}
       </span>
       <ChevronRight className="size-[18px] shrink-0 text-muted-foreground/80 rtl:rotate-180" strokeWidth={2} />
     </Link>
