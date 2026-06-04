@@ -21,7 +21,7 @@ import { VirtualMessageList } from '@/components/chat/virtual-message-list';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, Conversation, PendingMessage } from '@/components/chat/types';
-import { groupMessagesBySenderAndDate, isMineMessage, messagePreview } from '@/components/chat/utils';
+import { groupMessagesBySenderAndDate, isMineMessage } from '@/components/chat/utils';
 import {
   Dialog,
   DialogContent,
@@ -142,11 +142,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       clearTimeout(timer);
     };
   }, [room.listRef, room.acknowledgeUnread, room.hasOlderMessages, room.isFetchingOlder, room.loadOlderMessages]);
-
-  const pinnedPreview =
-    room.pinnedMessages.length > 0
-      ? messagePreview(room.pinnedMessages[room.pinnedMessages.length - 1])
-      : undefined;
 
   const copyMessage = (msg: ChatMessage | PendingMessage) => {
     const text =
@@ -299,8 +294,19 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         />
       ) : null}
 
-      {pinnedPreview ? (
-        <PinnedMessageBanner preview={pinnedPreview} scrollContainerRef={room.listRef} />
+      {room.pinnedMessages.length > 0 ? (
+        <PinnedMessageBanner
+          messages={room.pinnedMessages}
+          currentUserId={room.currentUserId}
+          scrollContainerRef={room.listRef}
+          onJumpToMessage={(messageId) => {
+            const el = room.listRef.current?.querySelector(`[data-message-id="${messageId}"]`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          onUnpin={(messageId) =>
+            room.pinMutation.mutate({ messageId, pinned: false })
+          }
+        />
       ) : null}
 
       <div
