@@ -218,8 +218,6 @@ export function useChatRoom(conversationId: string, locale: string) {
     if (!cursor || loadingOlderRef.current) return;
     loadingOlderRef.current = true;
     setIsFetchingOlder(true);
-    const node = listRef.current;
-    const prevHeight = node?.scrollHeight ?? 0;
     try {
       const res = await api<MessageListResponse>(
         `/conversations/${conversationId}/messages?cursor=${encodeURIComponent(cursor)}`,
@@ -233,11 +231,6 @@ export function useChatRoom(conversationId: string, locale: string) {
           data: [...older, ...prev.data],
           nextCursor: res.nextCursor ?? null,
         };
-      });
-      requestAnimationFrame(() => {
-        if (!node) return;
-        const delta = node.scrollHeight - prevHeight;
-        node.scrollTop += delta;
       });
     } finally {
       loadingOlderRef.current = false;

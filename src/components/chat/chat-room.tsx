@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ArrowDown, Check, Loader2 } from 'lucide-react';
@@ -21,6 +21,7 @@ import { MessageSearchBar } from '@/components/chat/message-search-bar';
 import { MessageSelectionHeader } from '@/components/chat/message-selection-header';
 import { MessageSelectionBar } from '@/components/chat/message-selection-bar';
 import { VirtualMessageList } from '@/components/chat/virtual-message-list';
+import type { VirtualMessageListHandlers } from '@/components/chat/virtual-message-row';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, Conversation, PendingMessage } from '@/components/chat/types';
@@ -72,8 +73,19 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
-  const [listScrolling, setListScrolling] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const isNearBottomRef = useRef(true);
+  const scrollRafRef = useRef<number | null>(null);
+  const messageHandlersRef = useRef<VirtualMessageListHandlers>({
+    onReply: () => {},
+    onOpenActions: () => {},
+    onCopy: () => {},
+    onForward: () => {},
+    onEdit: () => {},
+    onDelete: () => {},
+    onPin: () => {},
+    onReact: () => {},
+  });
   const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{
     url: string;
@@ -191,27 +203,43 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
 
   useEffect(() => {
     setIsNearBottom(true);
+    isNearBottomRef.current = true;
   }, [conversationId]);
 
   useEffect(() => {
     const node = room.listRef.current;
     if (!node) return;
-    let timer: ReturnType<typeof setTimeout>;
+    let scrollClassTimer: ReturnType<typeof setTimeout>;
     const onScroll = () => {
-      setListScrolling(true);
-      clearTimeout(timer);
-      timer = setTimeout(() => setListScrolling(false), 800);
-      const nearBottom = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
-      setIsNearBottom(nearBottom);
-      if (nearBottom) room.acknowledgeUnread();
-      if (node.scrollTop < 80 && room.hasOlderMessages && !room.isFetchingOlder) {
-        void room.loadOlderMessages();
-      }
+      node.classList.add('is-scrolling');
+      clearTimeout(scrollClassTimer);
+      scrollClassTimer = setTimeout(() => node.classList.remove('is-scrolling'), 800);
+
+      if (scrollRafRef.current !== null) return;
+      scrollRafRef.current = window.requestAnimationFrame(() => {
+        scrollRafRef.current = null;
+        const current = room.listRef.current;
+        if (!current) return;
+
+        const nearBottom =
+          current.scrollHeight - current.scrollTop - current.clientHeight < 80;
+        if (nearBottom !== isNearBottomRef.current) {
+          isNearBottomRef.current = nearBottom;
+          setIsNearBottom(nearBottom);
+        }
+        if (nearBottom) room.acknowledgeUnread();
+        if (current.scrollTop < 80 && room.hasOlderMessages && !room.isFetchingOlder) {
+          void room.loadOlderMessages();
+        }
+      });
     };
     node.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       node.removeEventListener('scroll', onScroll);
-      clearTimeout(timer);
+      clearTimeout(scrollClassTimer);
+      if (scrollRafRef.current !== null) {
+        window.cancelAnimationFrame(scrollRafRef.current);
+      }
     };
   }, [room.listRef, room.acknowledgeUnread, room.hasOlderMessages, room.isFetchingOlder, room.loadOlderMessages]);
 
@@ -413,6 +441,33 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     void room.reportPeer('Reported from chat profile');
   };
 
+  messageHandlersRef.current = {
+    onReply: room.setReplyTo,
+    onOpenActions: (msg) => {
+      if (selectionMode) toggleSelectMessage(msg);
+      else setActiveMessage(msg);
+    },
+    onCopy: copyMessage,
+    onForward: openForward,
+    onEdit: (msg) => {
+      if ('clientId' in msg) return;
+      setEditingMessageId(msg.id);
+      setEditingDraft(msg.body ?? '');
+    },
+    onDelete: openDeleteMessage,
+    onPin: (msg) => {
+      if ('clientId' in msg) return;
+      room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned });
+    },
+    onReact: (msg, emoji) => {
+      if ('clientId' in msg) return;
+      room.toggleReaction(msg.id, emoji);
+    },
+    onOpenMedia: openMediaViewer,
+    onToggleSelect: toggleSelectMessage,
+    onEnterSelection: enterSelection,
+  };
+
   return (
     <div className="flex h-dvh flex-col bg-background">
       {selectionMode ? (
@@ -477,7 +532,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           ref={room.listRef}
           className={cn(
             'relative h-full overflow-y-auto overscroll-contain px-3 py-3 chat-scrollbar',
-            listScrolling && 'is-scrolling',
           )}
         >
         {/* Self-contained wallpaper (never 404s): layered gradients + dot grid. */}
@@ -523,28 +577,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               loadingOlder={room.isFetchingOlder}
               selectionMode={selectionMode}
               selectedIds={selectedIds}
-              onToggleSelect={toggleSelectMessage}
-              onEnterSelection={enterSelection}
-              onReply={room.setReplyTo}
-              onOpenActions={(msg) => {
-                if (selectionMode) toggleSelectMessage(msg);
-                else setActiveMessage(msg);
-              }}
-              onCopy={copyMessage}
-              onForward={openForward}
-              onEdit={(msg) => {
-                setEditingMessageId(msg.id);
-                setEditingDraft(msg.body ?? '');
-              }}
-              onDelete={openDeleteMessage}
-              onPin={(msg) =>
-                room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
-              }
-              onReact={(msg, emoji) => {
-                if ('clientId' in msg) return;
-                room.toggleReaction(msg.id, emoji);
-              }}
-              onOpenMedia={openMediaViewer}
+              handlersRef={messageHandlersRef}
             />
           )}
 

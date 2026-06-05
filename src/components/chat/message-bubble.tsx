@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { animate, motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
 import { Check, MessageSquareReply } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -54,7 +54,7 @@ function bubbleRadius(isMine: boolean, position: BubblePosition) {
     : 'rounded-[18px] rounded-tl-[6px]';
 }
 
-export function MessageBubble({
+function MessageBubbleInner({
   message,
   currentUserId,
   position = 'single',
@@ -75,6 +75,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const reactions = message.reactions ?? [];
   const coarse = useCoarsePointer();
+  const swipeReplyEnabled = coarse && !selectionMode;
   const [swipeReply, setSwipeReply] = useState(false);
   const x = useMotionValue(0);
   const replyOpacity = useTransform(x, [-80, -32, 0], [1, 0.45, 0]);
@@ -127,10 +128,121 @@ export function MessageBubble({
     );
   }
 
-  const bubble = (
+  const bubbleBody = (
+    <div
+      {...(isMedia ? mediaLongPress.bind() : longPress.bind())}
+      onClick={
+        selectionMode
+          ? (event) => {
+              event.stopPropagation();
+              haptic('selection');
+              onToggleSelect?.();
+            }
+          : isMedia && !coarse
+            ? () => {
+                onOpenMedia?.();
+              }
+            : undefined
+      }
+      role={isMedia ? 'button' : undefined}
+      tabIndex={isMedia ? 0 : undefined}
+      onKeyDown={
+        isMedia
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenMedia?.();
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        'group w-full px-3 py-2 text-left transition-shadow duration-200',
+        isMedia && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        bubbleRadius(isMine, position),
+        isMine ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-foreground',
+        pending === 'failed' && 'border border-destructive/40 bg-destructive/10 text-destructive',
+        pending === 'sending' && 'opacity-70',
+        swipeReply && 'shadow-md',
+        selectionMode && selected && 'ring-2 ring-primary/50',
+        'select-none',
+      )}
+      aria-label="Message"
+    >
+      {message.forwardedFromName ? (
+        <div
+          className={cn(
+            'mb-1 flex items-center gap-1 text-[11px] italic opacity-80',
+            isMine ? 'text-primary-foreground/80' : 'text-muted-foreground',
+          )}
+        >
+          <span aria-hidden>↪</span>
+          Forwarded from {message.forwardedFromName}
+        </div>
+      ) : null}
+
+      {message.replyToSnippet ? (
+        <div
+          className={cn(
+            'mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs opacity-90',
+            isMine ? 'border-primary-foreground/40 bg-primary-foreground/10' : 'border-primary/60 bg-background/60',
+          )}
+        >
+          {message.replyToSnippet}
+        </div>
+      ) : null}
+
+      <MessageBodyContent
+        type={message.type}
+        body={message.body}
+        sticker={message.sticker}
+        attachment={message.attachment}
+        location={message.location}
+        imageUrl={message.imageUrl}
+        isMine={isMine}
+      />
+
+      {reactions.length > 0 ? (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {reactions.map((reaction) => {
+            const mine = currentUserId
+              ? reaction.userIds.includes(currentUserId)
+              : false;
+            return (
+              <button
+                key={reaction.emoji}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  haptic('selection');
+                  onReact(reaction.emoji);
+                }}
+                className={cn(
+                  'flex min-h-8 min-w-8 items-center gap-1 rounded-full px-2 py-1 text-xs shadow-sm transition-colors duration-200',
+                  mine
+                    ? 'bg-primary/15 ring-1 ring-primary/40'
+                    : 'bg-background/80 hover:bg-background',
+                )}
+                aria-label={`React ${reaction.emoji}`}
+              >
+                <span>{reaction.emoji}</span>
+                {reaction.count > 1 ? (
+                  <span className="tabular-nums text-[10px] font-medium opacity-80">
+                    {reaction.count}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const bubble = swipeReplyEnabled ? (
     <motion.div
-      style={selectionMode ? undefined : { x }}
-      drag={selectionMode ? false : 'x'}
+      style={{ x }}
+      drag="x"
       dragConstraints={{ left: -88, right: 0 }}
       dragElastic={0.1}
       dragSnapToOrigin
@@ -145,119 +257,10 @@ export function MessageBubble({
       >
         <MessageSquareReply className="size-4" />
       </motion.span>
-
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 4, scale: 0.99 }}
-        animate={{ opacity: pending === 'sending' ? 0.7 : 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-        {...(isMedia ? mediaLongPress.bind() : longPress.bind())}
-        onClick={
-          selectionMode
-            ? (event) => {
-                event.stopPropagation();
-                haptic('selection');
-                onToggleSelect?.();
-              }
-            : isMedia && !coarse
-              ? () => {
-                  onOpenMedia?.();
-                }
-              : undefined
-        }
-        role={isMedia ? 'button' : undefined}
-        tabIndex={isMedia ? 0 : undefined}
-        onKeyDown={
-          isMedia
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onOpenMedia?.();
-                }
-              }
-            : undefined
-        }
-        className={cn(
-          'group w-full px-3 py-2 text-left transition-shadow duration-200',
-          isMedia && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          bubbleRadius(isMine, position),
-          isMine ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-foreground',
-          pending === 'failed' && 'border border-destructive/40 bg-destructive/10 text-destructive',
-          swipeReply && 'shadow-md',
-          selectionMode && selected && 'ring-2 ring-primary/50',
-          'select-none',
-        )}
-        aria-label="Message"
-      >
-        {message.forwardedFromName ? (
-          <div
-            className={cn(
-              'mb-1 flex items-center gap-1 text-[11px] italic opacity-80',
-              isMine ? 'text-primary-foreground/80' : 'text-muted-foreground',
-            )}
-          >
-            <span aria-hidden>↪</span>
-            Forwarded from {message.forwardedFromName}
-          </div>
-        ) : null}
-
-        {message.replyToSnippet ? (
-          <div
-            className={cn(
-              'mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs opacity-90',
-              isMine ? 'border-primary-foreground/40 bg-primary-foreground/10' : 'border-primary/60 bg-background/60',
-            )}
-          >
-            {message.replyToSnippet}
-          </div>
-        ) : null}
-
-        <MessageBodyContent
-          type={message.type}
-          body={message.body}
-          sticker={message.sticker}
-          attachment={message.attachment}
-          location={message.location}
-          imageUrl={message.imageUrl}
-          isMine={isMine}
-        />
-
-        {reactions.length > 0 ? (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {reactions.map((reaction) => {
-              const mine = currentUserId
-                ? reaction.userIds.includes(currentUserId)
-                : false;
-              return (
-                <button
-                  key={reaction.emoji}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    haptic('selection');
-                    onReact(reaction.emoji);
-                  }}
-                  className={cn(
-                    'flex min-h-8 min-w-8 items-center gap-1 rounded-full px-2 py-1 text-xs shadow-sm transition-colors duration-200',
-                    mine
-                      ? 'bg-primary/15 ring-1 ring-primary/40'
-                      : 'bg-background/80 hover:bg-background',
-                  )}
-                  aria-label={`React ${reaction.emoji}`}
-                >
-                  <span>{reaction.emoji}</span>
-                  {reaction.count > 1 ? (
-                    <span className="tabular-nums text-[10px] font-medium opacity-80">
-                      {reaction.count}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-      </motion.div>
+      {bubbleBody}
     </motion.div>
+  ) : (
+    <div className="relative max-w-full">{bubbleBody}</div>
   );
 
   if (selectionMode) {
@@ -303,3 +306,40 @@ export function MessageBubble({
     </MessageContextMenu>
   );
 }
+
+function messageBubblePropsEqual(prev: MessageBubbleProps, next: MessageBubbleProps) {
+  if (prev.message !== next.message) {
+    if ('clientId' in prev.message || 'clientId' in next.message) {
+      if (
+        ('clientId' in prev.message ? prev.message.clientId : prev.message.id) !==
+        ('clientId' in next.message ? next.message.clientId : next.message.id)
+      ) {
+        return false;
+      }
+    } else if (prev.message.id !== next.message.id) {
+      return false;
+    }
+
+    if (
+      prev.message.body !== next.message.body ||
+      prev.message.editedAt !== next.message.editedAt ||
+      prev.message.deletedAt !== next.message.deletedAt ||
+      prev.message.pinned !== next.message.pinned ||
+      prev.message.reactions !== next.message.reactions ||
+      ('status' in prev.message ? prev.message.status : null) !==
+        ('status' in next.message ? next.message.status : null)
+    ) {
+      return false;
+    }
+  }
+
+  return (
+    prev.position === next.position &&
+    prev.isMine === next.isMine &&
+    prev.selectionMode === next.selectionMode &&
+    prev.selected === next.selected &&
+    prev.currentUserId === next.currentUserId
+  );
+}
+
+export const MessageBubble = memo(MessageBubbleInner, messageBubblePropsEqual);

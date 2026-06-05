@@ -1,21 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { DateSeparator } from '@/components/chat/date-separator';
-import { MessageGroup } from '@/components/chat/message-group';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import type { MessageDateGroup } from '@/components/chat/utils';
+import {
+  appendSenderGroupRows,
+  estimateMessageRowHeight,
+  VirtualMessageRow,
+  type MessageVirtualRow,
+  type VirtualMessageListHandlers,
+} from '@/components/chat/virtual-message-row';
 
 export type ChatVirtualRow =
   | { kind: 'date'; id: string; date: string }
   | { kind: 'unread'; id: string }
-  | {
-      kind: 'group';
-      id: string;
-      group: MessageDateGroup['senderGroups'][number];
-      date: string;
-    };
+  | MessageVirtualRow;
 
 type VirtualMessageListProps = {
   groupedMessages: MessageDateGroup[];
@@ -28,21 +29,11 @@ type VirtualMessageListProps = {
   peerName?: string | null;
   peerOnline?: boolean;
   highlightMessageId?: string;
-  onReply: (msg: ChatMessage | PendingMessage) => void;
-  onOpenActions: (msg: ChatMessage | PendingMessage) => void;
-  onCopy: (msg: ChatMessage | PendingMessage) => void;
-  onForward: (msg: ChatMessage | PendingMessage) => void;
-  onEdit: (msg: ChatMessage | PendingMessage) => void;
-  onDelete: (msg: ChatMessage | PendingMessage) => void;
-  onPin: (msg: ChatMessage | PendingMessage) => void;
-  onReact: (msg: ChatMessage | PendingMessage, emoji: string) => void;
-  onOpenMedia?: (msg: ChatMessage | PendingMessage) => void;
   unreadLabel: string;
   loadingOlder?: boolean;
   selectionMode?: boolean;
   selectedIds?: Set<string>;
-  onToggleSelect?: (msg: ChatMessage | PendingMessage) => void;
-  onEnterSelection?: (msg: ChatMessage) => void;
+  handlersRef: React.RefObject<VirtualMessageListHandlers>;
 };
 
 export function buildVirtualRows(
@@ -50,30 +41,19 @@ export function buildVirtualRows(
   firstUnreadId?: string | null,
 ): ChatVirtualRow[] {
   const rows: ChatVirtualRow[] = [];
-  let unreadInserted = !firstUnreadId;
+  const unreadState = { firstUnreadId, inserted: !firstUnreadId };
 
   for (const dateGroup of groupedMessages) {
     rows.push({ kind: 'date', id: `date-${dateGroup.date}`, date: dateGroup.date });
     for (const senderGroup of dateGroup.senderGroups) {
-      const hasUnread = senderGroup.messages.some(
-        (msg) => !('clientId' in msg) && msg.id === firstUnreadId,
-      );
-      if (hasUnread && !unreadInserted) {
-        rows.push({ kind: 'unread', id: 'unread-divider' });
-        unreadInserted = true;
-      }
-      rows.push({
-        kind: 'group',
-        id: `group-${dateGroup.date}-${senderGroup.senderId}-${senderGroup.messages[0]?.id ?? 'x'}`,
-        group: senderGroup,
-        date: dateGroup.date,
-      });
+      appendSenderGroupRows(rows, senderGroup, unreadState);
     }
   }
+
   return rows;
 }
 
-export function VirtualMessageList({
+function VirtualMessageListInner({
   groupedMessages,
   firstUnreadId,
   listRef,
@@ -84,21 +64,11 @@ export function VirtualMessageList({
   peerName,
   peerOnline,
   highlightMessageId,
-  onReply,
-  onOpenActions,
-  onCopy,
-  onForward,
-  onEdit,
-  onDelete,
-  onPin,
-  onReact,
-  onOpenMedia,
   unreadLabel,
   loadingOlder,
   selectionMode = false,
   selectedIds,
-  onToggleSelect,
-  onEnterSelection,
+  handlersRef,
 }: VirtualMessageListProps) {
   const rows = useMemo(
     () => buildVirtualRows(groupedMessages, firstUnreadId),
@@ -108,25 +78,28 @@ export function VirtualMessageList({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => listRef.current,
+    getItemKey: (index) => rows[index]?.id ?? index,
+    anchorTo: 'end',
+    followOnAppend: true,
+    scrollEndThreshold: 80,
+    directDomUpdates: true,
+    directDomUpdatesMode: 'transform',
     estimateSize: (index) => {
       const row = rows[index];
       if (row?.kind === 'date') return 36;
       if (row?.kind === 'unread') return 40;
-      const count = row?.kind === 'group' ? row.group.messages.length : 1;
-      return 56 + count * 52;
+      if (row?.kind === 'message') return estimateMessageRowHeight(row.message);
+      return 64;
     },
-    overscan: 10,
+    overscan: 4,
   });
 
   const items = virtualizer.getVirtualItems();
 
   return (
-    <div
-      className="relative w-full pb-2"
-      style={{ height: virtualizer.getTotalSize() }}
-    >
+    <div ref={virtualizer.containerRef} className="relative w-full pb-2">
       {loadingOlder ? (
-        <div className="absolute left-0 top-0 z-10 flex w-full justify-center py-2">
+        <div className="pointer-events-none absolute left-0 top-0 z-10 flex w-full justify-center py-2">
           <span className="rounded-full bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow">
             …
           </span>
@@ -135,13 +108,13 @@ export function VirtualMessageList({
       {items.map((virtualRow) => {
         const row = rows[virtualRow.index];
         if (!row) return null;
+
         return (
           <div
-            key={row.id}
+            key={virtualRow.key}
             data-index={virtualRow.index}
             ref={virtualizer.measureElement}
-            className="absolute left-0 top-0 w-full px-0"
-            style={{ transform: `translateY(${virtualRow.start}px)` }}
+            className="absolute top-0 left-0 w-full px-0 will-change-transform"
           >
             {row.kind === 'date' ? (
               <DateSeparator date={row.date} />
@@ -152,8 +125,12 @@ export function VirtualMessageList({
                 <div className="h-px flex-1 bg-primary/40" />
               </div>
             ) : (
-              <MessageGroup
-                group={row.group}
+              <VirtualMessageRow
+                message={row.message}
+                isMine={row.isMine}
+                position={row.position}
+                showAvatar={row.showAvatar}
+                showFooter={row.showFooter}
                 currentUserId={currentUserId}
                 currentUsername={currentUsername}
                 peerId={peerId}
@@ -162,19 +139,13 @@ export function VirtualMessageList({
                 peerOnline={peerOnline}
                 highlightMessageId={highlightMessageId}
                 unreadMessageId={firstUnreadId}
-                onReply={onReply}
-                onOpenActions={onOpenActions}
-                onCopy={onCopy}
-                onForward={onForward}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onPin={onPin}
-                onReact={onReact}
-                onOpenMedia={onOpenMedia}
                 selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={onToggleSelect}
-                onEnterSelection={onEnterSelection}
+                selected={
+                  !('clientId' in row.message) && selectedIds
+                    ? selectedIds.has(row.message.id)
+                    : false
+                }
+                handlersRef={handlersRef}
               />
             )}
           </div>
@@ -183,3 +154,23 @@ export function VirtualMessageList({
     </div>
   );
 }
+
+export const VirtualMessageList = memo(VirtualMessageListInner, (prev, next) =>
+  prev.groupedMessages === next.groupedMessages &&
+  prev.firstUnreadId === next.firstUnreadId &&
+  prev.listRef === next.listRef &&
+  prev.currentUserId === next.currentUserId &&
+  prev.currentUsername === next.currentUsername &&
+  prev.peerId === next.peerId &&
+  prev.peerAvatar === next.peerAvatar &&
+  prev.peerName === next.peerName &&
+  prev.peerOnline === next.peerOnline &&
+  prev.highlightMessageId === next.highlightMessageId &&
+  prev.unreadLabel === next.unreadLabel &&
+  prev.loadingOlder === next.loadingOlder &&
+  prev.selectionMode === next.selectionMode &&
+  prev.selectedIds === next.selectedIds &&
+  prev.handlersRef === next.handlersRef,
+);
+
+export type { VirtualMessageListHandlers };
