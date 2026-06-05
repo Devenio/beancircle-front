@@ -10,14 +10,7 @@ import { api } from '@/lib/api/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DeleteForPeerDialog } from '@/components/chat/delete-for-peer-dialog';
 import { useChatStore } from '@/stores/chat-store';
 import { useChatArchiveStore, getDisplayUnread } from '@/stores/chat-archive-store';
 import { ArchivePreviewSection } from '@/components/chat/archive-preview-section';
@@ -30,7 +23,9 @@ import { ArchivedActionsSheet } from '@/components/chat/archived-actions-sheet';
 import { ArchiveFilterSheet } from '@/components/chat/archive-filter-sheet';
 import { VirtualConversationList } from '@/components/chat/virtual-conversation-list';
 import { ArchiveBulkActionsSheet } from '@/components/chat/archive-bulk-actions-sheet';
+import { UserSearchResults, type SearchUser } from '@/components/chat/user-search-results';
 import type { Conversation } from '@/components/chat/types';
+import { useAuthStore } from '@/stores/auth-store';
 import { conversationSortKey } from '@/components/chat/utils';
 import { filterArchivedList, inactiveConversationSuggestions, type ArchiveFilterId } from '@/lib/chat-archive';
 import { haptic } from '@/lib/mobile/haptics';
@@ -65,7 +60,12 @@ export function MessagesHub({ locale }: { locale: string }) {
   const [sheetConv, setSheetConv] = useState<Conversation | null>(null);
   const [archivedSheetConv, setArchivedSheetConv] = useState<Conversation | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Conversation | null>(null);
+  const [deleteAlsoForPeer, setDeleteAlsoForPeer] = useState(false);
+  const [deleteAllAlsoForPeer, setDeleteAllAlsoForPeer] = useState(false);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [startingUserId, setStartingUserId] = useState<string | null>(null);
+
+  const currentUserId = useAuthStore((s) => s.user?.id);
 
   const archivedAt = useChatArchiveStore((s) => s.archivedAt);
   const forceUnreadIds = useChatArchiveStore((s) => s.forceUnreadIds);
@@ -83,6 +83,46 @@ export function MessagesHub({ locale }: { locale: string }) {
     queryFn: () => api<Conversation[]>('/conversations', { locale }),
   });
 
+  const trimmedQuery = query.trim();
+  const isUserSearch = !isArchivedView && trimmedQuery.length >= 2;
+
+  const { data: searchData, isFetching: isSearchingUsers } = useQuery({
+    queryKey: ['search', 'messages', trimmedQuery, locale],
+    queryFn: () =>
+      api<{ users: SearchUser[] }>(`/search?q=${encodeURIComponent(trimmedQuery)}`, { locale }),
+    enabled: isUserSearch,
+    staleTime: 30_000,
+  });
+
+  const startChatMutation = useMutation({
+    mutationFn: (participantId: string) =>
+      api<{ id: string }>('/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ participantId }),
+        locale,
+      }),
+    onMutate: (participantId) => {
+      setStartingUserId(participantId);
+    },
+    onSuccess: (conv) => {
+      qc.invalidateQueries({ queryKey: ['conversations'] });
+      setQuery('');
+      haptic('success');
+      router.push(`/messages/${conv.id}`);
+    },
+    onSettled: () => {
+      setStartingUserId(null);
+    },
+  });
+
+  const handleStartChat = useCallback(
+    (user: SearchUser) => {
+      if (!user.id || startChatMutation.isPending) return;
+      startChatMutation.mutate(user.id);
+    },
+    [startChatMutation],
+  );
+
   const archivedIds = useMemo(() => new Set(Object.keys(archivedAt)), [archivedAt]);
   const archivedCount = archivedIds.size;
 
@@ -90,6 +130,21 @@ export function MessagesHub({ locale }: { locale: string }) {
     () => (data ?? []).filter((c) => !archivedIds.has(c.id)),
     [data, archivedIds],
   );
+
+  const activePeerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const chat of activeChats) {
+      if (chat.otherMember?.id) ids.add(chat.otherMember.id);
+    }
+    return ids;
+  }, [activeChats]);
+
+  const newUsers = useMemo(() => {
+    if (!isUserSearch || !searchData?.users) return [];
+    return searchData.users.filter(
+      (user) => user.id && user.id !== currentUserId && !activePeerIds.has(user.id),
+    );
+  }, [activePeerIds, currentUserId, isUserSearch, searchData?.users]);
 
   const archivedChats = useMemo(
     () => (data ?? []).filter((c) => archivedIds.has(c.id)),
@@ -219,22 +274,32 @@ export function MessagesHub({ locale }: { locale: string }) {
 
   const deleteAllArchived = useCallback(async () => {
     for (const c of archivedChats) {
-      await api(`/conversations/${c.id}/messages`, { method: 'DELETE', locale });
+      await api(`/conversations/${c.id}/messages`, {
+        method: 'DELETE',
+        body: JSON.stringify({ forEveryone: deleteAllAlsoForPeer }),
+        locale,
+      });
       unarchive(c.id);
     }
     setDeleteAllOpen(false);
+    setDeleteAllAlsoForPeer(false);
     qc.invalidateQueries({ queryKey: ['conversations'] });
     haptic('success');
-  }, [archivedChats, locale, qc, unarchive]);
+  }, [archivedChats, deleteAllAlsoForPeer, locale, qc, unarchive]);
 
   const confirmDeleteOne = useCallback(async () => {
     if (!deleteTarget) return;
-    await api(`/conversations/${deleteTarget.id}/messages`, { method: 'DELETE', locale });
+    await api(`/conversations/${deleteTarget.id}/messages`, {
+      method: 'DELETE',
+      body: JSON.stringify({ forEveryone: deleteAlsoForPeer }),
+      locale,
+    });
     unarchive(deleteTarget.id);
     setDeleteTarget(null);
+    setDeleteAlsoForPeer(false);
     qc.invalidateQueries({ queryKey: ['conversations'] });
     haptic('success');
-  }, [deleteTarget, locale, qc, unarchive]);
+  }, [deleteAlsoForPeer, deleteTarget, locale, qc, unarchive]);
 
   const searchPlaceholder = isArchivedView ? t('searchArchivedPlaceholder') : t('search');
   const goToArchived = useCallback(() => router.push('/messages/archived'), [router]);
@@ -267,7 +332,10 @@ export function MessagesHub({ locale }: { locale: string }) {
                 onMute={() =>
                   muteMutation.mutate({ id: conversation.id, muted: !conversation.muted })
                 }
-                onDelete={() => setDeleteTarget(conversation)}
+                onDelete={() => {
+                  setDeleteAlsoForPeer(false);
+                  setDeleteTarget(conversation);
+                }}
               />
             );
           }}
@@ -296,7 +364,10 @@ export function MessagesHub({ locale }: { locale: string }) {
                 onMute={() =>
                   muteMutation.mutate({ id: conversation.id, muted: !conversation.muted })
                 }
-                onDelete={() => setDeleteTarget(conversation)}
+                onDelete={() => {
+                  setDeleteAlsoForPeer(false);
+                  setDeleteTarget(conversation);
+                }}
               />
             </motion.div>
           ))}
@@ -407,21 +478,32 @@ export function MessagesHub({ locale }: { locale: string }) {
                 </div>
               ) : null}
 
-              <ArchivePreviewSection
-                conversations={archivedChats}
-                archivedAt={archivedAt}
-                collapsed={archiveCollapsed}
-                onCollapsedChange={setArchiveCollapsed}
-                onViewAll={goToArchived}
-                onUnarchive={handleUnarchive}
-                onUnarchiveAll={unarchiveAll}
-                onMarkAllRead={() => void markAllArchivedRead()}
-                onDeleteAll={() => setDeleteAllOpen(true)}
-              />
+              {!isUserSearch ? (
+                <ArchivePreviewSection
+                  conversations={archivedChats}
+                  archivedAt={archivedAt}
+                  collapsed={archiveCollapsed}
+                  onCollapsedChange={setArchiveCollapsed}
+                  onViewAll={goToArchived}
+                  onUnarchive={handleUnarchive}
+                  onUnarchiveAll={unarchiveAll}
+                  onMarkAllRead={() => void markAllArchivedRead()}
+                  onDeleteAll={() => {
+          setDeleteAllAlsoForPeer(false);
+          setDeleteAllOpen(true);
+        }}
+                />
+              ) : null}
 
               {isLoading ? (
                 <ListSkeleton />
-              ) : filteredActive.length === 0 ? (
+              ) : isUserSearch && filteredActive.length === 0 && newUsers.length === 0 && !isSearchingUsers ? (
+                <MessagesEmptyState
+                  query={query}
+                  archivedCount={archivedCount}
+                  onViewArchived={goToArchived}
+                />
+              ) : !isUserSearch && filteredActive.length === 0 ? (
                 <MessagesEmptyState
                   query={query}
                   archivedCount={archivedCount}
@@ -429,6 +511,25 @@ export function MessagesHub({ locale }: { locale: string }) {
                 />
               ) : (
                 <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2 pb-24 chat-scrollbar">
+                  {isUserSearch ? (
+                    <>
+                      {isSearchingUsers && newUsers.length === 0 ? (
+                        <div className="px-3 py-4">
+                          <ListSkeleton />
+                        </div>
+                      ) : null}
+                      <UserSearchResults
+                        users={newUsers}
+                        startingUserId={startingUserId}
+                        onStartChat={handleStartChat}
+                      />
+                      {filteredActive.length > 0 ? (
+                        <h2 className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {t('searchChats')}
+                        </h2>
+                      ) : null}
+                    </>
+                  ) : null}
                   <AnimatePresence initial={false}>
                     {filteredActive.map((conversation) => (
                       <motion.div
@@ -453,6 +554,16 @@ export function MessagesHub({ locale }: { locale: string }) {
                             })
                           }
                           onArchive={() => archiveConv(conversation)}
+                          onTogglePin={() =>
+                            pinMutation.mutate({
+                              id: conversation.id,
+                              pinned: !conversation.pinned,
+                            })
+                          }
+                          onDelete={() => {
+                            setDeleteAlsoForPeer(false);
+                            setDeleteTarget(conversation);
+                          }}
                         />
                       </motion.div>
                     ))}
@@ -503,7 +614,11 @@ export function MessagesHub({ locale }: { locale: string }) {
         onOpenChange={(open) => !open && setArchivedSheetConv(null)}
         conversation={archivedSheetConv}
         onUnarchive={() => archivedSheetConv && handleUnarchive(archivedSheetConv.id)}
-        onDelete={() => archivedSheetConv && setDeleteTarget(archivedSheetConv)}
+        onDelete={() => {
+          if (!archivedSheetConv) return;
+          setDeleteAlsoForPeer(false);
+          setDeleteTarget(archivedSheetConv);
+        }}
         onToggleMute={() =>
           archivedSheetConv &&
           muteMutation.mutate({ id: archivedSheetConv.id, muted: !archivedSheetConv.muted })
@@ -527,44 +642,46 @@ export function MessagesHub({ locale }: { locale: string }) {
         count={archivedCount}
         onUnarchiveAll={unarchiveAll}
         onMarkAllRead={() => void markAllArchivedRead()}
-        onDeleteAll={() => setDeleteAllOpen(true)}
+        onDeleteAll={() => {
+          setDeleteAllAlsoForPeer(false);
+          setDeleteAllOpen(true);
+        }}
       />
 
-      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteChat')}</DialogTitle>
-            <DialogDescription>{t('deleteChatDescription')}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              {t('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={() => void confirmDeleteOne()}>
-              {t('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteForPeerDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteAlsoForPeer(false);
+          }
+        }}
+        title={t('deleteChat')}
+        description={t('deleteChatDescription')}
+        peerName={
+          deleteTarget?.otherMember?.name ??
+          deleteTarget?.otherMember?.username ??
+          t('unknownUser')
+        }
+        alsoDeleteForPeer={deleteAlsoForPeer}
+        onAlsoDeleteForPeerChange={setDeleteAlsoForPeer}
+        onConfirm={() => void confirmDeleteOne()}
+      />
 
-      <Dialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteAllArchived')}</DialogTitle>
-            <DialogDescription>
-              {t('deleteAllArchivedConfirm', { count: archivedCount })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDeleteAllOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={() => void deleteAllArchived()}>
-              {t('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteForPeerDialog
+        open={deleteAllOpen}
+        onOpenChange={(open) => {
+          setDeleteAllOpen(open);
+          if (!open) setDeleteAllAlsoForPeer(false);
+        }}
+        title={t('deleteAllArchived')}
+        description={t('deleteAllArchivedConfirm', { count: archivedCount })}
+        alsoDeleteLabel={t('alsoDeleteForEveryone')}
+        showAlsoDeleteForPeer
+        alsoDeleteForPeer={deleteAllAlsoForPeer}
+        onAlsoDeleteForPeerChange={setDeleteAllAlsoForPeer}
+        onConfirm={() => void deleteAllArchived()}
+      />
     </div>
   );
 }

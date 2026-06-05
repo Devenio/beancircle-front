@@ -25,6 +25,7 @@ import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, Conversation, PendingMessage } from '@/components/chat/types';
 import { groupMessagesBySenderAndDate, isMineMessage, messagePreview } from '@/components/chat/utils';
+import { DeleteForPeerDialog } from '@/components/chat/delete-for-peer-dialog';
 import {
   Dialog,
   DialogContent,
@@ -63,12 +64,16 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteSelectedOpen, setDeleteSelectedOpen] = useState(false);
+  const [deleteSelectedAlsoForPeer, setDeleteSelectedAlsoForPeer] = useState(false);
+  const [deleteMessageTarget, setDeleteMessageTarget] = useState<ChatMessage | null>(null);
+  const [deleteMessageAlsoForPeer, setDeleteMessageAlsoForPeer] = useState(false);
   const [showJumpToUnread, setShowJumpToUnread] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
   const [listScrolling, setListScrolling] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
   const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
   const [mediaViewer, setMediaViewer] = useState<{
     url: string;
@@ -185,6 +190,10 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   }, [searchIndex, searchMatches.length, scrollToSearchMatch]);
 
   useEffect(() => {
+    setIsNearBottom(true);
+  }, [conversationId]);
+
+  useEffect(() => {
     const node = room.listRef.current;
     if (!node) return;
     let timer: ReturnType<typeof setTimeout>;
@@ -193,6 +202,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       clearTimeout(timer);
       timer = setTimeout(() => setListScrolling(false), 800);
       const nearBottom = node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+      setIsNearBottom(nearBottom);
       if (nearBottom) room.acknowledgeUnread();
       if (node.scrollTop < 80 && room.hasOlderMessages && !room.isFetchingOlder) {
         void room.loadOlderMessages();
@@ -204,6 +214,12 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       clearTimeout(timer);
     };
   }, [room.listRef, room.acknowledgeUnread, room.hasOlderMessages, room.isFetchingOlder, room.loadOlderMessages]);
+
+  const scrollToLatest = useCallback(() => {
+    room.scrollToBottom('smooth');
+    setShowJumpToUnread(false);
+    room.acknowledgeUnread();
+  }, [room.scrollToBottom, room.acknowledgeUnread]);
 
   const copyMessage = (msg: ChatMessage | PendingMessage) => {
     const text =
@@ -293,12 +309,41 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     exitSelection();
   };
 
+  const peerDisplayName =
+    room.peer?.name ?? room.peer?.username ?? t('unknownUser');
+
+  const openDeleteMessage = (msg: ChatMessage | PendingMessage) => {
+    if ('clientId' in msg) return;
+    setDeleteMessageAlsoForPeer(false);
+    setDeleteMessageTarget(msg);
+  };
+
   const confirmDeleteSelected = async () => {
     const ids = deletableSelected.map((msg) => msg.id);
     if (ids.length === 0) return;
-    await room.deleteManyMessages(ids);
+    await room.deleteManyMessages(ids, deleteSelectedAlsoForPeer);
     setDeleteSelectedOpen(false);
+    setDeleteSelectedAlsoForPeer(false);
     exitSelection();
+  };
+
+  const confirmDeleteMessage = () => {
+    if (!deleteMessageTarget) return;
+    const mine = isMineMessage(deleteMessageTarget, room.currentUserId, room.currentUsername);
+    room.deleteMutation.mutate(
+      {
+        messageId: deleteMessageTarget.id,
+        forEveryone: mine && deleteMessageAlsoForPeer,
+      },
+      {
+        onSuccess: () => {
+          setDeleteMessageTarget(null);
+          setDeleteMessageAlsoForPeer(false);
+          setActiveMessage(null);
+          haptic('success');
+        },
+      },
+    );
   };
 
   const pinSelected = async () => {
@@ -427,13 +472,14 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         />
       ) : null}
 
-      <div
-        ref={room.listRef}
-        className={cn(
-          'relative flex-1 overflow-y-auto overscroll-contain px-3 py-3 chat-scrollbar',
-          listScrolling && 'is-scrolling',
-        )}
-      >
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={room.listRef}
+          className={cn(
+            'relative h-full overflow-y-auto overscroll-contain px-3 py-3 chat-scrollbar',
+            listScrolling && 'is-scrolling',
+          )}
+        >
         {/* Self-contained wallpaper (never 404s): layered gradients + dot grid. */}
         <div
           aria-hidden
@@ -490,7 +536,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
                 setEditingMessageId(msg.id);
                 setEditingDraft(msg.body ?? '');
               }}
-              onDelete={(msg) => room.deleteMutation.mutate(msg.id)}
+              onDelete={openDeleteMessage}
               onPin={(msg) =>
                 room.pinMutation.mutate({ messageId: msg.id, pinned: !msg.pinned })
               }
@@ -521,6 +567,23 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
             >
               <ArrowDown className="size-3.5" />
               {t('jumpToUnread')}
+            </motion.button>
+          ) : null}
+        </AnimatePresence>
+        </div>
+
+        <AnimatePresence>
+          {!isNearBottom && !room.isLoading && room.messages.length > 0 ? (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              onClick={scrollToLatest}
+              aria-label={t('scrollToBottom')}
+              className="absolute bottom-3 end-3 z-20 flex size-10 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-muted"
+            >
+              <ArrowDown className="size-5" />
             </motion.button>
           ) : null}
         </AnimatePresence>
@@ -628,7 +691,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           setEditingMessageId(activeMessage.id);
           setEditingDraft(activeMessage.body ?? '');
         }}
-        onDelete={() => activeMessage && room.deleteMutation.mutate(activeMessage.id)}
+        onDelete={() => activeMessage && openDeleteMessage(activeMessage)}
         onPin={() =>
           activeMessage &&
           room.pinMutation.mutate({ messageId: activeMessage.id, pinned: !activeMessage.pinned })
@@ -658,26 +721,49 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         }}
       />
 
-      <Dialog open={deleteSelectedOpen} onOpenChange={setDeleteSelectedOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('deleteSelectedTitle')}</DialogTitle>
-            <DialogDescription>
-              {deletableSelected.length < selectedIds.size
-                ? t('deleteSelectedPartial', { count: deletableSelected.length })
-                : t('deleteSelectedDescription', { count: deletableSelected.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDeleteSelectedOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={() => void confirmDeleteSelected()}>
-              {t('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteForPeerDialog
+        open={deleteSelectedOpen}
+        onOpenChange={(open) => {
+          setDeleteSelectedOpen(open);
+          if (!open) setDeleteSelectedAlsoForPeer(false);
+        }}
+        title={t('deleteSelectedTitle')}
+        description={
+          deletableSelected.length < selectedIds.size
+            ? t('deleteSelectedPartial', { count: deletableSelected.length })
+            : t('deleteSelectedDescription', { count: deletableSelected.length })
+        }
+        peerName={peerDisplayName}
+        showAlsoDeleteForPeer={deletableSelected.some((msg) =>
+          isMineMessage(msg, room.currentUserId, room.currentUsername),
+        )}
+        alsoDeleteForPeer={deleteSelectedAlsoForPeer}
+        onAlsoDeleteForPeerChange={setDeleteSelectedAlsoForPeer}
+        onConfirm={() => void confirmDeleteSelected()}
+        loading={room.deleteMutation.isPending}
+      />
+
+      <DeleteForPeerDialog
+        open={Boolean(deleteMessageTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteMessageTarget(null);
+            setDeleteMessageAlsoForPeer(false);
+          }
+        }}
+        title={t('delete')}
+        description={t('deleteMessageDescription')}
+        peerName={peerDisplayName}
+        showAlsoDeleteForPeer={
+          deleteMessageTarget
+            ? isMineMessage(deleteMessageTarget, room.currentUserId, room.currentUsername)
+            : false
+        }
+        alsoDeleteForPeer={deleteMessageAlsoForPeer}
+        onAlsoDeleteForPeerChange={setDeleteMessageAlsoForPeer}
+        onConfirm={confirmDeleteMessage}
+        loading={room.deleteMutation.isPending}
+      />
 
       <MediaViewerSheet
         open={mediaViewerOpen}

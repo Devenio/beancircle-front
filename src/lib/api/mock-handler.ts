@@ -28,6 +28,10 @@ function notFound(path: string): never {
 
 /** user ids blocked by the mock current user */
 const mockBlockedUserIds = new Set<string>();
+/** message ids hidden for the mock current user only */
+const mockHiddenMessageIds = new Set<string>();
+/** conversation ids hidden for the mock current user only */
+const mockHiddenConversationIds = new Set<string>();
 
 function findConversationMessage(conversationId: string, messageId: string) {
   const list = MOCK_MESSAGES[conversationId] ?? [];
@@ -166,7 +170,7 @@ export async function handleMockRequest<T>(
 
   // Conversations
   if (pathname === '/conversations' && method === 'GET') {
-    return MOCK_CONVERSATIONS as T;
+    return MOCK_CONVERSATIONS.filter((c) => !mockHiddenConversationIds.has(c.id)) as T;
   }
   if (pathname === '/conversations' && method === 'POST') {
     const body = parseBody(options.body);
@@ -181,13 +185,32 @@ export async function handleMockRequest<T>(
   }
   const messagesMatch = pathname.match(/^\/conversations\/([^/]+)\/messages$/);
   if (messagesMatch && method === 'GET') {
-    const conversationMessages = MOCK_MESSAGES[messagesMatch[1]] ?? [];
+    const conversationMessages = (MOCK_MESSAGES[messagesMatch[1]] ?? []).filter(
+      (m) => !mockHiddenMessageIds.has(m.id),
+    );
     return {
       data: [...conversationMessages].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       ),
       nextCursor: null,
     } as T;
+  }
+  if (messagesMatch && method === 'DELETE') {
+    const conversationId = messagesMatch[1];
+    const body = parseBody(options.body);
+    const forEveryone = Boolean(body.forEveryone);
+    if (forEveryone) {
+      const list = MOCK_MESSAGES[conversationId] ?? [];
+      const now = new Date().toISOString();
+      for (const message of list) {
+        message.body = '';
+        message.deletedAt = now;
+      }
+      mockHiddenConversationIds.add(conversationId);
+    } else {
+      mockHiddenConversationIds.add(conversationId);
+    }
+    return { conversationId, scope: forEveryone ? 'everyone' : 'me', deleted: true } as T;
   }
   if (messagesMatch && method === 'POST') {
     const conversationId = messagesMatch[1];
@@ -257,11 +280,17 @@ export async function handleMockRequest<T>(
   if (messageItemMatch && method === 'DELETE') {
     const conversationId = messageItemMatch[1];
     const messageId = messageItemMatch[2];
+    const body = parseBody(options.body);
+    const forEveryone = Boolean(body.forEveryone);
     const { message } = findConversationMessage(conversationId, messageId);
     if (!message) notFound(path);
-    message.body = '';
-    message.deletedAt = new Date().toISOString();
-    return message as T;
+    if (forEveryone) {
+      message.body = '';
+      message.deletedAt = new Date().toISOString();
+      return message as T;
+    }
+    mockHiddenMessageIds.add(messageId);
+    return { conversationId, messageId, scope: 'me' } as T;
   }
 
   const seenMatch = pathname.match(/^\/conversations\/([^/]+)\/messages\/([^/]+)\/seen$/);

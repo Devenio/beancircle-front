@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:settings": "playwright test e2e/settings.spec.ts"
+    "test:e2e:settings": "playwright test e2e/settings.spec.ts",
+    "test:e2e:messages": "playwright test e2e/messages.spec.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

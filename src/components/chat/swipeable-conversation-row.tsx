@@ -6,6 +6,7 @@ import { Archive, Bell, BellOff, CheckCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ConversationListItem } from '@/components/chat/conversation-list-item';
+import { ConversationContextMenu } from '@/components/chat/conversation-context-menu';
 import {
   SWIPE_ACTION_WIDTH,
   SwipeActionButton,
@@ -24,6 +25,8 @@ type SwipeableConversationRowProps = {
   onMarkRead: () => void;
   onMute: () => void;
   onArchive: () => void;
+  onTogglePin: () => void;
+  onDelete: () => void;
 };
 
 export function SwipeableConversationRow({
@@ -34,6 +37,8 @@ export function SwipeableConversationRow({
   onMarkRead,
   onMute,
   onArchive,
+  onTogglePin,
+  onDelete,
 }: SwipeableConversationRowProps) {
   const t = useTranslations('messages');
   const unread = conversation.unreadCount ?? 0;
@@ -101,36 +106,44 @@ export function SwipeableConversationRow({
         </div>
       </div>
 
-      <motion.div
-        style={{ x }}
-        drag="x"
-        dragConstraints={dragConstraints}
-        dragElastic={0.12}
-        dragMomentum={false}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onClick={() => {
-          if (revealed) reset();
-        }}
-        {...longPress.bind()}
-        className={cn('relative bg-background', dragging && 'shadow-sm', revealed && 'cursor-pointer')}
+      <ConversationContextMenu
+        conversation={conversation}
+        onTogglePin={onTogglePin}
+        onToggleMute={onMute}
+        onArchive={onArchive}
+        onDelete={onDelete}
       >
-        <Link
-          href={`/messages/${conversation.id}`}
-          className={cn(
-            'block border-0 transition-colors duration-200',
-            'hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none',
-            (dragging || revealed) && 'pointer-events-none',
-          )}
-          draggable={false}
+        <motion.div
+          style={{ x }}
+          drag="x"
+          dragConstraints={dragConstraints}
+          dragElastic={0.12}
+          dragMomentum={false}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onClick={() => {
+            if (revealed) reset();
+          }}
+          {...longPress.bind()}
+          className={cn('relative bg-background', dragging && 'shadow-sm', revealed && 'cursor-pointer')}
         >
-          <ConversationListItem
-            conversation={conversation}
-            typingLabel={typingLabel}
-            online={online}
-          />
-        </Link>
-      </motion.div>
+          <Link
+            href={`/messages/${conversation.id}`}
+            className={cn(
+              'block border-0 transition-colors duration-200',
+              'hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none',
+              (dragging || revealed) && 'pointer-events-none',
+            )}
+            draggable={false}
+          >
+            <ConversationListItem
+              conversation={conversation}
+              typingLabel={typingLabel}
+              online={online}
+            />
+          </Link>
+        </motion.div>
+      </ConversationContextMenu>
     </div>
   );
 }

@@ -260,6 +260,19 @@ export function useChatRoom(conversationId: string, locale: string) {
     [qc, messagesKey],
   );
 
+  const removeMessageFromCache = useCallback(
+    (messageId: string) => {
+      qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          data: prev.data.filter((m) => m.id !== messageId),
+        };
+      });
+    },
+    [qc, messagesKey],
+  );
+
   const appendMessageToCache = useCallback(
     (msg: ChatMessage) => {
       qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
@@ -417,9 +430,15 @@ export function useChatRoom(conversationId: string, locale: string) {
       }, 4000);
     };
 
+    const onHidden = (payload: { conversationId?: string; messageId?: string }) => {
+      if (payload.conversationId !== conversationId || !payload.messageId) return;
+      removeMessageFromCache(payload.messageId);
+    };
+
     const onCleared = (payload: { conversationId?: string }) => {
       if (payload.conversationId !== conversationId) return;
       qc.setQueryData<MessageListResponse>(messagesKey, { data: [] });
+      qc.invalidateQueries({ queryKey: ['conversations'] });
     };
 
     const heartbeat = setInterval(() => {
@@ -438,6 +457,8 @@ export function useChatRoom(conversationId: string, locale: string) {
     socket.on('message:read', onRead);
     socket.on('conversation:typing', onTyping);
     socket.on('conversation:cleared', onCleared);
+    socket.on('conversation:deleted', onCleared);
+    socket.on('message:hidden', onHidden);
 
     return () => {
       clearInterval(heartbeat);
@@ -454,6 +475,8 @@ export function useChatRoom(conversationId: string, locale: string) {
       socket.off('message:read', onRead);
       socket.off('conversation:typing', onTyping);
       socket.off('conversation:cleared', onCleared);
+      socket.off('conversation:deleted', onCleared);
+      socket.off('message:hidden', onHidden);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       setTypingUsername(null);
       setTypingStore(conversationId, null);
@@ -466,6 +489,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     messagesKey,
     appendMessageToCache,
     patchMessageInCache,
+    removeMessageFromCache,
     markRead,
     scrollToBottom,
     setTypingStore,
@@ -553,33 +577,63 @@ export function useChatRoom(conversationId: string, locale: string) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (messageId: string) =>
-      api<ChatMessage>(`/conversations/${conversationId}/messages/${messageId}`, {
-        method: 'DELETE',
-        locale,
-      }),
-    onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
+    mutationFn: ({
+      messageId,
+      forEveryone,
+    }: {
+      messageId: string;
+      forEveryone: boolean;
+    }) =>
+      api<ChatMessage | { conversationId: string; messageId: string; scope: 'me' }>(
+        `/conversations/${conversationId}/messages/${messageId}`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify({ forEveryone }),
+          locale,
+        },
+      ),
+    onSuccess: (result) => {
+      if ('scope' in result && result.scope === 'me') {
+        removeMessageFromCache(result.messageId);
+        return;
+      }
+      patchMessageInCache((result as ChatMessage).id, () => result as ChatMessage);
+    },
   });
 
   const deleteManyMessages = useCallback(
-    async (messageIds: string[]) => {
+    async (messageIds: string[], forEveryone: boolean) => {
+      const cached = qc.getQueryData<MessageListResponse>(messagesKey);
+      const byId = new Map((cached?.data ?? []).map((m) => [m.id, m]));
       const results = await Promise.allSettled(
-        messageIds.map((messageId) =>
-          api<ChatMessage>(`/conversations/${conversationId}/messages/${messageId}`, {
-            method: 'DELETE',
-            locale,
-          }),
-        ),
+        messageIds.map((messageId) => {
+          const msg = byId.get(messageId);
+          const mine = msg
+            ? isMineMessage(msg, currentUserId, currentUsername)
+            : false;
+          return api<ChatMessage | { conversationId: string; messageId: string; scope: 'me' }>(
+            `/conversations/${conversationId}/messages/${messageId}`,
+            {
+              method: 'DELETE',
+              body: JSON.stringify({ forEveryone: forEveryone && mine }),
+              locale,
+            },
+          );
+        }),
       );
       for (const result of results) {
-        if (result.status === 'fulfilled') {
-          patchMessageInCache(result.value.id, () => result.value);
+        if (result.status !== 'fulfilled') continue;
+        const value = result.value;
+        if ('scope' in value && value.scope === 'me') {
+          removeMessageFromCache(value.messageId);
+        } else {
+          patchMessageInCache((value as ChatMessage).id, () => value as ChatMessage);
         }
       }
       haptic('success');
       return results.filter((r) => r.status === 'fulfilled').length;
     },
-    [conversationId, locale, patchMessageInCache],
+    [conversationId, currentUserId, currentUsername, locale, patchMessageInCache, qc, messagesKey, removeMessageFromCache],
   );
 
   const pinMutation = useMutation({
