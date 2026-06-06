@@ -48,6 +48,17 @@ export const MOCK_USERS = {
     postsCount: 2,
     role: 'ADMIN',
   },
+  alex: {
+    id: 'mock-user-alex',
+    username: 'alex',
+    name: 'Alex',
+    bio: 'Startup founder & coffee nerd',
+    avatarUrl: null as string | null,
+    followersCount: 89,
+    followingCount: 64,
+    postsCount: 4,
+    role: 'USER',
+  },
 };
 
 export const MOCK_CITIES = [
@@ -165,6 +176,9 @@ export type MockConversation = {
   id: string;
   updatedAt?: string;
   otherMember: (typeof MOCK_USERS)[keyof typeof MOCK_USERS];
+  unreadCount?: number;
+  lastReadMessageId?: string | null;
+  lastReadAt?: string | null;
   lastMessage?: {
     body?: string;
     type?: MockMessageType;
@@ -178,6 +192,8 @@ export const MOCK_CONVERSATIONS: MockConversation[] = [
     id: 'mock-conv-1',
     updatedAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
     otherMember: MOCK_USERS.sara,
+    unreadCount: 0,
+    lastReadMessageId: 'mock-msg-3',
     lastMessage: {
       body: 'See you at Bean Circle tomorrow?',
       type: 'text',
@@ -189,6 +205,8 @@ export const MOCK_CONVERSATIONS: MockConversation[] = [
     id: 'mock-conv-2',
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
     otherMember: MOCK_USERS.admin,
+    unreadCount: 0,
+    lastReadMessageId: 'mock-msg-4',
     lastMessage: {
       body: 'Welcome to Bean Circle!',
       type: 'text',
@@ -292,3 +310,111 @@ export const MOCK_NOTIFICATIONS = [
     createdAt: '2026-05-29T18:00:00.000Z',
   },
 ];
+
+export const MOCK_NEARBY_PEOPLE = [
+  {
+    id: 'mock-user-sara',
+    name: 'Sara',
+    username: 'sara',
+    avatarUrl: null as string | null,
+    age: 28,
+    distanceM: 500,
+    distanceLabel: '500m away',
+    matchReasons: ['3 mutual friends', 'Shared: COFFEE, STARTUPS', 'Active now'],
+    score: 0.92,
+    mutualFriendsCount: 3,
+    sharedInterests: ['COFFEE', 'STARTUPS', 'AI'],
+    sharedGroupsCount: 1,
+    lastActive: 'online' as const,
+    relationship: 'none' as const,
+    lat: 35.7241,
+    lng: 50.9912,
+  },
+  {
+    id: 'mock-user-admin',
+    name: 'Admin',
+    username: 'admin',
+    avatarUrl: null as string | null,
+    distanceM: 1200,
+    distanceLabel: '1.2km away',
+    matchReasons: ['1 mutual friends', 'Shared: COFFEE, TECH'],
+    score: 0.71,
+    mutualFriendsCount: 1,
+    sharedInterests: ['COFFEE', 'TECH'],
+    sharedGroupsCount: 0,
+    lastActive: 'today' as const,
+    relationship: 'pending_in' as const,
+    lat: 35.728,
+    lng: 50.995,
+  },
+  {
+    id: 'mock-user-alex',
+    name: 'Alex',
+    username: 'alex',
+    avatarUrl: null as string | null,
+    age: 31,
+    distanceM: 200,
+    distanceLabel: '200m away',
+    matchReasons: ['Shared: FITNESS, MUSIC'],
+    score: 0.65,
+    mutualFriendsCount: 0,
+    sharedInterests: ['FITNESS', 'MUSIC'],
+    sharedGroupsCount: 0,
+    lastActive: 'week' as const,
+    relationship: 'friends' as const,
+    lat: 35.7235,
+    lng: 50.9905,
+  },
+];
+
+export const MOCK_SETTINGS = {
+  lastSeenVisibility: 'everyone',
+  onlineStatusVisibility: 'everyone',
+  readReceipts: true,
+  profileVisibility: 'everyone',
+  showLastSeen: true,
+  pushNotifications: true,
+  messageNotifications: true,
+  mentionNotifications: true,
+  groupNotifications: true,
+  marketingNotifications: false,
+  emailNotifications: true,
+  notificationSound: true,
+  notificationVibration: true,
+  accentColor: 'oklch(0.55 0.2 145)',
+  fontSize: 'medium',
+  messageDensity: 'comfortable',
+  chatWallpaper: 'default',
+  autoDownloadMedia: 'wifi',
+  mediaQuality: 'high',
+  saveDrafts: true,
+  linkPreviews: true,
+  typingIndicators: true,
+  autoCleanupDays: 30,
+  locationVisibility: 'approximate',
+  discoveryVisibility: 'everyone',
+  showOnlineStatus: true,
+  updatedAt: new Date().toISOString(),
+};
+
+const mockFriendRequests: {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: string;
+}[] = [
+  {
+    id: 'mock-fr-1',
+    senderId: 'mock-user-admin',
+    receiverId: 'mock-user-nima',
+    status: 'PENDING',
+  },
+];
+
+export function getMockFriendRequests() {
+  return mockFriendRequests;
+}
+
+export function getMockFriendships() {
+  return new Set(['mock-user-alex']);
+}

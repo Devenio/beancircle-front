@@ -100,7 +100,11 @@ function VirtualMessageListInner({
   const items = virtualizer.getVirtualItems();
 
   return (
-    <div ref={virtualizer.containerRef} className="relative w-full pb-2">
+    <div
+      ref={virtualizer.containerRef}
+      className="relative w-full pb-2"
+      style={{ height: `${virtualizer.getTotalSize()}px` }}
+    >
       {loadingOlder ? (
         <div className="pointer-events-none absolute left-0 top-0 z-10 w-full px-0">
           <ChatOlderMessagesSkeleton label={loadingOlderLabel} />

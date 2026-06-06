@@ -30,6 +30,9 @@ export type SettingsApiData = {
   linkPreviews: boolean;
   typingIndicators: boolean;
   autoCleanupDays: number;
+  locationVisibility: 'exact' | 'approximate' | 'city' | 'hidden';
+  discoveryVisibility: 'everyone' | 'friends_of_friends' | 'hidden';
+  showOnlineStatus: boolean;
   updatedAt: string;
 };
 

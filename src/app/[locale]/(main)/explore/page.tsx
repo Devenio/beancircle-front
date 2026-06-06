@@ -6,5 +6,5 @@ export default async function ExploreRedirectPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  redirect(`/${locale}/discover`);
+  redirect(`/${locale}/discover/people`);
 }

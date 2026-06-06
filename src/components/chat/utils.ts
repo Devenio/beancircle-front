@@ -16,10 +16,6 @@ export type MessageDateGroup = {
   senderGroups: MessageSenderGroup[];
 };
 
-export type MessageValidationResult =
-  | { valid: true }
-  | { valid: false; reason: 'empty' | 'spam' };
-
 export type PresenceStatusTone = 'typing' | 'online' | 'offline';
 
 /** Maps presence state to a translation key + optional params (messages namespace). */
@@ -251,21 +247,6 @@ export function getGroupPosition(
   if (index === 0) return 'first';
   if (index === total - 1) return 'last';
   return 'middle';
-}
-
-export function validateMessageText(text: string): MessageValidationResult {
-  const trimmed = text.trim();
-  if (!trimmed) return { valid: false, reason: 'empty' };
-
-  // Repeated single character (6+ times)
-  if (/^(.)\1{5,}$/u.test(trimmed)) return { valid: false, reason: 'spam' };
-
-  // Short Latin keyboard mash only (asdasd, qweqwe)
-  if (trimmed.length <= 12 && /^([a-z]{2,4})\1+$/iu.test(trimmed)) {
-    return { valid: false, reason: 'spam' };
-  }
-
-  return { valid: true };
 }
 
 export function renderMentionParts(text: string) {

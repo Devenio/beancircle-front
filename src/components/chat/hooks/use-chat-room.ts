@@ -20,7 +20,6 @@ import type { MediaComposerItem } from '@/components/chat/media-composer-modal';
 import {
   isMineMessage,
   messagePreview,
-  validateMessageText,
 } from '@/components/chat/utils';
 import { haptic } from '@/lib/mobile/haptics';
 import { useChatArchiveStore } from '@/stores/chat-archive-store';
@@ -86,7 +85,10 @@ export function useChatRoom(conversationId: string, locale: string) {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastReadSentRef = useRef<string | null>(null);
-  const entryReadIdRef = useRef<string | null | undefined>(undefined);
+  const [entrySnapshot, setEntrySnapshot] = useState<{
+    readId: string | null;
+    unreadCount: number;
+  } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
@@ -101,13 +103,24 @@ export function useChatRoom(conversationId: string, locale: string) {
       ),
   });
 
-  const { data, isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    refetch: refetchMessages,
+  } = useQuery({
     queryKey: messagesKey,
     queryFn: () =>
       api<MessageListResponse>(`/conversations/${conversationId}/messages`, {
         locale,
       }),
+    enabled: Boolean(conversationId),
+    refetchOnMount: 'always',
+    retry: 2,
   });
+
+  const messagesLoading = isLoading || (isFetching && !data);
 
   const { data: conversations } = useQuery({
     queryKey: ['conversations', locale],
@@ -177,17 +190,29 @@ export function useChatRoom(conversationId: string, locale: string) {
     return () => clearInterval(timer);
   }, [refreshPeerPresence]);
 
-  // Capture the server read cursor at entry time (for the jump-to-unread divider)
-  // before we mark the thread as read.
+  // Reset per-conversation UI state when switching chats.
   useEffect(() => {
-    if (entryReadIdRef.current !== undefined) return;
-    const conversations = qc.getQueryData<Conversation[]>(['conversations', locale]);
+    lastReadSentRef.current = null;
+    didInitialScrollRef.current = false;
+    unreadAcknowledgedRef.current = false;
+    setEntrySnapshot(null);
+    setPendingMessages([]);
+    setReplyTo(null);
+    setComposerError('');
+    setDraft(localStorage.getItem(draftStorageKey(conversationId)) ?? '');
+  }, [conversationId]);
+
+  // Snapshot inbox read state at entry (before we mark the thread read).
+  useEffect(() => {
+    if (entrySnapshot !== null) return;
     const conv = conversations?.find((c) => c.id === conversationId);
-    if (conv) {
-      entryReadIdRef.current = conv.lastReadMessageId ?? null;
-      setMuted(Boolean(conv.muted));
-    }
-  }, [qc, conversationId, locale]);
+    if (!conv) return;
+    setMuted(Boolean(conv.muted));
+    setEntrySnapshot({
+      readId: conv.lastReadMessageId ?? null,
+      unreadCount: conv.unreadCount ?? 0,
+    });
+  }, [conversationId, conversations, entrySnapshot]);
 
   useEffect(() => {
     localStorage.setItem(LIVE_CHAT_STORAGE_KEY, String(liveEnabled));
@@ -200,12 +225,6 @@ export function useChatRoom(conversationId: string, locale: string) {
     }, 300);
     return () => clearTimeout(timer);
   }, [draft, conversationId]);
-
-  useEffect(() => {
-    didInitialScrollRef.current = false;
-    unreadAcknowledgedRef.current = false;
-    setDraft(localStorage.getItem(draftStorageKey(conversationId)) ?? '');
-  }, [conversationId]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const node = listRef.current;
@@ -342,15 +361,25 @@ export function useChatRoom(conversationId: string, locale: string) {
     const onReconnectAttempt = () => setConnectionState('connecting');
 
     const onNew = (msg: ChatMessage) => {
-      appendMessageToCache(msg);
+      appendMessageToCache({ ...msg, enterAnimate: true });
       const mine = isMineMessage(msg, currentUserId, currentUsername);
       if (!mine) markRead(msg.id);
-      requestAnimationFrame(() => scrollToBottom('smooth'));
+      window.setTimeout(() => {
+        patchMessageInCache(msg.id, (m) => {
+          if (!m.enterAnimate) return m;
+          const { enterAnimate: _, ...rest } = m;
+          return rest;
+        });
+      }, 400);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
     };
 
     const onEdited = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
     const onDeleted = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
-    const onPinned = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
+    const onPinned = (msg: ChatMessage) =>
+      patchMessageInCache(msg.id, (m) => ({ ...m, ...msg, pinned: msg.pinned }));
 
     const onSeen = (payload: {
       message?: ChatMessage;
@@ -527,17 +556,32 @@ export function useChatRoom(conversationId: string, locale: string) {
       setDraft('');
       setReplyTo(null);
       haptic('light');
-      requestAnimationFrame(() => scrollToBottom('smooth'));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
       return { clientId };
     },
     onSuccess: (created, _vars, context) => {
+      if (context?.clientId) {
+        appendMessageToCache({ ...created, sendLayoutId: context.clientId });
+      } else {
+        appendMessageToCache(created);
+      }
       setPendingMessages((prev) =>
         prev.filter((item) => item.clientId !== context?.clientId),
       );
-      appendMessageToCache(created);
       lastReadSentRef.current = created.id;
       qc.invalidateQueries({ queryKey: ['conversations'] });
-      requestAnimationFrame(() => scrollToBottom('smooth'));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
+      window.setTimeout(() => {
+        patchMessageInCache(created.id, (m) => {
+          if (!m.sendLayoutId) return m;
+          const { sendLayoutId: _, ...rest } = m;
+          return rest;
+        });
+      }, 450);
     },
     onError: (error, payload, context) => {
       const message = error instanceof Error ? error.message : '';
@@ -636,7 +680,25 @@ export function useChatRoom(conversationId: string, locale: string) {
         body: JSON.stringify({ pinned }),
         locale,
       }),
-    onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
+    onMutate: async ({ messageId, pinned }) => {
+      await qc.cancelQueries({ queryKey: messagesKey });
+      const previous = qc.getQueryData<MessageListResponse>(messagesKey);
+      qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          data: prev.data.map((m) =>
+            m.id === messageId ? { ...m, pinned } : m,
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(messagesKey, ctx.previous);
+    },
+    onSuccess: (updated) =>
+      patchMessageInCache(updated.id, (m) => ({ ...m, ...updated, pinned: updated.pinned })),
   });
 
   const reactionMutation = useMutation({
@@ -690,12 +752,23 @@ export function useChatRoom(conversationId: string, locale: string) {
 
   // First unread message id captured at entry (for the jump-to-unread divider).
   const firstUnreadId = useMemo(() => {
-    const entryReadId = entryReadIdRef.current;
-    if (entryReadId === undefined) return null;
-    let passedRead = entryReadId === null; // null => nothing read yet
+    if (!entrySnapshot || entrySnapshot.unreadCount <= 0) return null;
+
+    const { readId } = entrySnapshot;
+
+    if (readId === null) {
+      for (const msg of messages) {
+        if (isMineMessage(msg, currentUserId, currentUsername)) continue;
+        if (msg.deletedAt) continue;
+        return msg.id;
+      }
+      return null;
+    }
+
+    let passedRead = false;
     for (const msg of messages) {
       if (!passedRead) {
-        if (msg.id === entryReadId) passedRead = true;
+        if (msg.id === readId) passedRead = true;
         continue;
       }
       if (isMineMessage(msg, currentUserId, currentUsername)) continue;
@@ -703,25 +776,25 @@ export function useChatRoom(conversationId: string, locale: string) {
       return msg.id;
     }
     return null;
-  }, [messages, currentUserId, currentUsername]);
+  }, [entrySnapshot, messages, currentUserId, currentUsername]);
 
   // ---- Mark the latest message read (delay when unreads exist) --------------
 
   useEffect(() => {
-    if (isLoading || !messages.length) return;
+    if (messagesLoading || !messages.length) return;
     const last = messages[messages.length - 1];
     if ('clientId' in last) return;
     if (firstUnreadId && !unreadAcknowledgedRef.current) return;
     markRead(last.id);
-  }, [messages, isLoading, markRead, firstUnreadId]);
+  }, [messages, messagesLoading, markRead, firstUnreadId]);
 
   // ---- Initial scroll to latest message -----------------------------------
 
   useEffect(() => {
-    if (isLoading || !messages.length || didInitialScrollRef.current) return;
+    if (messagesLoading || !messages.length || didInitialScrollRef.current) return;
     didInitialScrollRef.current = true;
     requestAnimationFrame(() => scrollToBottom('instant'));
-  }, [isLoading, messages.length, scrollToBottom]);
+  }, [messagesLoading, messages.length, scrollToBottom]);
 
   const acknowledgeUnread = useCallback(() => {
     unreadAcknowledgedRef.current = true;
@@ -775,12 +848,7 @@ export function useChatRoom(conversationId: string, locale: string) {
 
   const sendText = useCallback(() => {
     const trimmed = draft.trim();
-    const validation = validateMessageText(trimmed);
     if (!trimmed) return;
-    if (!validation.valid) {
-      setComposerError(t('messageValidationRejected'));
-      return;
-    }
     setComposerError('');
     stopTyping();
     sendPayload({
@@ -790,7 +858,7 @@ export function useChatRoom(conversationId: string, locale: string) {
       replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
     });
     localStorage.removeItem(draftStorageKey(conversationId));
-  }, [draft, replyTo, sendPayload, stopTyping, conversationId, t]);
+  }, [draft, replyTo, sendPayload, stopTyping, conversationId]);
 
   const retryFailed = useCallback(
     (clientId: string) => {
@@ -1023,7 +1091,9 @@ export function useChatRoom(conversationId: string, locale: string) {
     messages,
     pinnedMessages,
     firstUnreadId,
-    isLoading,
+    isLoading: messagesLoading,
+    isMessagesError: isError,
+    refetchMessages,
     listRef,
     composerInputRef,
     draft,

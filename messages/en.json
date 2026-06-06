@@ -72,6 +72,12 @@
   "discover": {
     "title": "Discover",
     "subtitle": "Find cafes and coffee people near you",
+    "placesTitle": "Places",
+    "placesSubtitle": "Find cafes and coffee spots near you",
+    "tabs": {
+      "people": "People",
+      "places": "Places"
+    },
     "loading": "Loading...",
     "error": "Search failed",
     "nearby": "Cafes in your city",
@@ -96,6 +102,87 @@
       "outdoorSeating": "Outdoor",
       "dateFriendly": "Date friendly",
       "petFriendly": "Pet friendly"
+    },
+    "people": {
+      "title": "People nearby",
+      "subtitle": "Discover coffee lovers around you",
+      "galaxyHint": "Drag to explore · Tap an orb to connect",
+      "listView": "List",
+      "mapView": "Map",
+      "addFriend": "Add Friend",
+      "message": "Message",
+      "accept": "Accept",
+      "decline": "Decline",
+      "cancelRequest": "Cancel Request",
+      "remove": "Remove",
+      "friendRequests": "Friend requests",
+      "incoming": "Incoming",
+      "outgoing": "Outgoing",
+      "noIncoming": "No pending requests",
+      "noOutgoing": "No sent requests",
+      "pending": "Pending",
+      "empty": "No one nearby yet. Try widening your distance filter.",
+      "locationRequired": "Enable location to see the map",
+      "close": "Close",
+      "mutualFriends": "{count} mutual friends",
+      "filters": {
+        "distance": "Distance",
+        "km": "{count} km",
+        "interests": "Interests",
+        "activity": "Activity",
+        "activity_online": "Online now",
+        "activity_today": "Active today",
+        "activity_week": "Active this week",
+        "relationship": "Show",
+        "relationship_not_friends": "Not friends",
+        "relationship_friends_only": "Friends only",
+        "relationship_suggested": "Suggested"
+      },
+      "interests": {
+        "COFFEE": "Coffee",
+        "BUSINESS": "Business",
+        "STARTUPS": "Startups",
+        "AI": "AI",
+        "FITNESS": "Fitness",
+        "MUSIC": "Music",
+        "GAMING": "Gaming",
+        "TECH": "Tech"
+      },
+      "activity": {
+        "online": "Online now",
+        "today": "Active today",
+        "week": "Active this week",
+        "offline": "Offline"
+      },
+      "modes": {
+        "galaxy": "Galaxy",
+        "radar": "Radar",
+        "heatmap": "Heat"
+      },
+      "aiMatches": {
+        "title": "People you should meet today",
+        "fallback": "Great match nearby"
+      },
+      "availability": {
+        "title": "Available for…",
+        "duration": "How long?",
+        "coffee": "Coffee",
+        "networking": "Networking",
+        "gaming": "Gaming",
+        "walking": "Walking",
+        "coworking": "Co-working"
+      },
+      "rewards": {
+        "explorerLevel": "Explorer Lv.{level}",
+        "streak": "{days} day discovery streak"
+      },
+      "empty": {
+        "expandTitle": "The galaxy is quiet… for now",
+        "peakEvening": "New people usually appear around 6 PM",
+        "peakGeneric": "Try expanding your orbit to find more creators",
+        "expandCta": "Expand to {km} km",
+        "tryInterest": "Try {interest} nearby"
+      }
     }
   },
   "cafes": {
@@ -259,6 +346,8 @@
     "loadingOlderMessages": "Loading older messages",
     "emptyChatTitle": "Say hello",
     "emptyChatBody": "Send a message, photo, or voice note to start the conversation.",
+    "messagesLoadError": "Couldn't load messages. Check your connection and try again.",
+    "retryLoadMessages": "Retry",
     "noResults": "No chats found",
     "noResultsBody": "Try a different name or username, or search for someone new.",
     "forward": "Forward",
@@ -492,6 +581,7 @@
     "connectGoogle": "Connect Google",
     "privacyCenterDesc": "Control who can see your activity and profile",
     "privacyCenterHint": "These settings help you decide what others see. Changes apply across BeanCircle.",
+    "discoverPrivacy": "Nearby discovery",
     "whoCanSee": "Who can see",
     "messaging": "Messaging",
     "people": "People & safety",
@@ -581,6 +671,12 @@
       "readReceiptsDesc": "Let others know when you read messages",
       "profileVisibility": "Profile visibility",
       "profileVisibilityDesc": "Who can view your full profile",
+      "locationVisibility": "Location sharing",
+      "locationVisibilityDesc": "How precisely others see your distance",
+      "discoveryVisibility": "Discoverability",
+      "discoveryVisibilityDesc": "Who can find you in People nearby",
+      "showOnlineStatus": "Show online status",
+      "showOnlineStatusDesc": "Let friends see when you're active",
       "blocked": "Blocked users",
       "blockedDesc": "People you have blocked",
       "muted": "Muted users",
@@ -665,6 +761,17 @@
         "contacts": "Only contacts can view your bio, stats, and activity",
         "nobody": "Your profile is hidden from search and non-contacts"
       }
+    },
+    "location": {
+      "exact": "Exact distance",
+      "approximate": "Approximate",
+      "city": "City only",
+      "hidden": "Hidden"
+    },
+    "discovery": {
+      "everyone": "Everyone",
+      "friendsOfFriends": "Friends of friends",
+      "hidden": "Hidden from discovery"
     },
     "hints": {
       "readReceiptsOff": "Others won't see when you've read their messages; you won't see theirs either",
@@ -870,6 +977,8 @@
     "posts": "posts",
     "followers": "followers",
     "following": "following",
+    "friends": "friends",
+    "connections": "connections",
     "streak": "Streak",
     "collection": "Collection",
     "achievements": "Achievements",

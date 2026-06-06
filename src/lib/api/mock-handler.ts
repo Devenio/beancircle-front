@@ -9,6 +9,10 @@ import {
   MOCK_NOTIFICATIONS,
   MOCK_POSTS,
   MOCK_USERS,
+  MOCK_NEARBY_PEOPLE,
+  MOCK_SETTINGS,
+  getMockFriendRequests,
+  getMockFriendships,
 } from './mock-data';
 
 type RequestOptions = RequestInit & { locale?: string };
@@ -184,6 +188,27 @@ export async function handleMockRequest<T>(
     } as T;
   }
   const messagesMatch = pathname.match(/^\/conversations\/([^/]+)\/messages$/);
+  const readMatch = pathname.match(/^\/conversations\/([^/]+)\/read$/);
+  if (readMatch && method === 'POST') {
+    const conversationId = readMatch[1];
+    const body = parseBody(options.body);
+    const conv = MOCK_CONVERSATIONS.find((item) => item.id === conversationId);
+    const list = MOCK_MESSAGES[conversationId] ?? [];
+    const messageId = typeof body.lastMessageId === 'string' ? body.lastMessageId : '';
+    const target = messageId
+      ? list.find((item) => item.id === messageId)
+      : list[list.length - 1];
+    if (conv) {
+      conv.lastReadMessageId = target?.id ?? null;
+      conv.lastReadAt = target?.createdAt ?? new Date().toISOString();
+      conv.unreadCount = 0;
+    }
+    return {
+      conversationId,
+      unreadCount: 0,
+      lastReadMessageId: conv?.lastReadMessageId ?? null,
+    } as T;
+  }
   if (messagesMatch && method === 'GET') {
     const conversationMessages = (MOCK_MESSAGES[messagesMatch[1]] ?? []).filter(
       (m) => !mockHiddenMessageIds.has(m.id),
@@ -315,8 +340,10 @@ export async function handleMockRequest<T>(
     const body = parseBody(options.body);
     const { message } = findConversationMessage(conversationId, messageId);
     if (!message) notFound(path);
-    message.pinned = typeof body.pinned === 'boolean' ? body.pinned : !message.pinned;
-    return message as T;
+    const pinned =
+      typeof body.pinned === 'boolean' ? body.pinned : !message.pinned;
+    message.pinned = pinned;
+    return { ...message, pinned } as T;
   }
 
   // Notifications
@@ -353,6 +380,111 @@ export async function handleMockRequest<T>(
   const voucherMatch = pathname.match(/^\/gifts\/([^/]+)\/voucher$/);
   if (voucherMatch && method === 'GET') {
     return { qrDataUrl: 'data:image/png;base64,mock' } as T;
+  }
+
+  // Settings
+  if (pathname === '/settings' && method === 'GET') {
+    return MOCK_SETTINGS as T;
+  }
+  if (pathname === '/settings' && method === 'PATCH') {
+    const body = parseBody(options.body);
+    Object.assign(MOCK_SETTINGS, body);
+    MOCK_SETTINGS.updatedAt = new Date().toISOString();
+    return MOCK_SETTINGS as T;
+  }
+  if (pathname === '/settings/blocked' && method === 'GET') {
+    return [] as T;
+  }
+  if (pathname === '/settings/muted' && method === 'GET') {
+    return [] as T;
+  }
+
+  // Location
+  if (pathname === '/users/location' && method === 'POST') {
+    return { ok: true, distanceVisibility: 'approximate' } as T;
+  }
+  if (pathname === '/users/me/location' && method === 'GET') {
+    return { visibility: 'approximate', hasLocation: true, cityName: 'Fardis' } as T;
+  }
+
+  // Discover people
+  if (pathname === '/discover/nearby' && method === 'GET') {
+    return {
+      items: MOCK_NEARBY_PEOPLE.map(({ lat: _lat, lng: _lng, ...p }) => p),
+      nextCursor: null,
+      hasMore: false,
+    } as T;
+  }
+  if (pathname === '/discover/suggestions' && method === 'GET') {
+    return {
+      items: MOCK_NEARBY_PEOPLE.slice(0, 2).map((p) => ({
+        id: p.id,
+        name: p.name,
+        username: p.username,
+        avatarUrl: p.avatarUrl,
+        sharedInterests: p.sharedInterests,
+        reason: 'mutual_friends',
+        score: 0.8,
+        lastActive: p.lastActive,
+        relationship: p.relationship,
+      })),
+      nextCursor: null,
+      hasMore: false,
+    } as T;
+  }
+  if (pathname === '/discover/map' && method === 'GET') {
+    return {
+      pins: MOCK_NEARBY_PEOPLE.map(({ lat, lng, ...rest }) => ({ lat, lng, ...rest })),
+      center: { lat: 35.724, lng: 50.991 },
+    } as T;
+  }
+  if (pathname === '/discover/sections' && method === 'GET') {
+    const cafes = Object.values(MOCK_CAFES);
+    return {
+      trending: cafes,
+      recommended: cafes.slice(0, 2),
+      new: cafes.slice(1),
+      hiddenGems: [cafes[2]],
+    } as T;
+  }
+  if (pathname === '/discover' && method === 'GET') {
+    return Object.values(MOCK_CAFES) as T;
+  }
+
+  // Friends
+  if (pathname === '/friends/requests' && method === 'GET') {
+    const incoming = getMockFriendRequests()
+      .filter((r) => r.receiverId === MOCK_CURRENT_USER.id && r.status === 'PENDING')
+      .map((r) => ({
+        ...r,
+        sender: Object.values(MOCK_USERS).find((u) => u.id === r.senderId),
+      }));
+    return { incoming, outgoing: [] } as T;
+  }
+  if (pathname === '/friends/status' && method === 'GET') {
+    const userId = params.get('userId') ?? '';
+    if (getMockFriendships().has(userId)) return 'friends' as T;
+    const pending = getMockFriendRequests().find(
+      (r) =>
+        r.status === 'PENDING' &&
+        ((r.senderId === MOCK_CURRENT_USER.id && r.receiverId === userId) ||
+          (r.receiverId === MOCK_CURRENT_USER.id && r.senderId === userId)),
+    );
+    if (pending?.senderId === MOCK_CURRENT_USER.id) return 'pending_out' as T;
+    if (pending) return 'pending_in' as T;
+    return 'none' as T;
+  }
+  if (pathname === '/friends/request' && method === 'POST') {
+    return { id: `mock-fr-${Date.now()}`, status: 'PENDING' } as T;
+  }
+  if (pathname === '/friends/accept' && method === 'POST') {
+    return { ok: true } as T;
+  }
+  if (pathname === '/friends/reject' && method === 'POST') {
+    return { ok: true } as T;
+  }
+  if (pathname === '/friends/list' && method === 'GET') {
+    return { items: [], nextCursor: null, hasMore: false } as T;
   }
 
   notFound(`${method} ${pathname}`);

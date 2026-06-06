@@ -48,6 +48,10 @@ export type ChatMessage = {
   pinned?: boolean;
   seenBy?: string[];
   reactions?: ReactionGroup[];
+  /** Client-only: shared layout id while optimistic send resolves */
+  sendLayoutId?: string;
+  /** Client-only: play a one-time enter animation (e.g. incoming socket message) */
+  enterAnimate?: boolean;
 };
 
 export type PendingMessage = ChatMessage & {

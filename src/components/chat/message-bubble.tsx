@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, type ReactNode } from 'react';
 import { animate, motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
 import { Check, MessageSquareReply } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,61 @@ import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { haptic } from '@/lib/mobile/haptics';
 
 type BubblePosition = 'single' | 'first' | 'middle' | 'last';
+
+const SEND_TRANSITION = { duration: 0.3, ease: [0.32, 0.72, 0, 1] as const };
+
+function outgoingLayoutId(message: ChatMessage | PendingMessage): string | undefined {
+  if ('clientId' in message) return `outgoing-${message.clientId}`;
+  if (message.sendLayoutId) return `outgoing-${message.sendLayoutId}`;
+  return undefined;
+}
+
+function shouldPlayEnter(message: ChatMessage | PendingMessage): boolean {
+  return 'clientId' in message || Boolean(message.enterAnimate);
+}
+
+function BubbleMotionShell({
+  message,
+  isMine,
+  pending,
+  children,
+}: {
+  message: ChatMessage | PendingMessage;
+  isMine: boolean;
+  pending: 'sending' | 'failed' | null;
+  children: ReactNode;
+}) {
+  const layoutId = outgoingLayoutId(message);
+  const playEnter = shouldPlayEnter(message);
+
+  return (
+    <motion.div
+      layout={Boolean(layoutId)}
+      layoutId={layoutId}
+      initial={
+        playEnter
+          ? isMine
+            ? { opacity: 0, y: 12, scale: 0.95 }
+            : { opacity: 0, y: 10, x: -10, scale: 0.97 }
+          : false
+      }
+      animate={{
+        opacity: pending === 'sending' ? 0.92 : 1,
+        y: 0,
+        x: 0,
+        scale: 1,
+      }}
+      transition={
+        pending === 'sending'
+          ? { opacity: { duration: 0.22, ease: 'easeOut' }, ...SEND_TRANSITION }
+          : SEND_TRANSITION
+      }
+      className="relative max-w-full"
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 type MessageBubbleProps = {
   message: ChatMessage | PendingMessage;
@@ -162,7 +217,6 @@ function MessageBubbleInner({
         bubbleRadius(isMine, position),
         isMine ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-foreground',
         pending === 'failed' && 'border border-destructive/40 bg-destructive/10 text-destructive',
-        pending === 'sending' && 'opacity-70',
         swipeReply && 'shadow-md',
         selectionMode && selected && 'ring-2 ring-primary/50',
         'select-none',
@@ -240,27 +294,31 @@ function MessageBubbleInner({
   );
 
   const bubble = swipeReplyEnabled ? (
-    <motion.div
-      style={{ x }}
-      drag="x"
-      dragConstraints={{ left: -88, right: 0 }}
-      dragElastic={0.1}
-      dragSnapToOrigin
-      onDragStart={() => setSwipeReply(true)}
-      onDragEnd={handleDragEnd}
-      className="relative max-w-full"
-    >
-      <motion.span
-        style={{ opacity: replyOpacity }}
-        className="pointer-events-none absolute -left-8 top-1/2 flex -translate-y-1/2 items-center text-primary"
-        aria-hidden
+    <BubbleMotionShell message={message} isMine={isMine} pending={pending}>
+      <motion.div
+        style={{ x }}
+        drag="x"
+        dragConstraints={{ left: -88, right: 0 }}
+        dragElastic={0.1}
+        dragSnapToOrigin
+        onDragStart={() => setSwipeReply(true)}
+        onDragEnd={handleDragEnd}
+        className="relative max-w-full"
       >
-        <MessageSquareReply className="size-4" />
-      </motion.span>
-      {bubbleBody}
-    </motion.div>
+        <motion.span
+          style={{ opacity: replyOpacity }}
+          className="pointer-events-none absolute -left-8 top-1/2 flex -translate-y-1/2 items-center text-primary"
+          aria-hidden
+        >
+          <MessageSquareReply className="size-4" />
+        </motion.span>
+        {bubbleBody}
+      </motion.div>
+    </BubbleMotionShell>
   ) : (
-    <div className="relative max-w-full">{bubbleBody}</div>
+    <BubbleMotionShell message={message} isMine={isMine} pending={pending}>
+      {bubbleBody}
+    </BubbleMotionShell>
   );
 
   if (selectionMode) {
@@ -325,6 +383,8 @@ function messageBubblePropsEqual(prev: MessageBubbleProps, next: MessageBubblePr
       prev.message.editedAt !== next.message.editedAt ||
       prev.message.deletedAt !== next.message.deletedAt ||
       prev.message.pinned !== next.message.pinned ||
+      prev.message.sendLayoutId !== next.message.sendLayoutId ||
+      prev.message.enterAnimate !== next.message.enterAnimate ||
       prev.message.reactions !== next.message.reactions ||
       ('status' in prev.message ? prev.message.status : null) !==
         ('status' in next.message ? next.message.status : null)

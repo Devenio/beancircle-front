@@ -1,22 +1,21 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CalendarDays, ChevronRight, Settings, Stamp, Users } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { Button } from '@/components/ui/button';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { BeanScorePanel } from '@/components/beanscore/beanscore-panel';
 import { CollectionCard, StreakCard } from '@/components/profile/profile-stats';
+import { FriendActionButton } from '@/components/discover/people/friend-action-button';
+import type { DiscoverPerson } from '@/components/discover/people/types';
 
 export default function ProfilePage() {
   const { username, locale } = useParams<{ username: string; locale: string }>();
-  const t = useTranslations('common');
   const tp = useTranslations('profile');
-  const router = useRouter();
-  const qc = useQueryClient();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', username, locale],
@@ -31,9 +30,18 @@ export default function ProfilePage() {
         followersCount: number;
         followingCount: number;
         postsCount: number;
-        isFollowing?: boolean;
         isSelf?: boolean;
       }>(`/users/${username}`, { locale }),
+  });
+
+  const { data: relationship } = useQuery({
+    queryKey: ['friends', 'status', profile?.id, locale],
+    queryFn: () =>
+      api<'none' | 'pending_out' | 'pending_in' | 'friends' | 'self'>(
+        `/friends/status?userId=${encodeURIComponent(profile!.id)}`,
+        { locale },
+      ),
+    enabled: !!profile && !profile.isSelf,
   });
 
   const { data: me } = useQuery({
@@ -42,26 +50,28 @@ export default function ProfilePage() {
     enabled: !!profile?.isSelf,
   });
 
-  const followMutation = useMutation({
-    mutationFn: () =>
-      api(`/users/${profile?.id}/follow`, {
-        method: profile?.isFollowing ? 'DELETE' : 'POST',
-        locale,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile', username] }),
-  });
-
-  async function startChat() {
-    if (!profile) return;
-    const conv = await api<{ id: string }>('/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ participantId: profile.id }),
-      locale,
-    });
-    router.push(`/messages/${conv.id}`);
-  }
-
   if (!profile) return null;
+
+  const person: DiscoverPerson | null =
+    !profile.isSelf && relationship && relationship !== 'self'
+      ? {
+          id: profile.id,
+          name: profile.name,
+          username: profile.username,
+          avatarUrl: profile.avatarUrl,
+          mutualFriendsCount: 0,
+          sharedInterests: [],
+          sharedGroupsCount: 0,
+          lastActive: 'offline',
+          relationship:
+            relationship === 'none' ||
+            relationship === 'pending_out' ||
+            relationship === 'pending_in' ||
+            relationship === 'friends'
+              ? relationship
+              : 'none',
+        }
+      : null;
 
   return (
     <div className="min-h-dvh pb-4">
@@ -78,8 +88,8 @@ export default function ProfilePage() {
         <Avatar src={profile.avatarUrl} name={profile.name} className="h-20 w-20" />
         <div className="flex flex-1 justify-around text-center">
           <Stat value={profile.postsCount} label={tp('posts')} />
-          <Stat value={profile.followersCount} label={tp('followers')} />
-          <Stat value={profile.followingCount} label={tp('following')} />
+          <Stat value={profile.followersCount} label={tp('friends')} />
+          <Stat value={profile.followingCount} label={tp('connections')} />
         </div>
       </div>
       <div className="px-4">
@@ -87,18 +97,9 @@ export default function ProfilePage() {
         {profile.bio ? <p className="mt-1 text-sm">{profile.bio}</p> : null}
       </div>
 
-      {!profile.isSelf ? (
-        <div className="mt-4 flex gap-2 px-4">
-          <Button
-            className="flex-1"
-            variant={profile.isFollowing ? 'outline' : 'default'}
-            onClick={() => followMutation.mutate()}
-          >
-            {profile.isFollowing ? t('unfollow') : t('follow')}
-          </Button>
-          <Button className="flex-1" variant="outline" onClick={startChat}>
-            {t('message')}
-          </Button>
+      {person ? (
+        <div className="mt-4 px-4">
+          <FriendActionButton person={person} />
         </div>
       ) : null}
 

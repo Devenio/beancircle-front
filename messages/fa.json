@@ -72,6 +72,12 @@
   "discover": {
     "title": "کاوش",
     "subtitle": "کافه‌ها و افراد علاقه‌مند به قهوه را پیدا کنید",
+    "placesTitle": "مکان‌ها",
+    "placesSubtitle": "کافه‌ها و مکان‌های قهوه نزدیک خود را پیدا کنید",
+    "tabs": {
+      "people": "افراد",
+      "places": "مکان‌ها"
+    },
     "loading": "در حال بارگذاری...",
     "error": "جستجو ناموفق بود",
     "nearby": "کافه‌های شهر شما",
@@ -96,6 +102,87 @@
       "outdoorSeating": "فضای باز",
       "dateFriendly": "مناسب قرار",
       "petFriendly": "حیوان‌دوست"
+    },
+    "people": {
+      "title": "افراد نزدیک",
+      "subtitle": "علاقه‌مندان به قهوه در اطرافت را کشف کن",
+      "galaxyHint": "بچرخان و کاوش کن · روی کره‌ها بزن",
+      "listView": "فهرست",
+      "mapView": "نقشه",
+      "addFriend": "افزودن دوست",
+      "message": "پیام",
+      "accept": "پذیرفتن",
+      "decline": "رد",
+      "cancelRequest": "لغو درخواست",
+      "remove": "حذف",
+      "friendRequests": "درخواست‌های دوستی",
+      "incoming": "دریافتی",
+      "outgoing": "ارسالی",
+      "noIncoming": "درخواستی نیست",
+      "noOutgoing": "درخواست ارسالی نیست",
+      "pending": "در انتظار",
+      "empty": "کسی نزدیک نیست. فیلتر فاصله را بیشتر کن.",
+      "locationRequired": "برای نقشه موقعیت را فعال کن",
+      "close": "بستن",
+      "mutualFriends": "{count} دوست مشترک",
+      "filters": {
+        "distance": "فاصله",
+        "km": "{count} کیلومتر",
+        "interests": "علاقه‌ها",
+        "activity": "فعالیت",
+        "activity_online": "آنلاین",
+        "activity_today": "فعال امروز",
+        "activity_week": "فعال این هفته",
+        "relationship": "نمایش",
+        "relationship_not_friends": "غیردوست",
+        "relationship_friends_only": "فقط دوستان",
+        "relationship_suggested": "پیشنهادی"
+      },
+      "interests": {
+        "COFFEE": "قهوه",
+        "BUSINESS": "کسب‌وکار",
+        "STARTUPS": "استارتاپ",
+        "AI": "هوش مصنوعی",
+        "FITNESS": "ورزش",
+        "MUSIC": "موسیقی",
+        "GAMING": "بازی",
+        "TECH": "فناوری"
+      },
+      "activity": {
+        "online": "آنلاین",
+        "today": "فعال امروز",
+        "week": "فعال این هفته",
+        "offline": "آفلاین"
+      },
+      "modes": {
+        "galaxy": "کهکشان",
+        "radar": "رادار",
+        "heatmap": "حرارتی"
+      },
+      "aiMatches": {
+        "title": "امروز باید ببینی",
+        "fallback": "هم‌مسیر نزدیک"
+      },
+      "availability": {
+        "title": "آماده برای…",
+        "duration": "چند دقیقه؟",
+        "coffee": "قهوه",
+        "networking": "Networking",
+        "gaming": "بازی",
+        "walking": "پیاده‌روی",
+        "coworking": "هم‌کاری"
+      },
+      "rewards": {
+        "explorerLevel": "کاوشگر Lv.{level}",
+        "streak": "استریک {days} روزه"
+      },
+      "empty": {
+        "expandTitle": "کهکشان الان آرام است…",
+        "peakEvening": "معمولاً حوالی ۶ عصر آدم‌های جدید می‌آیند",
+        "peakGeneric": "شعاع جستجو را بیشتر کن",
+        "expandCta": "گسترش تا {km} کیلومتر",
+        "tryInterest": "{interest} نزدیک"
+      }
     }
   },
   "cafes": {
@@ -259,6 +346,8 @@
     "loadingOlderMessages": "در حال بارگذاری پیام‌های قدیمی‌تر",
     "emptyChatTitle": "سلام کنید",
     "emptyChatBody": "با ارسال پیام، عکس یا ویس گفتگو را شروع کنید.",
+    "messagesLoadError": "بارگذاری پیام‌ها ممکن نشد. اتصال را بررسی کنید و دوباره تلاش کنید.",
+    "retryLoadMessages": "تلاش دوباره",
     "noResults": "گفتگویی پیدا نشد",
     "noResultsBody": "نام یا نام کاربری دیگری را امتحان کنید یا شخص جدیدی جستجو کنید.",
     "forward": "فوروارد",
@@ -491,6 +580,7 @@
     "connectGoogle": "اتصال گوگل",
     "privacyCenterDesc": "کنترل کنید چه کسی فعالیت و پروفایل شما را می‌بیند",
     "privacyCenterHint": "این تنظیمات مشخص می‌کنند دیگران چه چیزی می‌بینند. تغییرات در کل BeanCircle اعمال می‌شود.",
+    "discoverPrivacy": "کشف افراد نزدیک",
     "whoCanSee": "چه کسی می‌بیند",
     "messaging": "پیام‌رسانی",
     "people": "افراد و امنیت",
@@ -580,6 +670,12 @@
       "readReceiptsDesc": "اطلاع به دیگران از خواندن پیام",
       "profileVisibility": "نمایش پروفایل",
       "profileVisibilityDesc": "چه کسی پروفایل کامل را ببیند",
+      "locationVisibility": "اشتراک موقعیت",
+      "locationVisibilityDesc": "دقت نمایش فاصله برای دیگران",
+      "discoveryVisibility": "قابل کشف بودن",
+      "discoveryVisibilityDesc": "چه کسی شما را در افراد نزدیک ببیند",
+      "showOnlineStatus": "نمایش وضعیت آنلاین",
+      "showOnlineStatusDesc": "به دوستان نشان بده وقتی فعال هستی",
       "blocked": "کاربران مسدود",
       "blockedDesc": "افرادی که مسدود کرده‌اید",
       "muted": "کاربران بی‌صدا",
@@ -664,6 +760,17 @@
         "contacts": "فقط مخاطبین بیو، آمار و فعالیت را می‌بینند",
         "nobody": "پروفایل از جستجو و غیرمخاطبین پنهان است"
       }
+    },
+    "location": {
+      "exact": "فاصله دقیق",
+      "approximate": "تقریبی",
+      "city": "فقط شهر",
+      "hidden": "مخفی"
+    },
+    "discovery": {
+      "everyone": "همه",
+      "friendsOfFriends": "دوستان دوستان",
+      "hidden": "مخفی از کشف"
     },
     "hints": {
       "readReceiptsOff": "دیگران نمی‌فهمند پیام را خوانده‌اید؛ شما هم رسید خواندن آن‌ها را نمی‌بینید",
@@ -869,6 +976,8 @@
     "posts": "پست",
     "followers": "دنبال‌کننده",
     "following": "دنبال‌شونده",
+    "friends": "دوستان",
+    "connections": "ارتباطات",
     "streak": "استریک",
     "collection": "کلکسیون",
     "achievements": "دستاوردها",

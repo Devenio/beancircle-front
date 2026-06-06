@@ -1,6 +1,7 @@
 'use client';
 
 import { BellOff, Pin } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/chat/user-avatar';
@@ -53,7 +54,18 @@ export function ConversationListItem({
               {displayName}
             </p>
             {pinned ? (
-              <Pin className="size-3 shrink-0 text-muted-foreground" aria-label={t('pin')} />
+              <AnimatePresence initial={false}>
+                <motion.span
+                  key="pinned"
+                  initial={{ opacity: 0, scale: 0.5, rotate: -40 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, rotate: 40 }}
+                  transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
+                  className="inline-flex"
+                >
+                  <Pin className="size-3 shrink-0 text-muted-foreground" aria-label={t('pin')} />
+                </motion.span>
+              </AnimatePresence>
             ) : null}
             {muted ? (
               <BellOff className="size-3 shrink-0 text-muted-foreground" aria-label={t('muted')} />

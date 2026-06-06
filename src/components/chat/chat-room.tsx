@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ArrowDown, Check, Loader2 } from 'lucide-react';
 import { ChatMessagesSkeleton } from '@/components/chat/chat-messages-skeleton';
@@ -512,20 +512,31 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         />
       ) : null}
 
-      {room.pinnedMessages.length > 0 && !selectionMode ? (
-        <PinnedMessageBanner
-          messages={room.pinnedMessages}
-          currentUserId={room.currentUserId}
-          scrollContainerRef={room.listRef}
-          onJumpToMessage={(messageId) => {
-            const el = room.listRef.current?.querySelector(`[data-message-id="${messageId}"]`);
-            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-          onUnpin={(messageId) =>
-            room.pinMutation.mutate({ messageId, pinned: false })
-          }
-        />
-      ) : null}
+      <AnimatePresence initial={false}>
+        {room.pinnedMessages.length > 0 && !selectionMode ? (
+          <motion.div
+            key="pinned-messages-banner"
+            initial={{ opacity: 0, y: -10, scaleY: 0.94 }}
+            animate={{ opacity: 1, y: 0, scaleY: 1 }}
+            exit={{ opacity: 0, y: -8, scaleY: 0.94 }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            className="origin-top overflow-hidden"
+          >
+            <PinnedMessageBanner
+              messages={room.pinnedMessages}
+              currentUserId={room.currentUserId}
+              scrollContainerRef={room.listRef}
+              onJumpToMessage={(messageId) => {
+                const el = room.listRef.current?.querySelector(`[data-message-id="${messageId}"]`);
+                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              onUnpin={(messageId) =>
+                room.pinMutation.mutate({ messageId, pinned: false })
+              }
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <div className="relative min-h-0 flex-1">
         <div
@@ -552,30 +563,40 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         <div className="relative z-10">
           {room.isLoading ? (
             <ChatMessagesSkeleton label={t('loadingMessages')} />
+          ) : room.isMessagesError ? (
+            <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-3 px-6 text-center">
+              <p className="text-sm text-muted-foreground">{t('messagesLoadError')}</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void room.refetchMessages()}>
+                {t('retryLoadMessages')}
+              </Button>
+            </div>
           ) : room.messages.length === 0 ? (
             <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
               <p className="text-lg font-medium">{t('emptyChatTitle')}</p>
               <p className="max-w-xs text-sm text-muted-foreground">{t('emptyChatBody')}</p>
             </div>
           ) : (
-            <VirtualMessageList
-              groupedMessages={groupedMessages}
-              firstUnreadId={room.firstUnreadId}
-              listRef={room.listRef}
-              currentUserId={room.currentUserId}
-              currentUsername={room.currentUsername}
-              peerId={room.peer?.id}
-              peerAvatar={room.peer?.avatarUrl}
-              peerName={room.peer?.name ?? room.peer?.username}
-              peerOnline={peerOnline}
-              highlightMessageId={searchMatches[searchIndex]?.id}
-              unreadLabel={t('unreadMessages')}
-              loadingOlder={room.isFetchingOlder}
-              loadingOlderLabel={t('loadingOlderMessages')}
-              selectionMode={selectionMode}
-              selectedIds={selectedIds}
-              handlersRef={messageHandlersRef}
-            />
+            <LayoutGroup id={`messages-${conversationId}`}>
+              <VirtualMessageList
+                key={conversationId}
+                groupedMessages={groupedMessages}
+                firstUnreadId={room.firstUnreadId}
+                listRef={room.listRef}
+                currentUserId={room.currentUserId}
+                currentUsername={room.currentUsername}
+                peerId={room.peer?.id}
+                peerAvatar={room.peer?.avatarUrl}
+                peerName={room.peer?.name ?? room.peer?.username}
+                peerOnline={peerOnline}
+                highlightMessageId={searchMatches[searchIndex]?.id}
+                unreadLabel={t('unreadMessages')}
+                loadingOlder={room.isFetchingOlder}
+                loadingOlderLabel={t('loadingOlderMessages')}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                handlersRef={messageHandlersRef}
+              />
+            </LayoutGroup>
           )}
 
           <AnimatePresence>

@@ -14,7 +14,8 @@ import {
   SettingsToggleRow,
 } from '@/components/settings/settings-row';
 import { SettingsVisibilityPicker } from '@/components/settings/settings-visibility-picker';
-import { useBlockedUsers, useMutedUsers, useSettingsApi } from '@/hooks/use-settings-api';
+import { SettingsOptionPicker } from '@/components/settings/settings-option-picker';
+import { useBlockedUsers, useMutedUsers, useSettingsApi, type SettingsApiData } from '@/hooks/use-settings-api';
 import { visibilityActiveHint, readReceiptsHint } from '@/lib/settings-hints';
 import { ProfileAvatar } from '@/components/chat/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -89,6 +90,57 @@ export default function SettingsPrivacyPage() {
             onChange={(v) => setVisibility('profileVisibility', v)}
           />
         </div>
+      </SettingsList>
+
+      <SettingsSectionLabel>{t('discoverPrivacy')}</SettingsSectionLabel>
+      <SettingsList>
+        <div>
+          <SettingsFieldHeader
+            icon={<Eye className="size-5" />}
+            label={t('items.locationVisibility')}
+            description={t('items.locationVisibilityDesc')}
+          />
+          <SettingsOptionPicker
+            value={settings.locationVisibility}
+            onChange={(v) =>
+              update({
+                locationVisibility: v as SettingsApiData['locationVisibility'],
+              })
+            }
+            options={[
+              { value: 'exact', label: t('location.exact') },
+              { value: 'approximate', label: t('location.approximate') },
+              { value: 'city', label: t('location.city') },
+              { value: 'hidden', label: t('location.hidden') },
+            ]}
+          />
+        </div>
+        <div>
+          <SettingsFieldHeader
+            icon={<UserCircle className="size-5" />}
+            label={t('items.discoveryVisibility')}
+            description={t('items.discoveryVisibilityDesc')}
+          />
+          <SettingsOptionPicker
+            value={settings.discoveryVisibility}
+            onChange={(v) =>
+              update({
+                discoveryVisibility: v as SettingsApiData['discoveryVisibility'],
+              })
+            }
+            options={[
+              { value: 'everyone', label: t('discovery.everyone') },
+              { value: 'friends_of_friends', label: t('discovery.friendsOfFriends') },
+              { value: 'hidden', label: t('discovery.hidden') },
+            ]}
+          />
+        </div>
+        <SettingsToggleRow
+          label={t('items.showOnlineStatus')}
+          description={t('items.showOnlineStatusDesc')}
+          checked={settings.showOnlineStatus}
+          onCheckedChange={(v) => update({ showOnlineStatus: v })}
+        />
       </SettingsList>
 
       <SettingsSectionLabel>{t('messaging')}</SettingsSectionLabel>

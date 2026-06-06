@@ -5,5 +5,6 @@ import { ChatRoom } from '@/components/chat/chat-room';
 
 export default function ChatPage() {
   const { id, locale } = useParams<{ id: string; locale: string }>();
-  return <ChatRoom conversationId={id} locale={locale} />;
+  if (!id) return null;
+  return <ChatRoom key={id} conversationId={id} locale={locale} />;
 }
