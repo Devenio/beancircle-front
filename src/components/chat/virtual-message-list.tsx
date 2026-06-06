@@ -2,6 +2,7 @@
 
 import { memo, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { ChatOlderMessagesSkeleton } from '@/components/chat/chat-messages-skeleton';
 import { DateSeparator } from '@/components/chat/date-separator';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import type { MessageDateGroup } from '@/components/chat/utils';
@@ -31,6 +32,7 @@ type VirtualMessageListProps = {
   highlightMessageId?: string;
   unreadLabel: string;
   loadingOlder?: boolean;
+  loadingOlderLabel?: string;
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   handlersRef: React.RefObject<VirtualMessageListHandlers>;
@@ -66,6 +68,7 @@ function VirtualMessageListInner({
   highlightMessageId,
   unreadLabel,
   loadingOlder,
+  loadingOlderLabel,
   selectionMode = false,
   selectedIds,
   handlersRef,
@@ -99,10 +102,8 @@ function VirtualMessageListInner({
   return (
     <div ref={virtualizer.containerRef} className="relative w-full pb-2">
       {loadingOlder ? (
-        <div className="pointer-events-none absolute left-0 top-0 z-10 flex w-full justify-center py-2">
-          <span className="rounded-full bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow">
-            …
-          </span>
+        <div className="pointer-events-none absolute left-0 top-0 z-10 w-full px-0">
+          <ChatOlderMessagesSkeleton label={loadingOlderLabel} />
         </div>
       ) : null}
       {items.map((virtualRow) => {
@@ -168,6 +169,7 @@ export const VirtualMessageList = memo(VirtualMessageListInner, (prev, next) =>
   prev.highlightMessageId === next.highlightMessageId &&
   prev.unreadLabel === next.unreadLabel &&
   prev.loadingOlder === next.loadingOlder &&
+  prev.loadingOlderLabel === next.loadingOlderLabel &&
   prev.selectionMode === next.selectionMode &&
   prev.selectedIds === next.selectedIds &&
   prev.handlersRef === next.handlersRef,

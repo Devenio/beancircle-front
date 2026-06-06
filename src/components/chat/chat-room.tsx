@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ArrowDown, Check, Loader2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ChatMessagesSkeleton } from '@/components/chat/chat-messages-skeleton';
 import { ChatHeader } from '@/components/chat/chat-header';
 import { ChatComposer } from '@/components/chat/composer';
 import { Button } from '@/components/ui/button';
@@ -551,11 +551,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         />
         <div className="relative z-10">
           {room.isLoading ? (
-            <div className="flex flex-col gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className={i % 2 ? 'ml-auto h-14 w-[70%] rounded-2xl' : 'h-14 w-[70%] rounded-2xl'} />
-              ))}
-            </div>
+            <ChatMessagesSkeleton label={t('loadingMessages')} />
           ) : room.messages.length === 0 ? (
             <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
               <p className="text-lg font-medium">{t('emptyChatTitle')}</p>
@@ -575,6 +571,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               highlightMessageId={searchMatches[searchIndex]?.id}
               unreadLabel={t('unreadMessages')}
               loadingOlder={room.isFetchingOlder}
+              loadingOlderLabel={t('loadingOlderMessages')}
               selectionMode={selectionMode}
               selectedIds={selectedIds}
               handlersRef={messageHandlersRef}

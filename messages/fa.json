@@ -255,6 +255,8 @@
     "markAllRead": "علامت‌گذاری همه به‌عنوان خوانده‌شده",
     "deleteAllArchived": "حذف همه بایگانی",
     "deleteAllArchivedConfirm": "{count} گفتگوی بایگانی‌شده از صندوق ورودی شما حذف شود؟",
+    "loadingMessages": "در حال بارگذاری پیام‌ها",
+    "loadingOlderMessages": "در حال بارگذاری پیام‌های قدیمی‌تر",
     "emptyChatTitle": "سلام کنید",
     "emptyChatBody": "با ارسال پیام، عکس یا ویس گفتگو را شروع کنید.",
     "noResults": "گفتگویی پیدا نشد",

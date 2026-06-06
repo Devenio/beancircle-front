@@ -255,6 +255,8 @@
     "markAllRead": "Mark all as read",
     "deleteAllArchived": "Delete all archived",
     "deleteAllArchivedConfirm": "Remove {count} archived chats from your inbox?",
+    "loadingMessages": "Loading messages",
+    "loadingOlderMessages": "Loading older messages",
     "emptyChatTitle": "Say hello",
     "emptyChatBody": "Send a message, photo, or voice note to start the conversation.",
     "noResults": "No chats found",
