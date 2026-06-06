@@ -23,5 +23,8 @@ export const SETTINGS_API_KEYS = [
   'linkPreviews',
   'typingIndicators',
   'autoCleanupDays',
+  'locationVisibility',
+  'discoveryVisibility',
+  'showOnlineStatus',
   'updatedAt',
 ] as const;

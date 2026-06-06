@@ -123,7 +123,7 @@ export function MessageGroup({
                 onPin={() => onPin(msg)}
                 onReact={(emoji) => onReact(msg, emoji)}
                 onOpenMedia={onOpenMedia ? () => onOpenMedia(msg) : undefined}
-                selectionMode={selectable}
+                selectionMode={!!selectable}
                 selected={messageId ? selectedIds?.has(messageId) : false}
                 onToggleSelect={selectable ? () => onToggleSelect?.(msg) : undefined}
                 onSelect={

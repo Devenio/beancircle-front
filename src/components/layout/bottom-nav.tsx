@@ -27,7 +27,7 @@ type NavTab = {
 const TABS: NavTab[] = [
   { href: '/', key: 'home', Icon: Home },
   { href: '/events', key: 'events', Icon: CalendarDays },
-  { href: '/discover', key: 'explore', Icon: Compass },
+  { href: '/discover/people', key: 'explore', Icon: Compass },
   { href: '/messages', key: 'messages', Icon: MessageCircle },
   { href: '/profile', key: 'profile', Icon: Home, avatar: true },
 ];
@@ -100,7 +100,7 @@ export function BottomNav() {
               unread={tab.key === 'messages' ? totalUnread : 0}
               unreadSender={tab.key === 'messages' ? latestUnreadSender : undefined}
               avatarUrl={tab.avatar ? user?.avatarUrl ?? null : null}
-              fallback={tab.avatar ? initials(user) : undefined}
+              fallback={tab.avatar ? initials(user ?? undefined) : undefined}
             />
           );
         })}
