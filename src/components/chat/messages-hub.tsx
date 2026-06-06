@@ -208,7 +208,19 @@ export function MessagesHub({ locale }: { locale: string }) {
         body: JSON.stringify({ pinned }),
         locale,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['conversations'] }),
+    onMutate: async ({ id, pinned }) => {
+      await qc.cancelQueries({ queryKey: ['conversations', locale] });
+      const previous = qc.getQueryData<Conversation[]>(['conversations', locale]);
+      qc.setQueryData<Conversation[]>(['conversations', locale], (prev) => {
+        if (!prev) return prev;
+        return prev.map((c) => (c.id === id ? { ...c, pinned } : c));
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['conversations', locale], ctx.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['conversations'] }),
   });
 
   const muteMutation = useMutation({
@@ -535,6 +547,7 @@ export function MessagesHub({ locale }: { locale: string }) {
                       <motion.div
                         key={conversation.id}
                         layout
+                        transition={{ layout: { duration: 0.28, ease: [0.32, 0.72, 0, 1] } }}
                         exit={{ opacity: 0, x: -40, transition: { duration: 0.18 } }}
                       >
                         <SwipeableConversationRow

@@ -342,15 +342,25 @@ export function useChatRoom(conversationId: string, locale: string) {
     const onReconnectAttempt = () => setConnectionState('connecting');
 
     const onNew = (msg: ChatMessage) => {
-      appendMessageToCache(msg);
+      appendMessageToCache({ ...msg, enterAnimate: true });
       const mine = isMineMessage(msg, currentUserId, currentUsername);
       if (!mine) markRead(msg.id);
-      requestAnimationFrame(() => scrollToBottom('smooth'));
+      window.setTimeout(() => {
+        patchMessageInCache(msg.id, (m) => {
+          if (!m.enterAnimate) return m;
+          const { enterAnimate: _, ...rest } = m;
+          return rest;
+        });
+      }, 400);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
     };
 
     const onEdited = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
     const onDeleted = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
-    const onPinned = (msg: ChatMessage) => patchMessageInCache(msg.id, () => msg);
+    const onPinned = (msg: ChatMessage) =>
+      patchMessageInCache(msg.id, (m) => ({ ...m, ...msg, pinned: msg.pinned }));
 
     const onSeen = (payload: {
       message?: ChatMessage;
@@ -527,17 +537,32 @@ export function useChatRoom(conversationId: string, locale: string) {
       setDraft('');
       setReplyTo(null);
       haptic('light');
-      requestAnimationFrame(() => scrollToBottom('smooth'));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
       return { clientId };
     },
     onSuccess: (created, _vars, context) => {
+      if (context?.clientId) {
+        appendMessageToCache({ ...created, sendLayoutId: context.clientId });
+      } else {
+        appendMessageToCache(created);
+      }
       setPendingMessages((prev) =>
         prev.filter((item) => item.clientId !== context?.clientId),
       );
-      appendMessageToCache(created);
       lastReadSentRef.current = created.id;
       qc.invalidateQueries({ queryKey: ['conversations'] });
-      requestAnimationFrame(() => scrollToBottom('smooth'));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
+      window.setTimeout(() => {
+        patchMessageInCache(created.id, (m) => {
+          if (!m.sendLayoutId) return m;
+          const { sendLayoutId: _, ...rest } = m;
+          return rest;
+        });
+      }, 450);
     },
     onError: (error, payload, context) => {
       const message = error instanceof Error ? error.message : '';
@@ -636,7 +661,25 @@ export function useChatRoom(conversationId: string, locale: string) {
         body: JSON.stringify({ pinned }),
         locale,
       }),
-    onSuccess: (updated) => patchMessageInCache(updated.id, () => updated),
+    onMutate: async ({ messageId, pinned }) => {
+      await qc.cancelQueries({ queryKey: messagesKey });
+      const previous = qc.getQueryData<MessageListResponse>(messagesKey);
+      qc.setQueryData<MessageListResponse>(messagesKey, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          data: prev.data.map((m) =>
+            m.id === messageId ? { ...m, pinned } : m,
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(messagesKey, ctx.previous);
+    },
+    onSuccess: (updated) =>
+      patchMessageInCache(updated.id, (m) => ({ ...m, ...updated, pinned: updated.pinned })),
   });
 
   const reactionMutation = useMutation({

@@ -315,8 +315,10 @@ export async function handleMockRequest<T>(
     const body = parseBody(options.body);
     const { message } = findConversationMessage(conversationId, messageId);
     if (!message) notFound(path);
-    message.pinned = typeof body.pinned === 'boolean' ? body.pinned : !message.pinned;
-    return message as T;
+    const pinned =
+      typeof body.pinned === 'boolean' ? body.pinned : !message.pinned;
+    message.pinned = pinned;
+    return { ...message, pinned } as T;
   }
 
   // Notifications

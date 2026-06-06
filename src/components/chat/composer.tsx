@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Mic, Plus, SendHorizontal, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,8 @@ const attachTriggerClass =
   'inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 const iconButtonClass = 'size-10 shrink-0 rounded-full';
+
+const COMPOSER_ACTION_TRANSITION = { duration: 0.22, ease: [0.32, 0.72, 0, 1] as const };
 
 export function ChatComposer({
   draft,
@@ -115,17 +118,28 @@ export function ChatComposer({
 
   return (
     <div className="sticky bottom-0 z-20 border-t border-border/60 bg-background/95 px-3 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md">
-      {replyTo ? (
-        <div className="mb-2 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
-          <div className="min-w-0 flex-1 border-l-2 border-primary pl-2">
-            <p className="text-[11px] font-medium text-primary">{t('reply')}</p>
-            <p className="truncate text-xs text-muted-foreground">{messagePreview(replyTo)}</p>
-          </div>
-          <Button type="button" variant="ghost" size="sm" onClick={onCancelReply} aria-label={t('cancelReply')}>
-            ✕
-          </Button>
-        </div>
-      ) : null}
+      <AnimatePresence initial={false}>
+        {replyTo ? (
+          <motion.div
+            key="reply-preview"
+            initial={{ opacity: 0, height: 0, y: 6 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: 6 }}
+            transition={COMPOSER_ACTION_TRANSITION}
+            className="mb-2 overflow-hidden"
+          >
+            <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
+              <div className="min-w-0 flex-1 border-l-2 border-primary pl-2">
+                <p className="text-[11px] font-medium text-primary">{t('reply')}</p>
+                <p className="truncate text-xs text-muted-foreground">{messagePreview(replyTo)}</p>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={onCancelReply} aria-label={t('cancelReply')}>
+                ✕
+              </Button>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {uploading ? (
         <p className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -212,44 +226,72 @@ export function ChatComposer({
           </div>
         )}
 
-        {recordingMode === 'voice' ? null : showSend ? (
-          <Button
-            type="button"
-            size="icon"
-            className={cn(iconButtonClass, (!canSend || !validation.valid) && 'opacity-40')}
-            onClick={() => {
-              if (!hasText || isSending) return;
-              haptic('light');
-              onSend();
-              focusInput();
-            }}
-            disabled={!canSend}
-            aria-label={t('send')}
-          >
-            <SendHorizontal className="size-5" />
-          </Button>
-        ) : recordingMode === 'video' ? (
-          <Button
-            type="button"
-            size="icon"
-            variant="destructive"
-            className={iconButtonClass}
-            onClick={onStopRecording}
-            aria-label={t('stopVideoRecording')}
-          >
-            <Square className="size-4" />
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="icon"
-            variant="secondary"
-            className={iconButtonClass}
-            onClick={() => onStartRecording('voice')}
-            aria-label={t('recordVoice')}
-          >
-            <Mic className="size-5" />
-          </Button>
+        {recordingMode === 'voice' ? null : (
+          <AnimatePresence mode="wait" initial={false}>
+            {showSend ? (
+              <motion.div
+                key="send"
+                initial={{ opacity: 0, scale: 0.72, rotate: -18 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0, scale: 0.72, rotate: 18 }}
+                transition={{ type: 'spring', stiffness: 520, damping: 28 }}
+              >
+                <Button
+                  type="button"
+                  size="icon"
+                  className={cn(iconButtonClass, (!canSend || !validation.valid) && 'opacity-40')}
+                  onClick={() => {
+                    if (!hasText || isSending) return;
+                    haptic('light');
+                    onSend();
+                    focusInput();
+                  }}
+                  disabled={!canSend}
+                  aria-label={t('send')}
+                >
+                  <SendHorizontal className="size-5" />
+                </Button>
+              </motion.div>
+            ) : recordingMode === 'video' ? (
+              <motion.div
+                key="stop-video"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={COMPOSER_ACTION_TRANSITION}
+              >
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  className={iconButtonClass}
+                  onClick={onStopRecording}
+                  aria-label={t('stopVideoRecording')}
+                >
+                  <Square className="size-4" />
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="mic"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={COMPOSER_ACTION_TRANSITION}
+              >
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className={iconButtonClass}
+                  onClick={() => onStartRecording('voice')}
+                  aria-label={t('recordVoice')}
+                >
+                  <Mic className="size-5" />
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
       </div>
     </div>
