@@ -184,6 +184,27 @@ export async function handleMockRequest<T>(
     } as T;
   }
   const messagesMatch = pathname.match(/^\/conversations\/([^/]+)\/messages$/);
+  const readMatch = pathname.match(/^\/conversations\/([^/]+)\/read$/);
+  if (readMatch && method === 'POST') {
+    const conversationId = readMatch[1];
+    const body = parseBody(options.body);
+    const conv = MOCK_CONVERSATIONS.find((item) => item.id === conversationId);
+    const list = MOCK_MESSAGES[conversationId] ?? [];
+    const messageId = typeof body.lastMessageId === 'string' ? body.lastMessageId : '';
+    const target = messageId
+      ? list.find((item) => item.id === messageId)
+      : list[list.length - 1];
+    if (conv) {
+      conv.lastReadMessageId = target?.id ?? null;
+      conv.lastReadAt = target?.createdAt ?? new Date().toISOString();
+      conv.unreadCount = 0;
+    }
+    return {
+      conversationId,
+      unreadCount: 0,
+      lastReadMessageId: conv?.lastReadMessageId ?? null,
+    } as T;
+  }
   if (messagesMatch && method === 'GET') {
     const conversationMessages = (MOCK_MESSAGES[messagesMatch[1]] ?? []).filter(
       (m) => !mockHiddenMessageIds.has(m.id),

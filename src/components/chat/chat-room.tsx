@@ -567,6 +567,13 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
                 <Skeleton key={i} className={i % 2 ? 'ml-auto h-14 w-[70%] rounded-2xl' : 'h-14 w-[70%] rounded-2xl'} />
               ))}
             </div>
+          ) : room.isMessagesError ? (
+            <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-3 px-6 text-center">
+              <p className="text-sm text-muted-foreground">{t('messagesLoadError')}</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void room.refetchMessages()}>
+                {t('retryLoadMessages')}
+              </Button>
+            </div>
           ) : room.messages.length === 0 ? (
             <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
               <p className="text-lg font-medium">{t('emptyChatTitle')}</p>
@@ -575,6 +582,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           ) : (
             <LayoutGroup id={`messages-${conversationId}`}>
               <VirtualMessageList
+                key={conversationId}
                 groupedMessages={groupedMessages}
                 firstUnreadId={room.firstUnreadId}
                 listRef={room.listRef}

@@ -97,7 +97,11 @@ function VirtualMessageListInner({
   const items = virtualizer.getVirtualItems();
 
   return (
-    <div ref={virtualizer.containerRef} className="relative w-full pb-2">
+    <div
+      ref={virtualizer.containerRef}
+      className="relative w-full pb-2"
+      style={{ height: `${virtualizer.getTotalSize()}px` }}
+    >
       {loadingOlder ? (
         <div className="pointer-events-none absolute left-0 top-0 z-10 flex w-full justify-center py-2">
           <span className="rounded-full bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow">

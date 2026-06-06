@@ -165,6 +165,9 @@ export type MockConversation = {
   id: string;
   updatedAt?: string;
   otherMember: (typeof MOCK_USERS)[keyof typeof MOCK_USERS];
+  unreadCount?: number;
+  lastReadMessageId?: string | null;
+  lastReadAt?: string | null;
   lastMessage?: {
     body?: string;
     type?: MockMessageType;
@@ -178,6 +181,8 @@ export const MOCK_CONVERSATIONS: MockConversation[] = [
     id: 'mock-conv-1',
     updatedAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
     otherMember: MOCK_USERS.sara,
+    unreadCount: 0,
+    lastReadMessageId: 'mock-msg-3',
     lastMessage: {
       body: 'See you at Bean Circle tomorrow?',
       type: 'text',
@@ -189,6 +194,8 @@ export const MOCK_CONVERSATIONS: MockConversation[] = [
     id: 'mock-conv-2',
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
     otherMember: MOCK_USERS.admin,
+    unreadCount: 0,
+    lastReadMessageId: 'mock-msg-4',
     lastMessage: {
       body: 'Welcome to Bean Circle!',
       type: 'text',

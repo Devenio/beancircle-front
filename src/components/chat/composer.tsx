@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Mic, Plus, SendHorizontal, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/components/chat/types';
-import { messagePreview, validateMessageText } from '@/components/chat/utils';
+import { messagePreview } from '@/components/chat/utils';
 import { VoiceRecordingBar } from '@/components/chat/voice-recording-bar';
 import { AttachmentPickerSheet } from '@/components/chat/attachment-picker-sheet';
 import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
@@ -83,7 +83,6 @@ export function ChatComposer({
   const videoRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef<number | null>(null);
 
-  const validation = useMemo(() => validateMessageText(draft), [draft]);
   const hasText = draft.trim().length > 0;
   const canSend = hasText && !isSending;
   const showSend = hasText;
@@ -148,9 +147,6 @@ export function ChatComposer({
         </p>
       ) : null}
       {composerError ? <p className="mb-1.5 text-xs text-destructive">{composerError}</p> : null}
-      {!validation.valid && hasText && !composerError ? (
-        <p className="mb-1.5 text-xs text-muted-foreground">{t('messageValidationHint')}</p>
-      ) : null}
 
       <input ref={imageRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { onPickImage(e.target.files); e.target.value = ''; }} />
       <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { onPickFile(e.target.files); e.target.value = ''; }} />
@@ -239,7 +235,7 @@ export function ChatComposer({
                 <Button
                   type="button"
                   size="icon"
-                  className={cn(iconButtonClass, (!canSend || !validation.valid) && 'opacity-40')}
+                  className={cn(iconButtonClass, !canSend && 'opacity-40')}
                   onClick={() => {
                     if (!hasText || isSending) return;
                     haptic('light');

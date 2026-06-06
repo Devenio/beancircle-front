@@ -257,6 +257,8 @@
     "deleteAllArchivedConfirm": "Remove {count} archived chats from your inbox?",
     "emptyChatTitle": "Say hello",
     "emptyChatBody": "Send a message, photo, or voice note to start the conversation.",
+    "messagesLoadError": "Couldn't load messages. Check your connection and try again.",
+    "retryLoadMessages": "Retry",
     "noResults": "No chats found",
     "noResultsBody": "Try a different name or username, or search for someone new.",
     "forward": "Forward",
