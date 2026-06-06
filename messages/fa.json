@@ -106,6 +106,7 @@
     "people": {
       "title": "افراد نزدیک",
       "subtitle": "علاقه‌مندان به قهوه در اطرافت را کشف کن",
+      "galaxyHint": "بچرخان و کاوش کن · روی کره‌ها بزن",
       "listView": "فهرست",
       "mapView": "نقشه",
       "addFriend": "افزودن دوست",
@@ -152,6 +153,35 @@
         "today": "فعال امروز",
         "week": "فعال این هفته",
         "offline": "آفلاین"
+      },
+      "modes": {
+        "galaxy": "کهکشان",
+        "radar": "رادار",
+        "heatmap": "حرارتی"
+      },
+      "aiMatches": {
+        "title": "امروز باید ببینی",
+        "fallback": "هم‌مسیر نزدیک"
+      },
+      "availability": {
+        "title": "آماده برای…",
+        "duration": "چند دقیقه؟",
+        "coffee": "قهوه",
+        "networking": "Networking",
+        "gaming": "بازی",
+        "walking": "پیاده‌روی",
+        "coworking": "هم‌کاری"
+      },
+      "rewards": {
+        "explorerLevel": "کاوشگر Lv.{level}",
+        "streak": "استریک {days} روزه"
+      },
+      "empty": {
+        "expandTitle": "کهکشان الان آرام است…",
+        "peakEvening": "معمولاً حوالی ۶ عصر آدم‌های جدید می‌آیند",
+        "peakGeneric": "شعاع جستجو را بیشتر کن",
+        "expandCta": "گسترش تا {km} کیلومتر",
+        "tryInterest": "{interest} نزدیک"
       }
     }
   },

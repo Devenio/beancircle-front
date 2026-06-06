@@ -106,6 +106,7 @@
     "people": {
       "title": "People nearby",
       "subtitle": "Discover coffee lovers around you",
+      "galaxyHint": "Drag to explore · Tap an orb to connect",
       "listView": "List",
       "mapView": "Map",
       "addFriend": "Add Friend",
@@ -152,6 +153,35 @@
         "today": "Active today",
         "week": "Active this week",
         "offline": "Offline"
+      },
+      "modes": {
+        "galaxy": "Galaxy",
+        "radar": "Radar",
+        "heatmap": "Heat"
+      },
+      "aiMatches": {
+        "title": "People you should meet today",
+        "fallback": "Great match nearby"
+      },
+      "availability": {
+        "title": "Available for…",
+        "duration": "How long?",
+        "coffee": "Coffee",
+        "networking": "Networking",
+        "gaming": "Gaming",
+        "walking": "Walking",
+        "coworking": "Co-working"
+      },
+      "rewards": {
+        "explorerLevel": "Explorer Lv.{level}",
+        "streak": "{days} day discovery streak"
+      },
+      "empty": {
+        "expandTitle": "The galaxy is quiet… for now",
+        "peakEvening": "New people usually appear around 6 PM",
+        "peakGeneric": "Try expanding your orbit to find more creators",
+        "expandCta": "Expand to {km} km",
+        "tryInterest": "Try {interest} nearby"
       }
     }
   },

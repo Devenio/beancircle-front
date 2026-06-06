@@ -12,14 +12,15 @@ type Props = {
   person: DiscoverPerson;
   requestId?: string;
   compact?: boolean;
+  onSuccess?: () => void;
 };
 
-export function FriendActionButton({ person, requestId, compact }: Props) {
+export function FriendActionButton({ person, requestId, compact, onSuccess }: Props) {
   const t = useTranslations('discover.people');
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
   const { sendRequest, acceptRequest, rejectRequest, cancelRequest, removeFriend } =
-    useFriendActions();
+    useFriendActions(onSuccess);
 
   async function message() {
     const conv = await api<{ id: string }>('/conversations', {

@@ -5,13 +5,14 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import type { DiscoverPerson } from '../types';
 
-export function useFriendActions() {
+export function useFriendActions(onSuccess?: () => void) {
   const { locale } = useParams<{ locale: string }>();
   const qc = useQueryClient();
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['discover'] });
     qc.invalidateQueries({ queryKey: ['friends'] });
+    onSuccess?.();
   };
 
   const sendRequest = useMutation({
