@@ -1,7 +1,17 @@
 'use client';
 
-import { Archive, Bell, BellOff, CheckCheck, Pin, Trash2 } from 'lucide-react';
+import {
+  ArchiveRestore,
+  Bell,
+  BellOff,
+  CheckCheck,
+  Eye,
+  Pin,
+  Trash2,
+  User,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -12,43 +22,54 @@ import {
 import type { Conversation } from '@/components/chat/types';
 import { haptic } from '@/lib/mobile/haptics';
 
-type ConversationContextMenuProps = {
+type ArchivedConversationContextMenuProps = {
   children: React.ReactNode;
   conversation: Conversation;
-  onMarkRead?: () => void;
+  onUnarchive: () => void;
   onTogglePin: () => void;
   onToggleMute: () => void;
-  onArchive: () => void;
+  onToggleRead: () => void;
   onDelete: () => void;
 };
 
-export function ConversationContextMenu({
+export function ArchivedConversationContextMenu({
   children,
   conversation,
-  onMarkRead,
+  onUnarchive,
   onTogglePin,
   onToggleMute,
-  onArchive,
+  onToggleRead,
   onDelete,
-}: ConversationContextMenuProps) {
+}: ArchivedConversationContextMenuProps) {
   const t = useTranslations('messages');
+  const router = useRouter();
   const pinned = conversation.pinned ?? false;
   const muted = conversation.muted ?? false;
   const unread = conversation.unreadCount ?? 0;
+  const username = conversation.otherMember?.username;
 
   return (
     <ContextMenu>
       <ContextMenuTrigger className="block">{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-56">
-        {unread > 0 && onMarkRead ? (
+        <ContextMenuItem
+          onClick={() => {
+            haptic('light');
+            onUnarchive();
+          }}
+        >
+          <ArchiveRestore />
+          {t('unarchive')}
+        </ContextMenuItem>
+        {username ? (
           <ContextMenuItem
             onClick={() => {
               haptic('light');
-              onMarkRead();
+              router.push(`/profile/${username}`);
             }}
           >
-            <CheckCheck />
-            {t('markRead')}
+            <User />
+            {t('viewProfile')}
           </ContextMenuItem>
         ) : null}
         <ContextMenuItem
@@ -58,7 +79,7 @@ export function ConversationContextMenu({
           }}
         >
           <Pin />
-          {pinned ? t('unpin') : t('pinChat')}
+          {pinned ? t('unpin') : t('pinInArchive')}
         </ContextMenuItem>
         <ContextMenuItem
           onClick={() => {
@@ -72,11 +93,11 @@ export function ConversationContextMenu({
         <ContextMenuItem
           onClick={() => {
             haptic('light');
-            onArchive();
+            onToggleRead();
           }}
         >
-          <Archive />
-          {t('archive')}
+          {unread > 0 ? <CheckCheck /> : <Eye />}
+          {unread > 0 ? t('markRead') : t('markUnread')}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem

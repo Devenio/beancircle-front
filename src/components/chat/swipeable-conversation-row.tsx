@@ -12,7 +12,6 @@ import {
   SwipeActionButton,
   useSnapSwipeRow,
 } from '@/components/chat/swipe-row-actions';
-import { useLongPress } from '@/hooks/use-long-press';
 import { haptic } from '@/lib/mobile/haptics';
 import type { Conversation } from '@/components/chat/types';
 import { cn } from '@/lib/utils';
@@ -21,7 +20,6 @@ type SwipeableConversationRowProps = {
   conversation: Conversation;
   typingLabel?: string | null;
   online?: boolean;
-  onLongPress: () => void;
   onMarkRead: () => void;
   onMute: () => void;
   onArchive: () => void;
@@ -33,7 +31,6 @@ export function SwipeableConversationRow({
   conversation,
   typingLabel,
   online,
-  onLongPress,
   onMarkRead,
   onMute,
   onArchive,
@@ -60,8 +57,6 @@ export function SwipeableConversationRow({
       leftWidth: SWIPE_ACTION_WIDTH * 2,
       enableRight: true,
     });
-
-  const longPress = useLongPress(onLongPress);
 
   return (
     <div
@@ -108,6 +103,7 @@ export function SwipeableConversationRow({
 
       <ConversationContextMenu
         conversation={conversation}
+        onMarkRead={onMarkRead}
         onTogglePin={onTogglePin}
         onToggleMute={onMute}
         onArchive={onArchive}
@@ -124,7 +120,6 @@ export function SwipeableConversationRow({
           onClick={() => {
             if (revealed) reset();
           }}
-          {...longPress.bind()}
           className={cn('relative bg-background', dragging && 'shadow-sm', revealed && 'cursor-pointer')}
         >
           <Link

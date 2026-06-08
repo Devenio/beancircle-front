@@ -20,6 +20,9 @@ import { AvailabilityBeacon } from './availability-beacon';
 import { ExploreRewards } from './explore-rewards';
 import { SmartEmptyState } from './smart-empty-state';
 import { ParticleBurst } from './particle-burst';
+import { MeetNowButton } from './meet-now-button';
+import { MeetNowFlow } from './meet-now-flow';
+import { useMeetNowStore } from '@/stores/meet-now-store';
 import { layoutOrbits, type AvailabilityIntent, type DiscoverMode, type OrbitPerson, type ActivityCircle } from '../types';
 
 const FriendGalaxy = dynamic(
@@ -54,6 +57,7 @@ export function DiscoverExperience() {
   const [requestsOpen, setRequestsOpen] = useState(false);
   const [burst, setBurst] = useState(false);
   const [myAvailability, setMyAvailability] = useState<{ intent: AvailabilityIntent; minutes: number } | null>(null);
+  const openMeetNow = useMeetNowStore((s) => s.open);
 
   useLocationPing(true);
   const { orbits, aiMatches, activities, isLoading, refetch, isFetching } = useDiscoverData(radiusKm);
@@ -152,6 +156,10 @@ export function DiscoverExperience() {
         ))}
       </div>
 
+      <div className="absolute inset-x-0 bottom-[4.5rem] z-20 flex justify-center px-4">
+        <MeetNowButton onClick={openMeetNow} disabled={isLoading} />
+      </div>
+
       <div className="absolute inset-x-0 bottom-3 z-20 flex justify-center gap-2 px-4">
         {MODES.map(({ id, icon: Icon, labelKey }) => (
           <button
@@ -184,6 +192,7 @@ export function DiscoverExperience() {
         }}
       />
       <ParticleBurst active={burst} />
+      <MeetNowFlow />
       <FriendRequestsSheet open={requestsOpen} onClose={() => setRequestsOpen(false)} />
 
       {myAvailability ? (

@@ -6,8 +6,53 @@ import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu
 import { cn } from "@/lib/utils"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
 
-function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
-  return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />
+let activeContextMenuClose: (() => void) | null = null
+
+function isCoarsePointer() {
+  return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
+}
+
+function ContextMenu({
+  onOpenChange,
+  ...props
+}: ContextMenuPrimitive.Root.Props) {
+  const actionsRef = React.useRef<ContextMenuPrimitive.Root.Actions | null>(null)
+
+  const closeSelf = React.useCallback(() => {
+    actionsRef.current?.close()
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      if (activeContextMenuClose === closeSelf) {
+        activeContextMenuClose = null
+      }
+    }
+  }, [closeSelf])
+
+  const handleOpenChange = React.useCallback(
+    (open: boolean, eventDetails: ContextMenuPrimitive.Root.ChangeEventDetails) => {
+      if (open && isCoarsePointer()) {
+        if (activeContextMenuClose && activeContextMenuClose !== closeSelf) {
+          activeContextMenuClose()
+        }
+        activeContextMenuClose = closeSelf
+      } else if (!open && activeContextMenuClose === closeSelf) {
+        activeContextMenuClose = null
+      }
+      onOpenChange?.(open, eventDetails)
+    },
+    [closeSelf, onOpenChange],
+  )
+
+  return (
+    <ContextMenuPrimitive.Root
+      data-slot="context-menu"
+      actionsRef={actionsRef}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  )
 }
 
 function ContextMenuPortal({ ...props }: ContextMenuPrimitive.Portal.Props) {

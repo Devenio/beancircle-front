@@ -10,7 +10,6 @@ import { ChatComposer } from '@/components/chat/composer';
 import { Button } from '@/components/ui/button';
 import { PinnedMessageBanner } from '@/components/chat/pinned-message-banner';
 import { ChatBlockedBar } from '@/components/chat/chat-blocked-bar';
-import { MessageActionsSheet } from '@/components/chat/message-actions-sheet';
 import { MediaViewerSheet } from '@/components/chat/attachment-picker-sheet';
 import { ForwardPickerSheet } from '@/components/chat/forward-picker-sheet';
 import { TypingIndicator } from '@/components/chat/typing-indicator';
@@ -20,7 +19,10 @@ import { LocationPickerModal } from '@/components/chat/location-picker-modal';
 import { MessageSearchBar } from '@/components/chat/message-search-bar';
 import { MessageSelectionHeader } from '@/components/chat/message-selection-header';
 import { MessageSelectionBar } from '@/components/chat/message-selection-bar';
-import { VirtualMessageList } from '@/components/chat/virtual-message-list';
+import {
+  VirtualMessageList,
+  type VirtualMessageListController,
+} from '@/components/chat/virtual-message-list';
 import type { VirtualMessageListHandlers } from '@/components/chat/virtual-message-row';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
@@ -55,7 +57,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const onlineUserIds = useChatStore((s) => s.onlineUserIds);
 
   const room = useChatRoom(conversationId, locale);
-  const [activeMessage, setActiveMessage] = useState<ChatMessage | PendingMessage | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState('');
   const [forwardOpen, setForwardOpen] = useState(false);
@@ -73,12 +74,14 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
+  const [flashMessageId, setFlashMessageId] = useState<string | null>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const isNearBottomRef = useRef(true);
   const scrollRafRef = useRef<number | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageListControllerRef = useRef<VirtualMessageListController | null>(null);
   const messageHandlersRef = useRef<VirtualMessageListHandlers>({
     onReply: () => {},
-    onOpenActions: () => {},
     onCopy: () => {},
     onForward: () => {},
     onEdit: () => {},
@@ -181,20 +184,35 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     (message?: ChatMessage) => {
       setSelectionMode(true);
       setSelectedIds(message ? new Set([message.id]) : new Set());
-      setActiveMessage(null);
       closeChatSearch();
     },
     [closeChatSearch],
+  );
+
+  const flashMessage = useCallback((messageId: string) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlashMessageId(null);
+    requestAnimationFrame(() => {
+      setFlashMessageId(messageId);
+      flashTimerRef.current = setTimeout(() => setFlashMessageId(null), 1200);
+    });
+  }, []);
+
+  const jumpToMessage = useCallback(
+    (messageId: string) => {
+      messageListControllerRef.current?.scrollToMessage(messageId);
+      flashMessage(messageId);
+    },
+    [flashMessage],
   );
 
   const scrollToSearchMatch = useCallback(
     (index: number) => {
       const msg = searchMatches[index];
       if (!msg || 'clientId' in msg) return;
-      const el = room.listRef.current?.querySelector(`[data-message-id="${msg.id}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      jumpToMessage(msg.id);
     },
-    [searchMatches, room.listRef],
+    [searchMatches, jumpToMessage],
   );
 
   useEffect(() => {
@@ -204,7 +222,15 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   useEffect(() => {
     setIsNearBottom(true);
     isNearBottomRef.current = true;
+    setFlashMessageId(null);
   }, [conversationId]);
+
+  useEffect(
+    () => () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const node = room.listRef.current;
@@ -308,8 +334,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     haptic('light');
   };
 
-  const activeMediaUrl = activeMessage ? getMessageMediaUrl(activeMessage) : undefined;
-
   const openForward = (msg: ChatMessage | PendingMessage) => {
     if ('clientId' in msg) return;
     setForwardSources([msg]);
@@ -367,7 +391,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         onSuccess: () => {
           setDeleteMessageTarget(null);
           setDeleteMessageAlsoForPeer(false);
-          setActiveMessage(null);
           haptic('success');
         },
       },
@@ -419,7 +442,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       setTimeout(() => {
         setForwardOpen(false);
         setForwardSources([]);
-        setActiveMessage(null);
         exitSelection();
       }, 700);
     } catch {
@@ -428,10 +450,8 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   };
 
   const jumpToUnread = () => {
-    const node = room.listRef.current;
-    if (!node || !room.firstUnreadId) return;
-    const el = node.querySelector(`[data-message-id="${room.firstUnreadId}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!room.firstUnreadId) return;
+    jumpToMessage(room.firstUnreadId);
     setShowJumpToUnread(false);
     room.acknowledgeUnread();
   };
@@ -443,10 +463,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
 
   messageHandlersRef.current = {
     onReply: room.setReplyTo,
-    onOpenActions: (msg) => {
-      if (selectionMode) toggleSelectMessage(msg);
-      else setActiveMessage(msg);
-    },
     onCopy: copyMessage,
     onForward: openForward,
     onEdit: (msg) => {
@@ -526,10 +542,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               messages={room.pinnedMessages}
               currentUserId={room.currentUserId}
               scrollContainerRef={room.listRef}
-              onJumpToMessage={(messageId) => {
-                const el = room.listRef.current?.querySelector(`[data-message-id="${messageId}"]`);
-                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }}
+              onJumpToMessage={jumpToMessage}
               onUnpin={(messageId) =>
                 room.pinMutation.mutate({ messageId, pinned: false })
               }
@@ -589,6 +602,8 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
                 peerName={room.peer?.name ?? room.peer?.username}
                 peerOnline={peerOnline}
                 highlightMessageId={searchMatches[searchIndex]?.id}
+                flashMessageId={flashMessageId ?? undefined}
+                scrollControllerRef={messageListControllerRef}
                 unreadLabel={t('unreadMessages')}
                 loadingOlder={room.isFetchingOlder}
                 loadingOlderLabel={t('loadingOlderMessages')}
@@ -727,49 +742,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         onMute={() => void room.toggleMute()}
         onBlock={() => void room.blockPeer()}
         onReport={openReportFromProfile}
-      />
-
-      <MessageActionsSheet
-        open={Boolean(activeMessage)}
-        onOpenChange={(open) => !open && setActiveMessage(null)}
-        message={activeMessage}
-        isMine={activeMessage ? isMineMessage(activeMessage, room.currentUserId, room.currentUsername) : false}
-        onReply={() => activeMessage && room.setReplyTo(activeMessage)}
-        onCopy={() => activeMessage && copyMessage(activeMessage)}
-        onForward={() => activeMessage && openForward(activeMessage)}
-        onEdit={() => {
-          if (!activeMessage) return;
-          setEditingMessageId(activeMessage.id);
-          setEditingDraft(activeMessage.body ?? '');
-        }}
-        onDelete={() => activeMessage && openDeleteMessage(activeMessage)}
-        onPin={() =>
-          activeMessage &&
-          room.pinMutation.mutate({ messageId: activeMessage.id, pinned: !activeMessage.pinned })
-        }
-        onReact={(emoji) => {
-          if (!activeMessage || 'clientId' in activeMessage) return;
-          room.toggleReaction(activeMessage.id, emoji);
-        }}
-        onSaveMedia={
-          activeMediaUrl ? () => void saveMediaFromUrl(activeMediaUrl) : undefined
-        }
-        onShareMedia={
-          activeMediaUrl ? () => void shareMediaFromUrl(activeMediaUrl) : undefined
-        }
-        onCopyLink={activeMediaUrl ? () => copyMediaLink(activeMediaUrl) : undefined}
-        onOpenDetails={
-          activeMediaUrl
-            ? () => {
-                openMediaViewer(activeMessage!);
-                setActiveMessage(null);
-              }
-            : undefined
-        }
-        onSelect={() => {
-          if (!activeMessage || 'clientId' in activeMessage) return;
-          enterSelection(activeMessage);
-        }}
       />
 
       <DeleteForPeerDialog

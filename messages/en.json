@@ -182,6 +182,27 @@
         "peakGeneric": "Try expanding your orbit to find more creators",
         "expandCta": "Expand to {km} km",
         "tryInterest": "Try {interest} nearby"
+      },
+      "meetNow": {
+        "cta": "Meet People Now",
+        "close": "Close",
+        "scanMsg1": "Scanning nearby people...",
+        "scanMsg2": "Looking for active members...",
+        "scanMsg3": "Finding your next connection...",
+        "signalDetected": "Signal Detected",
+        "anotherSignal": "Another Signal Found",
+        "scoreNearby": "{count} Nearby Connections Found",
+        "scoreInterests": "{count} Shared Interests Detected",
+        "matchHigh": "High Match Potential",
+        "matchMedium": "Good Match Potential",
+        "matchLow": "New Connections Available",
+        "emptyTitle": "No active members nearby right now",
+        "emptySubtitle": "The radar is listening. Expand your search or invite friends to grow your circle.",
+        "expandRadius": "Expand search to {km} km",
+        "inviteFriends": "Invite friends",
+        "notifyNearby": "Notify me when someone appears nearby",
+        "shareInvite": "Join me on Bean Circle — discover coffee people near you!",
+        "networkHint": "Tap an orb to connect · Lines show shared interests"
       }
     }
   },

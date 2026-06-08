@@ -176,6 +176,19 @@ html[data-font-size='large'] {
     }
 }
 
+@keyframes message-flash {
+  0% {
+    background-color: color-mix(in oklch, var(--primary) 28%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-message-flash {
+  animation: message-flash 1.2s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

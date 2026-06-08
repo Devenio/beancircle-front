@@ -16,7 +16,6 @@ import {
 
 export type VirtualMessageListHandlers = {
   onReply: (msg: ChatMessage | PendingMessage) => void;
-  onOpenActions: (msg: ChatMessage | PendingMessage) => void;
   onCopy: (msg: ChatMessage | PendingMessage) => void;
   onForward: (msg: ChatMessage | PendingMessage) => void;
   onEdit: (msg: ChatMessage | PendingMessage) => void;
@@ -41,6 +40,7 @@ type VirtualMessageRowProps = {
   peerName?: string | null;
   peerOnline?: boolean;
   highlightMessageId?: string;
+  flashMessageId?: string;
   unreadMessageId?: string | null;
   selectionMode?: boolean;
   selected?: boolean;
@@ -54,6 +54,7 @@ export const VirtualMessageRow = memo(
     prev.selected === next.selected &&
     prev.selectionMode === next.selectionMode &&
     prev.highlightMessageId === next.highlightMessageId &&
+    prev.flashMessageId === next.flashMessageId &&
     prev.unreadMessageId === next.unreadMessageId &&
     prev.position === next.position &&
     prev.showAvatar === next.showAvatar &&
@@ -75,6 +76,7 @@ function VirtualMessageRowInner({
   peerName,
   peerOnline,
   highlightMessageId,
+  flashMessageId,
   unreadMessageId,
   selectionMode = false,
   selected = false,
@@ -104,16 +106,20 @@ function VirtualMessageRowInner({
 
       <div
         className={cn(
-          'flex min-w-0 max-w-[88%] flex-col',
+          'flex min-w-0 max-w-[88%] flex-col rounded-lg',
           isMine ? 'items-end' : 'items-start',
           !selectionMode &&
             messageId &&
             messageId === highlightMessageId &&
-            'rounded-lg ring-2 ring-primary/50',
+            'ring-2 ring-primary/50',
+          !selectionMode &&
+            messageId &&
+            messageId === flashMessageId &&
+            'animate-message-flash',
           !selectionMode &&
             unreadMessageId &&
             messageId === unreadMessageId &&
-            'rounded-lg bg-primary/5',
+            'bg-primary/5',
         )}
       >
         <MessageBubble
@@ -124,7 +130,6 @@ function VirtualMessageRowInner({
           position={position}
           isMine={isMine}
           onReply={() => handlers.onReply(message)}
-          onOpenActions={() => handlers.onOpenActions(message)}
           onCopy={() => handlers.onCopy(message)}
           onForward={() => handlers.onForward(message)}
           onEdit={() => handlers.onEdit(message)}

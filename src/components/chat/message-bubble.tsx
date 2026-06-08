@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import type { ChatMessage, PendingMessage } from '@/components/chat/types';
 import { MessageBodyContent } from '@/components/chat/message-content';
 import { MessageContextMenu } from '@/components/chat/message-context-menu';
-import { useLongPress } from '@/hooks/use-long-press';
 import { useCoarsePointer } from '@/hooks/use-coarse-pointer';
 import { haptic } from '@/lib/mobile/haptics';
 
@@ -76,7 +75,6 @@ type MessageBubbleProps = {
   position?: BubblePosition;
   isMine?: boolean;
   onReply: () => void;
-  onOpenActions: () => void;
   onCopy: () => void;
   onForward: () => void;
   onEdit: () => void;
@@ -115,7 +113,6 @@ function MessageBubbleInner({
   position = 'single',
   isMine = false,
   onReply,
-  onOpenActions,
   onCopy,
   onForward,
   onEdit,
@@ -137,25 +134,6 @@ function MessageBubbleInner({
 
   const pending = 'status' in message ? message.status : null;
   const isMedia = message.type === 'image' || message.type === 'video';
-
-  const longPress = useLongPress(
-    () => {
-      if (!coarse) return;
-      haptic('medium');
-      if (selectionMode) onToggleSelect?.();
-      else onOpenActions();
-    },
-    { delay: 400 },
-  );
-
-  const mediaLongPress = useLongPress(
-    () => {
-      haptic('medium');
-      if (isMedia) onOpenMedia?.();
-      else if (coarse) onOpenActions();
-    },
-    { delay: 400 },
-  );
 
   const resetDragPosition = () => {
     animate(x, 0, { type: 'spring', stiffness: 520, damping: 32 });
@@ -185,7 +163,6 @@ function MessageBubbleInner({
 
   const bubbleBody = (
     <div
-      {...(isMedia ? mediaLongPress.bind() : longPress.bind())}
       onClick={
         selectionMode
           ? (event) => {
@@ -344,8 +321,6 @@ function MessageBubbleInner({
       </div>
     );
   }
-
-  if (coarse) return bubble;
 
   return (
     <MessageContextMenu

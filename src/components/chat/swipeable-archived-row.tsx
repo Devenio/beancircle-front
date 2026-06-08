@@ -6,12 +6,12 @@ import { ArchiveRestore, Bell, BellOff, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ConversationListItem } from '@/components/chat/conversation-list-item';
+import { ArchivedConversationContextMenu } from '@/components/chat/archived-conversation-context-menu';
 import {
   SWIPE_ACTION_WIDTH,
   SwipeActionButton,
   useSnapSwipeRow,
 } from '@/components/chat/swipe-row-actions';
-import { useLongPress } from '@/hooks/use-long-press';
 import { haptic } from '@/lib/mobile/haptics';
 import type { Conversation } from '@/components/chat/types';
 import { cn } from '@/lib/utils';
@@ -20,9 +20,10 @@ type SwipeableArchivedRowProps = {
   conversation: Conversation;
   typingLabel?: string | null;
   online?: boolean;
-  onLongPress: () => void;
   onUnarchive: () => void;
   onMute: () => void;
+  onTogglePin: () => void;
+  onToggleRead: () => void;
   onDelete: () => void;
 };
 
@@ -30,9 +31,10 @@ export function SwipeableArchivedRow({
   conversation,
   typingLabel,
   online,
-  onLongPress,
   onUnarchive,
   onMute,
+  onTogglePin,
+  onToggleRead,
   onDelete,
 }: SwipeableArchivedRowProps) {
   const t = useTranslations('messages');
@@ -52,8 +54,6 @@ export function SwipeableArchivedRow({
       rightWidth: SWIPE_ACTION_WIDTH,
       leftWidth: SWIPE_ACTION_WIDTH * 2,
     });
-
-  const longPress = useLongPress(onLongPress);
 
   return (
     <div
@@ -97,37 +97,45 @@ export function SwipeableArchivedRow({
         </div>
       </div>
 
-      <motion.div
-        style={{ x }}
-        drag="x"
-        dragConstraints={dragConstraints}
-        dragElastic={0.12}
-        dragMomentum={false}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onClick={() => {
-          if (revealed) reset();
-        }}
-        layout
-        exit={{ opacity: 0, x: 48, transition: { duration: 0.2 } }}
-        {...longPress.bind()}
-        className={cn('relative bg-background', dragging && 'shadow-sm', revealed && 'cursor-pointer')}
+      <ArchivedConversationContextMenu
+        conversation={conversation}
+        onUnarchive={onUnarchive}
+        onTogglePin={onTogglePin}
+        onToggleMute={onMute}
+        onToggleRead={onToggleRead}
+        onDelete={onDelete}
       >
-        <Link
-          href={`/messages/${conversation.id}`}
-          className={cn(
-            'block border-0 transition-colors hover:bg-muted/70 focus-visible:outline-none',
-            (dragging || revealed) && 'pointer-events-none',
-          )}
-          draggable={false}
+        <motion.div
+          style={{ x }}
+          drag="x"
+          dragConstraints={dragConstraints}
+          dragElastic={0.12}
+          dragMomentum={false}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onClick={() => {
+            if (revealed) reset();
+          }}
+          layout
+          exit={{ opacity: 0, x: 48, transition: { duration: 0.2 } }}
+          className={cn('relative bg-background', dragging && 'shadow-sm', revealed && 'cursor-pointer')}
         >
-          <ConversationListItem
-            conversation={conversation}
-            typingLabel={typingLabel}
-            online={online}
-          />
-        </Link>
-      </motion.div>
+          <Link
+            href={`/messages/${conversation.id}`}
+            className={cn(
+              'block border-0 transition-colors hover:bg-muted/70 focus-visible:outline-none',
+              (dragging || revealed) && 'pointer-events-none',
+            )}
+            draggable={false}
+          >
+            <ConversationListItem
+              conversation={conversation}
+              typingLabel={typingLabel}
+              online={online}
+            />
+          </Link>
+        </motion.div>
+      </ArchivedConversationContextMenu>
     </div>
   );
 }
