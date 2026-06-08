@@ -5,47 +5,66 @@ import { cn } from '@/lib/utils';
 
 type SkeletonRow = {
   side: 'incoming' | 'outgoing';
-  width: string;
-  height: string;
+  bubbleWidth: string;
+  bubbleHeight: string;
   lines?: number;
 };
 
 const INITIAL_ROWS: SkeletonRow[] = [
-  { side: 'incoming', width: 'w-[68%]', height: 'h-12' },
-  { side: 'incoming', width: 'w-[52%]', height: 'h-10' },
-  { side: 'outgoing', width: 'w-[58%]', height: 'h-11' },
-  { side: 'outgoing', width: 'w-[44%]', height: 'h-9' },
-  { side: 'incoming', width: 'w-[72%]', height: 'h-14', lines: 2 },
-  { side: 'outgoing', width: 'w-[64%]', height: 'h-12' },
-  { side: 'incoming', width: 'w-[46%]', height: 'h-10' },
-  { side: 'outgoing', width: 'w-[50%]', height: 'h-10' },
+  { side: 'incoming', bubbleWidth: 'w-[min(68%,17rem)]', bubbleHeight: 'h-12' },
+  { side: 'incoming', bubbleWidth: 'w-[min(52%,13rem)]', bubbleHeight: 'h-10' },
+  { side: 'outgoing', bubbleWidth: 'w-[min(58%,15rem)]', bubbleHeight: 'h-11' },
+  { side: 'outgoing', bubbleWidth: 'w-[min(44%,11rem)]', bubbleHeight: 'h-9' },
+  { side: 'incoming', bubbleWidth: 'w-[min(72%,18rem)]', bubbleHeight: 'h-14', lines: 2 },
+  { side: 'outgoing', bubbleWidth: 'w-[min(64%,16rem)]', bubbleHeight: 'h-12' },
+  { side: 'incoming', bubbleWidth: 'w-[min(46%,12rem)]', bubbleHeight: 'h-10' },
+  { side: 'outgoing', bubbleWidth: 'w-[min(50%,13rem)]', bubbleHeight: 'h-10' },
 ];
 
 const OLDER_ROWS: SkeletonRow[] = [
-  { side: 'incoming', width: 'w-[60%]', height: 'h-11' },
-  { side: 'incoming', width: 'w-[48%]', height: 'h-9' },
-  { side: 'outgoing', width: 'w-[55%]', height: 'h-10' },
+  { side: 'incoming', bubbleWidth: 'w-[min(60%,15rem)]', bubbleHeight: 'h-11' },
+  { side: 'incoming', bubbleWidth: 'w-[min(48%,12rem)]', bubbleHeight: 'h-9' },
+  { side: 'outgoing', bubbleWidth: 'w-[min(55%,14rem)]', bubbleHeight: 'h-10' },
 ];
+
+function bubbleSkeletonTone(isMine: boolean) {
+  return isMine
+    ? 'bg-primary/30 dark:bg-primary/40'
+    : 'bg-muted/90 dark:bg-muted/70';
+}
 
 function MessageSkeletonRow({ row }: { row: SkeletonRow }) {
   const isMine = row.side === 'outgoing';
+  const tone = bubbleSkeletonTone(isMine);
 
   return (
-    <div className={cn('flex w-full gap-2 pb-1', isMine ? 'justify-end' : 'justify-start')}>
-      {!isMine ? <Skeleton className="size-7 shrink-0 self-end rounded-full" /> : null}
+    <div
+      className={cn(
+        'flex w-full max-w-[88%] gap-2 pb-1',
+        isMine ? 'ms-auto justify-end' : 'me-auto justify-start',
+      )}
+    >
+      {!isMine ? <Skeleton className={cn('size-7 shrink-0 self-end rounded-full', tone)} /> : null}
       <div className={cn('flex min-w-0 flex-col gap-1.5', isMine ? 'items-end' : 'items-start')}>
         <Skeleton
           className={cn(
-            'rounded-[18px]',
+            'shrink-0 rounded-[18px]',
             isMine ? 'rounded-br-[6px]' : 'rounded-bl-[6px]',
-            row.width,
-            row.height,
+            row.bubbleWidth,
+            row.bubbleHeight,
+            tone,
           )}
         />
         {row.lines && row.lines > 1 ? (
-          <Skeleton className={cn('rounded-[18px]', isMine ? 'rounded-tr-[6px]' : 'rounded-tl-[6px]', 'w-[38%] h-8')} />
+          <Skeleton
+            className={cn(
+              'h-8 w-[min(72%,12rem)] shrink-0 rounded-[18px]',
+              isMine ? 'rounded-tr-[6px]' : 'rounded-tl-[6px]',
+              tone,
+            )}
+          />
         ) : null}
-        <Skeleton className="h-2.5 w-10 rounded-full opacity-60" />
+        <Skeleton className={cn('h-2.5 w-10 shrink-0 rounded-full opacity-80', tone)} />
       </div>
     </div>
   );
@@ -78,7 +97,7 @@ export function ChatMessagesSkeleton({
         <div key={index}>
           {showDateSeparator && index === separatorIndex ? (
             <div className="mb-3 flex items-center justify-center">
-              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-24 rounded-full bg-muted/90 dark:bg-muted/70" />
             </div>
           ) : null}
           <MessageSkeletonRow row={row} />

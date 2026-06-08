@@ -20,7 +20,10 @@ import { LocationPickerModal } from '@/components/chat/location-picker-modal';
 import { MessageSearchBar } from '@/components/chat/message-search-bar';
 import { MessageSelectionHeader } from '@/components/chat/message-selection-header';
 import { MessageSelectionBar } from '@/components/chat/message-selection-bar';
-import { VirtualMessageList } from '@/components/chat/virtual-message-list';
+import {
+  VirtualMessageList,
+  type VirtualMessageListController,
+} from '@/components/chat/virtual-message-list';
 import type { VirtualMessageListHandlers } from '@/components/chat/virtual-message-row';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
 import { useChatStore } from '@/stores/chat-store';
@@ -73,9 +76,12 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
+  const [flashMessageId, setFlashMessageId] = useState<string | null>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const isNearBottomRef = useRef(true);
   const scrollRafRef = useRef<number | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageListControllerRef = useRef<VirtualMessageListController | null>(null);
   const messageHandlersRef = useRef<VirtualMessageListHandlers>({
     onReply: () => {},
     onOpenActions: () => {},
@@ -187,14 +193,30 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     [closeChatSearch],
   );
 
+  const flashMessage = useCallback((messageId: string) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlashMessageId(null);
+    requestAnimationFrame(() => {
+      setFlashMessageId(messageId);
+      flashTimerRef.current = setTimeout(() => setFlashMessageId(null), 1200);
+    });
+  }, []);
+
+  const jumpToMessage = useCallback(
+    (messageId: string) => {
+      messageListControllerRef.current?.scrollToMessage(messageId);
+      flashMessage(messageId);
+    },
+    [flashMessage],
+  );
+
   const scrollToSearchMatch = useCallback(
     (index: number) => {
       const msg = searchMatches[index];
       if (!msg || 'clientId' in msg) return;
-      const el = room.listRef.current?.querySelector(`[data-message-id="${msg.id}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      jumpToMessage(msg.id);
     },
-    [searchMatches, room.listRef],
+    [searchMatches, jumpToMessage],
   );
 
   useEffect(() => {
@@ -204,7 +226,15 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   useEffect(() => {
     setIsNearBottom(true);
     isNearBottomRef.current = true;
+    setFlashMessageId(null);
   }, [conversationId]);
+
+  useEffect(
+    () => () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const node = room.listRef.current;
@@ -428,10 +458,8 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   };
 
   const jumpToUnread = () => {
-    const node = room.listRef.current;
-    if (!node || !room.firstUnreadId) return;
-    const el = node.querySelector(`[data-message-id="${room.firstUnreadId}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!room.firstUnreadId) return;
+    jumpToMessage(room.firstUnreadId);
     setShowJumpToUnread(false);
     room.acknowledgeUnread();
   };
@@ -526,10 +554,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
               messages={room.pinnedMessages}
               currentUserId={room.currentUserId}
               scrollContainerRef={room.listRef}
-              onJumpToMessage={(messageId) => {
-                const el = room.listRef.current?.querySelector(`[data-message-id="${messageId}"]`);
-                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }}
+              onJumpToMessage={jumpToMessage}
               onUnpin={(messageId) =>
                 room.pinMutation.mutate({ messageId, pinned: false })
               }
@@ -589,6 +614,8 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
                 peerName={room.peer?.name ?? room.peer?.username}
                 peerOnline={peerOnline}
                 highlightMessageId={searchMatches[searchIndex]?.id}
+                flashMessageId={flashMessageId ?? undefined}
+                scrollControllerRef={messageListControllerRef}
                 unreadLabel={t('unreadMessages')}
                 loadingOlder={room.isFetchingOlder}
                 loadingOlderLabel={t('loadingOlderMessages')}

@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChatOlderMessagesSkeleton } from '@/components/chat/chat-messages-skeleton';
 import { DateSeparator } from '@/components/chat/date-separator';
@@ -19,6 +19,10 @@ export type ChatVirtualRow =
   | { kind: 'unread'; id: string }
   | MessageVirtualRow;
 
+export type VirtualMessageListController = {
+  scrollToMessage: (messageId: string) => boolean;
+};
+
 type VirtualMessageListProps = {
   groupedMessages: MessageDateGroup[];
   firstUnreadId?: string | null;
@@ -30,6 +34,8 @@ type VirtualMessageListProps = {
   peerName?: string | null;
   peerOnline?: boolean;
   highlightMessageId?: string;
+  flashMessageId?: string;
+  scrollControllerRef?: React.RefObject<VirtualMessageListController | null>;
   unreadLabel: string;
   loadingOlder?: boolean;
   loadingOlderLabel?: string;
@@ -66,6 +72,8 @@ function VirtualMessageListInner({
   peerName,
   peerOnline,
   highlightMessageId,
+  flashMessageId,
+  scrollControllerRef,
   unreadLabel,
   loadingOlder,
   loadingOlderLabel,
@@ -98,6 +106,33 @@ function VirtualMessageListInner({
   });
 
   const items = virtualizer.getVirtualItems();
+
+  const scrollToMessage = useCallback(
+    (messageId: string) => {
+      const index = rows.findIndex(
+        (row) =>
+          row.kind === 'message' &&
+          !('clientId' in row.message) &&
+          row.message.id === messageId,
+      );
+      if (index === -1) return false;
+
+      virtualizer.scrollToIndex(index, { align: 'center', behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = listRef.current?.querySelector(`[data-message-id="${messageId}"]`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
+      return true;
+    },
+    [rows, virtualizer, listRef],
+  );
+
+  useEffect(() => {
+    if (!scrollControllerRef) return;
+    scrollControllerRef.current = { scrollToMessage };
+  }, [scrollControllerRef, scrollToMessage]);
 
   return (
     <div
@@ -143,6 +178,7 @@ function VirtualMessageListInner({
                 peerName={peerName}
                 peerOnline={peerOnline}
                 highlightMessageId={highlightMessageId}
+                flashMessageId={flashMessageId}
                 unreadMessageId={firstUnreadId}
                 selectionMode={selectionMode}
                 selected={
@@ -171,6 +207,8 @@ export const VirtualMessageList = memo(VirtualMessageListInner, (prev, next) =>
   prev.peerName === next.peerName &&
   prev.peerOnline === next.peerOnline &&
   prev.highlightMessageId === next.highlightMessageId &&
+  prev.flashMessageId === next.flashMessageId &&
+  prev.scrollControllerRef === next.scrollControllerRef &&
   prev.unreadLabel === next.unreadLabel &&
   prev.loadingOlder === next.loadingOlder &&
   prev.loadingOlderLabel === next.loadingOlderLabel &&
