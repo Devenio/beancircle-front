@@ -10,7 +10,6 @@ import { ChatComposer } from '@/components/chat/composer';
 import { Button } from '@/components/ui/button';
 import { PinnedMessageBanner } from '@/components/chat/pinned-message-banner';
 import { ChatBlockedBar } from '@/components/chat/chat-blocked-bar';
-import { MessageActionsSheet } from '@/components/chat/message-actions-sheet';
 import { MediaViewerSheet } from '@/components/chat/attachment-picker-sheet';
 import { ForwardPickerSheet } from '@/components/chat/forward-picker-sheet';
 import { TypingIndicator } from '@/components/chat/typing-indicator';
@@ -58,7 +57,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const onlineUserIds = useChatStore((s) => s.onlineUserIds);
 
   const room = useChatRoom(conversationId, locale);
-  const [activeMessage, setActiveMessage] = useState<ChatMessage | PendingMessage | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState('');
   const [forwardOpen, setForwardOpen] = useState(false);
@@ -84,7 +82,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const messageListControllerRef = useRef<VirtualMessageListController | null>(null);
   const messageHandlersRef = useRef<VirtualMessageListHandlers>({
     onReply: () => {},
-    onOpenActions: () => {},
     onCopy: () => {},
     onForward: () => {},
     onEdit: () => {},
@@ -187,7 +184,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     (message?: ChatMessage) => {
       setSelectionMode(true);
       setSelectedIds(message ? new Set([message.id]) : new Set());
-      setActiveMessage(null);
       closeChatSearch();
     },
     [closeChatSearch],
@@ -338,8 +334,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
     haptic('light');
   };
 
-  const activeMediaUrl = activeMessage ? getMessageMediaUrl(activeMessage) : undefined;
-
   const openForward = (msg: ChatMessage | PendingMessage) => {
     if ('clientId' in msg) return;
     setForwardSources([msg]);
@@ -397,7 +391,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         onSuccess: () => {
           setDeleteMessageTarget(null);
           setDeleteMessageAlsoForPeer(false);
-          setActiveMessage(null);
           haptic('success');
         },
       },
@@ -449,7 +442,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       setTimeout(() => {
         setForwardOpen(false);
         setForwardSources([]);
-        setActiveMessage(null);
         exitSelection();
       }, 700);
     } catch {
@@ -471,10 +463,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
 
   messageHandlersRef.current = {
     onReply: room.setReplyTo,
-    onOpenActions: (msg) => {
-      if (selectionMode) toggleSelectMessage(msg);
-      else setActiveMessage(msg);
-    },
     onCopy: copyMessage,
     onForward: openForward,
     onEdit: (msg) => {
@@ -754,49 +742,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         onMute={() => void room.toggleMute()}
         onBlock={() => void room.blockPeer()}
         onReport={openReportFromProfile}
-      />
-
-      <MessageActionsSheet
-        open={Boolean(activeMessage)}
-        onOpenChange={(open) => !open && setActiveMessage(null)}
-        message={activeMessage}
-        isMine={activeMessage ? isMineMessage(activeMessage, room.currentUserId, room.currentUsername) : false}
-        onReply={() => activeMessage && room.setReplyTo(activeMessage)}
-        onCopy={() => activeMessage && copyMessage(activeMessage)}
-        onForward={() => activeMessage && openForward(activeMessage)}
-        onEdit={() => {
-          if (!activeMessage) return;
-          setEditingMessageId(activeMessage.id);
-          setEditingDraft(activeMessage.body ?? '');
-        }}
-        onDelete={() => activeMessage && openDeleteMessage(activeMessage)}
-        onPin={() =>
-          activeMessage &&
-          room.pinMutation.mutate({ messageId: activeMessage.id, pinned: !activeMessage.pinned })
-        }
-        onReact={(emoji) => {
-          if (!activeMessage || 'clientId' in activeMessage) return;
-          room.toggleReaction(activeMessage.id, emoji);
-        }}
-        onSaveMedia={
-          activeMediaUrl ? () => void saveMediaFromUrl(activeMediaUrl) : undefined
-        }
-        onShareMedia={
-          activeMediaUrl ? () => void shareMediaFromUrl(activeMediaUrl) : undefined
-        }
-        onCopyLink={activeMediaUrl ? () => copyMediaLink(activeMediaUrl) : undefined}
-        onOpenDetails={
-          activeMediaUrl
-            ? () => {
-                openMediaViewer(activeMessage!);
-                setActiveMessage(null);
-              }
-            : undefined
-        }
-        onSelect={() => {
-          if (!activeMessage || 'clientId' in activeMessage) return;
-          enterSelection(activeMessage);
-        }}
       />
 
       <DeleteForPeerDialog

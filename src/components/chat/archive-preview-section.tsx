@@ -1,16 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { Archive, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { CompactArchivedPreviewRow } from '@/components/chat/compact-archived-preview-row';
-import { ArchiveBulkActionsSheet } from '@/components/chat/archive-bulk-actions-sheet';
-import { useLongPress } from '@/hooks/use-long-press';
+import { ArchiveBulkActionsContextMenu } from '@/components/chat/archive-bulk-actions-context-menu';
 import { sortArchivedConversations } from '@/lib/chat-archive';
 import type { Conversation } from '@/components/chat/types';
 import { cn } from '@/lib/utils';
-import { haptic } from '@/lib/mobile/haptics';
 
 const PREVIEW_LIMIT = 3;
 
@@ -36,25 +33,23 @@ export function ArchivePreviewSection({
   onDeleteAll: () => void;
 }) {
   const t = useTranslations('messages');
-  const [bulkOpen, setBulkOpen] = useState(false);
   const count = conversations.length;
   const sorted = sortArchivedConversations(conversations, archivedAt);
   const preview = sorted.slice(0, PREVIEW_LIMIT);
 
-  const longPress = useLongPress(() => {
-    haptic('medium');
-    if (count > 0) setBulkOpen(true);
-    else onViewAll();
-  });
-
   return (
     <section className="mx-3 rounded-2xl border border-border/80 bg-muted/30">
-      <button
-        type="button"
-        {...longPress.bind()}
-        onClick={() => onCollapsedChange(!collapsed)}
-        className="flex w-full min-h-[52px] items-center gap-3 px-3 py-2.5 text-start active:bg-muted/60"
+      <ArchiveBulkActionsContextMenu
+        count={count}
+        onUnarchiveAll={onUnarchiveAll}
+        onMarkAllRead={onMarkAllRead}
+        onDeleteAll={onDeleteAll}
       >
+        <button
+          type="button"
+          onClick={() => onCollapsedChange(!collapsed)}
+          className="flex w-full min-h-[52px] items-center gap-3 px-3 py-2.5 text-start active:bg-muted/60"
+        >
         <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Archive className="size-5" strokeWidth={2} />
         </span>
@@ -72,7 +67,8 @@ export function ArchivePreviewSection({
         ) : (
           <ChevronDown className="size-5 shrink-0 text-muted-foreground" />
         )}
-      </button>
+        </button>
+      </ArchiveBulkActionsContextMenu>
 
       {!collapsed && count > 0 ? (
         <div className="space-y-0.5 border-t border-border/60 px-2 pb-2 pt-1">
@@ -107,14 +103,6 @@ export function ArchivePreviewSection({
         </button>
       ) : null}
 
-      <ArchiveBulkActionsSheet
-        open={bulkOpen}
-        onOpenChange={setBulkOpen}
-        count={count}
-        onUnarchiveAll={onUnarchiveAll}
-        onMarkAllRead={onMarkAllRead}
-        onDeleteAll={onDeleteAll}
-      />
     </section>
   );
 }

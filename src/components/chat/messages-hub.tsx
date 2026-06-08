@@ -18,11 +18,9 @@ import { MessagesEmptyState } from '@/components/chat/messages-empty-state';
 import { ArchivedEmptyPanel } from '@/components/chat/archived-empty-panel';
 import { SwipeableConversationRow } from '@/components/chat/swipeable-conversation-row';
 import { SwipeableArchivedRow } from '@/components/chat/swipeable-archived-row';
-import { ConversationActionsSheet } from '@/components/chat/conversation-actions-sheet';
-import { ArchivedActionsSheet } from '@/components/chat/archived-actions-sheet';
 import { ArchiveFilterSheet } from '@/components/chat/archive-filter-sheet';
 import { VirtualConversationList } from '@/components/chat/virtual-conversation-list';
-import { ArchiveBulkActionsSheet } from '@/components/chat/archive-bulk-actions-sheet';
+import { ArchiveBulkActionsContextMenu } from '@/components/chat/archive-bulk-actions-context-menu';
 import { UserSearchResults, type SearchUser } from '@/components/chat/user-search-results';
 import type { Conversation } from '@/components/chat/types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -56,9 +54,6 @@ export function MessagesHub({ locale }: { locale: string }) {
   const [archiveCollapsed, setArchiveCollapsed] = useState(true);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilterId>('all');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [sheetConv, setSheetConv] = useState<Conversation | null>(null);
-  const [archivedSheetConv, setArchivedSheetConv] = useState<Conversation | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Conversation | null>(null);
   const [deleteAlsoForPeer, setDeleteAlsoForPeer] = useState(false);
   const [deleteAllAlsoForPeer, setDeleteAllAlsoForPeer] = useState(false);
@@ -339,11 +334,17 @@ export function MessagesHub({ locale }: { locale: string }) {
                     ? onlineUserIds.has(conversation.otherMember.id)
                     : false
                 }
-                onLongPress={() => setArchivedSheetConv(conversation)}
                 onUnarchive={() => handleUnarchive(conversation.id)}
                 onMute={() =>
                   muteMutation.mutate({ id: conversation.id, muted: !conversation.muted })
                 }
+                onTogglePin={() =>
+                  pinMutation.mutate({ id: conversation.id, pinned: !conversation.pinned })
+                }
+                onToggleRead={() => {
+                  if ((conversation.unreadCount ?? 0) > 0) void markRead(conversation);
+                  else markForceUnread(conversation.id);
+                }}
                 onDelete={() => {
                   setDeleteAlsoForPeer(false);
                   setDeleteTarget(conversation);
@@ -371,11 +372,17 @@ export function MessagesHub({ locale }: { locale: string }) {
                     ? onlineUserIds.has(conversation.otherMember.id)
                     : false
                 }
-                onLongPress={() => setArchivedSheetConv(conversation)}
                 onUnarchive={() => handleUnarchive(conversation.id)}
                 onMute={() =>
                   muteMutation.mutate({ id: conversation.id, muted: !conversation.muted })
                 }
+                onTogglePin={() =>
+                  pinMutation.mutate({ id: conversation.id, pinned: !conversation.pinned })
+                }
+                onToggleRead={() => {
+                  if ((conversation.unreadCount ?? 0) > 0) void markRead(conversation);
+                  else markForceUnread(conversation.id);
+                }}
                 onDelete={() => {
                   setDeleteAlsoForPeer(false);
                   setDeleteTarget(conversation);
@@ -558,7 +565,6 @@ export function MessagesHub({ locale }: { locale: string }) {
                               ? onlineUserIds.has(conversation.otherMember.id)
                               : false
                           }
-                          onLongPress={() => setSheetConv(conversation)}
                           onMarkRead={() => void markRead(conversation)}
                           onMute={() =>
                             muteMutation.mutate({
@@ -594,13 +600,22 @@ export function MessagesHub({ locale }: { locale: string }) {
               className="flex min-h-0 flex-1 flex-col pt-3"
             >
               {archivedCount > 0 ? (
-                <button
-                  type="button"
-                  className="mx-3 mt-2 text-start text-xs text-muted-foreground underline-offset-2 hover:underline"
-                  onClick={() => setBulkOpen(true)}
+                <ArchiveBulkActionsContextMenu
+                  count={archivedCount}
+                  onUnarchiveAll={unarchiveAll}
+                  onMarkAllRead={() => void markAllArchivedRead()}
+                  onDeleteAll={() => {
+                    setDeleteAllAlsoForPeer(false);
+                    setDeleteAllOpen(true);
+                  }}
                 >
-                  {t('archiveBulkActionsHint')}
-                </button>
+                  <button
+                    type="button"
+                    className="mx-3 mt-2 text-start text-xs text-muted-foreground underline-offset-2 hover:underline"
+                  >
+                    {t('archiveBulkActionsHint')}
+                  </button>
+                </ArchiveBulkActionsContextMenu>
               ) : null}
               {renderArchivedList()}
             </motion.div>
@@ -608,58 +623,7 @@ export function MessagesHub({ locale }: { locale: string }) {
         </AnimatePresence>
       </div>
 
-      <ConversationActionsSheet
-        open={Boolean(sheetConv)}
-        onOpenChange={(open) => !open && setSheetConv(null)}
-        conversation={sheetConv}
-        onMarkRead={() => sheetConv && void markRead(sheetConv)}
-        onTogglePin={() =>
-          sheetConv && pinMutation.mutate({ id: sheetConv.id, pinned: !sheetConv.pinned })
-        }
-        onToggleMute={() =>
-          sheetConv && muteMutation.mutate({ id: sheetConv.id, muted: !sheetConv.muted })
-        }
-        onArchive={() => sheetConv && archiveConv(sheetConv)}
-      />
-
-      <ArchivedActionsSheet
-        open={Boolean(archivedSheetConv)}
-        onOpenChange={(open) => !open && setArchivedSheetConv(null)}
-        conversation={archivedSheetConv}
-        onUnarchive={() => archivedSheetConv && handleUnarchive(archivedSheetConv.id)}
-        onDelete={() => {
-          if (!archivedSheetConv) return;
-          setDeleteAlsoForPeer(false);
-          setDeleteTarget(archivedSheetConv);
-        }}
-        onToggleMute={() =>
-          archivedSheetConv &&
-          muteMutation.mutate({ id: archivedSheetConv.id, muted: !archivedSheetConv.muted })
-        }
-        onTogglePin={() =>
-          archivedSheetConv &&
-          pinMutation.mutate({ id: archivedSheetConv.id, pinned: !archivedSheetConv.pinned })
-        }
-        onMarkUnread={() => {
-          if (!archivedSheetConv) return;
-          if ((archivedSheetConv.unreadCount ?? 0) > 0) void markRead(archivedSheetConv);
-          else markForceUnread(archivedSheetConv.id);
-        }}
-      />
-
       <ArchiveFilterSheet open={filterOpen} onOpenChange={setFilterOpen} value={archiveFilter} onChange={setArchiveFilter} />
-
-      <ArchiveBulkActionsSheet
-        open={bulkOpen}
-        onOpenChange={setBulkOpen}
-        count={archivedCount}
-        onUnarchiveAll={unarchiveAll}
-        onMarkAllRead={() => void markAllArchivedRead()}
-        onDeleteAll={() => {
-          setDeleteAllAlsoForPeer(false);
-          setDeleteAllOpen(true);
-        }}
-      />
 
       <DeleteForPeerDialog
         open={Boolean(deleteTarget)}

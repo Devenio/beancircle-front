@@ -25,7 +25,6 @@ type MessageGroupProps = {
   highlightMessageId?: string;
   unreadMessageId?: string | null;
   onReply: (msg: ChatMessage | PendingMessage) => void;
-  onOpenActions: (msg: ChatMessage | PendingMessage) => void;
   onCopy: (msg: ChatMessage | PendingMessage) => void;
   onForward: (msg: ChatMessage | PendingMessage) => void;
   onEdit: (msg: ChatMessage | PendingMessage) => void;
@@ -50,7 +49,6 @@ export function MessageGroup({
   highlightMessageId,
   unreadMessageId,
   onReply,
-  onOpenActions,
   onCopy,
   onForward,
   onEdit,
@@ -115,7 +113,6 @@ export function MessageGroup({
                 position={getGroupPosition(index, messages.length)}
                 isMine={isMine}
                 onReply={() => onReply(msg)}
-                onOpenActions={() => onOpenActions(msg)}
                 onCopy={() => onCopy(msg)}
                 onForward={() => onForward(msg)}
                 onEdit={() => onEdit(msg)}

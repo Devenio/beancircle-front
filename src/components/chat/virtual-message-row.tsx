@@ -16,7 +16,6 @@ import {
 
 export type VirtualMessageListHandlers = {
   onReply: (msg: ChatMessage | PendingMessage) => void;
-  onOpenActions: (msg: ChatMessage | PendingMessage) => void;
   onCopy: (msg: ChatMessage | PendingMessage) => void;
   onForward: (msg: ChatMessage | PendingMessage) => void;
   onEdit: (msg: ChatMessage | PendingMessage) => void;
@@ -131,7 +130,6 @@ function VirtualMessageRowInner({
           position={position}
           isMine={isMine}
           onReply={() => handlers.onReply(message)}
-          onOpenActions={() => handlers.onOpenActions(message)}
           onCopy={() => handlers.onCopy(message)}
           onForward={() => handlers.onForward(message)}
           onEdit={() => handlers.onEdit(message)}

@@ -114,7 +114,7 @@ test.describe('Messages E2E', () => {
       await openChatWithPeer(page, PEER_NAME);
 
       await longPress(page.getByText(body, { exact: true }).last());
-      await page.getByRole('button', { name: 'Reply' }).click();
+      await page.getByRole('menuitem', { name: 'Reply' }).click();
       await expect(page.getByText('Reply', { exact: true })).toBeVisible();
 
       const replyBody = `e2e-reply-${Date.now()}`;
@@ -131,7 +131,7 @@ test.describe('Messages E2E', () => {
       await openChatWithPeer(page, PEER_NAME);
 
       await longPress(page.getByText(body, { exact: true }).last());
-      await page.getByRole('button', { name: 'Edit' }).click();
+      await page.getByRole('menuitem', { name: 'Edit' }).click();
 
       const edited = `${body}-updated`;
       const patchPromise = waitForMessagePatch(page);
@@ -160,14 +160,14 @@ test.describe('Messages E2E', () => {
   });
 
   test.describe('Chat room — message actions', () => {
-    test('pins a message from the actions sheet', async ({ page, request }) => {
+    test('pins a message from the context menu', async ({ page, request }) => {
       const body = `e2e-pin-${Date.now()}`;
       await apiSendMessage(request, authToken, conversationId, body);
       await openChatWithPeer(page, PEER_NAME);
 
       await longPress(page.getByText(body, { exact: true }).last());
       const pinPromise = waitForMessagePin(page);
-      await page.getByRole('button', { name: 'Pin' }).click();
+      await page.getByRole('menuitem', { name: 'Pin' }).click();
       await pinPromise;
       await expect(page.getByText('Pinned message')).toBeVisible();
     });
@@ -178,7 +178,7 @@ test.describe('Messages E2E', () => {
       await openChatWithPeer(page, PEER_NAME);
 
       await longPress(page.getByText(body, { exact: true }).last());
-      await page.getByRole('button', { name: 'Delete' }).click();
+      await page.getByRole('menuitem', { name: 'Delete' }).click();
       await expect(page.getByText(/remove this message from your view/i)).toBeVisible();
       const deletePromise = waitForMessageDelete(page);
       await page.getByRole('button', { name: 'Delete' }).last().click();
@@ -192,7 +192,7 @@ test.describe('Messages E2E', () => {
       await openChatWithPeer(page, PEER_NAME);
 
       await longPress(page.getByText(body, { exact: true }).last());
-      await page.getByRole('button', { name: /select messages/i }).click();
+      await page.getByRole('menuitem', { name: 'Select' }).click();
       await expect(page.getByText('1 selected')).toBeVisible();
       await hideNextDevOverlay(page);
       await page.getByRole('button', { name: 'Copy' }).click({ force: true });
