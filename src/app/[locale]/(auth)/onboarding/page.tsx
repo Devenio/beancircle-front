@@ -3,34 +3,33 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion';
 import { Coffee, UserRound } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api/client';
 import { isValidUsername, normalizeUsername } from '@/lib/username';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from '@/i18n/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { AuthBackground } from '@/components/auth/auth-background';
+import { AuthPrimaryButton } from '@/components/auth/auth-primary-button';
+import { LoginHero } from '@/components/auth/login-hero';
 
 export default function OnboardingPage() {
   const t = useTranslations('auth');
   const tOs = useTranslations('cafeOs');
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
-  const { setUser } = useAuthStore();
-  const [step, setStep] = useState<'profile' | 'identity'>('profile');
+  const { user, setUser } = useAuthStore();
+  
+  // Skip profile if user already has a username
+  const [step, setStep] = useState<'profile' | 'identity'>(() => user?.username ? 'identity' : 'profile');
+  
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
-  const [cityId, setCityId] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const { data: cities, isError: citiesError } = useQuery({
-    queryKey: ['cities'],
-    queryFn: () => api<{ id: string; name: string; slug: string }[]>('/users/cities', { locale }),
-  });
+  
+  const reduceMotion = useReducedMotion();
 
   const normalized = normalizeUsername(username);
   const usernameOk = isValidUsername(normalized);
@@ -45,23 +44,22 @@ export default function OnboardingPage() {
     if (next !== username) setUsername(next);
   }
 
-  async function submit() {
+  async function submitProfile() {
     const finalUsername = normalizeUsername(username);
     if (!isValidUsername(finalUsername)) {
       setError(t('usernameInvalid'));
       return;
     }
-    if (!cityId) return;
 
     setLoading(true);
     setError('');
     try {
-      const user = await api('/users/me', {
+      const updatedUser = await api('/users/me', {
         method: 'PATCH',
-        body: JSON.stringify({ username: finalUsername, name, cityId }),
+        body: JSON.stringify({ username: finalUsername, name }),
         locale,
       });
-      setUser({ ...(user as object), needsOnboarding: false } as never);
+      setUser({ ...(updatedUser as object), needsOnboarding: false } as never);
       if (referralCode.trim().length >= 4) {
         try {
           await api('/growth/referrals/apply', {
@@ -81,110 +79,134 @@ export default function OnboardingPage() {
     }
   }
 
-  if (step === 'identity') {
-    return (
-      <motion.div
-        className="space-y-5"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div>
-          <h1 className="text-2xl font-bold">{tOs('onboardingTitle')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {tOs('onboardingSubtitle')}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => router.replace('/')}
-          className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition active:scale-[0.98]"
-        >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <UserRound className="h-6 w-6" />
-          </span>
-          <span>
-            <span className="block font-semibold">{tOs('optionPersonal')}</span>
-            <span className="block text-sm text-muted-foreground">
-              {tOs('optionPersonalHint')}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => router.replace('/cafe-os/new')}
-          className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition active:scale-[0.98]"
-        >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
-            <Coffee className="h-6 w-6" />
-          </span>
-          <span>
-            <span className="block font-semibold">{tOs('optionCafe')}</span>
-            <span className="block text-sm text-muted-foreground">
-              {tOs('optionCafeHint')}
-            </span>
-          </span>
-        </button>
-
-        <p className="text-center text-xs text-muted-foreground">
-          {tOs('onboardingBothHint')}
-        </p>
-      </motion.div>
-    );
-  }
+  const motionProps = reduceMotion
+    ? { initial: false, animate: { opacity: 1, y: 0 }, exit: { opacity: 1, y: 0 } }
+    : {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -12 },
+        transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const },
+      };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t('onboarding')}</h1>
-      <div>
-        <Input
-          value={username}
-          onChange={(e) => handleUsernameChange(e.target.value)}
-          onBlur={handleUsernameBlur}
-          placeholder={t('username')}
-          autoComplete="username"
-          dir="ltr"
-          className="text-start"
-        />
-        <p className="mt-1 text-xs text-neutral-500">{t('usernameHint')}</p>
-        {username && !usernameOk && (
-          <p className="mt-1 text-xs text-amber-600">{t('usernameInvalid')}</p>
-        )}
+    <div className="relative flex min-h-dvh min-h-[100dvh] flex-col overflow-hidden text-white">
+      <AuthBackground />
+
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <LoginHero />
+
+        <LazyMotion features={domAnimation} strict>
+          <div className="flex flex-1 flex-col justify-center py-6">
+            <AnimatePresence mode="wait" initial={false}>
+              {step === 'profile' ? (
+                <m.div
+                  key="profile"
+                  layoutId={reduceMotion ? undefined : 'auth-card'}
+                  {...motionProps}
+                  className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                >
+                  <h2 className="mb-4 text-xl font-bold tracking-tight">{t('onboarding')}</h2>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <input
+                        value={username}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
+                        onBlur={handleUsernameBlur}
+                        placeholder={t('username')}
+                        autoComplete="username"
+                        dir="ltr"
+                        className="h-14 w-full rounded-2xl border border-white/12 bg-white/5 px-4 text-base text-white placeholder:text-white/40 outline-none focus:border-amber-400/80 focus:ring-4 focus:ring-amber-400/10 transition-all"
+                      />
+                      <p className="mt-1.5 px-1 text-xs text-white/50">{t('usernameHint')}</p>
+                      {username && !usernameOk && (
+                        <p className="mt-1 px-1 text-xs text-red-400">{t('usernameInvalid')}</p>
+                      )}
+                    </div>
+                    
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={t('name')}
+                      className="h-14 w-full rounded-2xl border border-white/12 bg-white/5 px-4 text-base text-white placeholder:text-white/40 outline-none focus:border-amber-400/80 focus:ring-4 focus:ring-amber-400/10 transition-all"
+                    />
+                    
+                    <input
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      placeholder={t('referralCode')}
+                      dir="ltr"
+                      className="h-14 w-full rounded-2xl border border-white/12 bg-white/5 px-4 font-mono text-base text-white placeholder:text-white/40 outline-none focus:border-amber-400/80 focus:ring-4 focus:ring-amber-400/10 transition-all"
+                    />
+                    
+                    {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+                    
+                    <div className="pt-2">
+                      <AuthPrimaryButton
+                        onClick={submitProfile}
+                        disabled={loading || !usernameOk}
+                        loading={loading}
+                      >
+                        {t('save')}
+                      </AuthPrimaryButton>
+                    </div>
+                  </div>
+                </m.div>
+              ) : (
+                <m.div
+                  key="identity"
+                  layoutId={reduceMotion ? undefined : 'auth-card'}
+                  {...motionProps}
+                  className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl space-y-5"
+                >
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight">{tOs('onboardingTitle')}</h2>
+                    <p className="mt-1.5 text-sm text-white/55">
+                      {tOs('onboardingSubtitle')}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => router.replace('/')}
+                    className="flex w-full items-center gap-4 rounded-2xl border border-white/12 bg-white/5 p-4 text-start transition hover:bg-white/10 active:scale-[0.98]"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400">
+                      <UserRound className="h-6 w-6" />
+                    </span>
+                    <span>
+                      <span className="block font-semibold text-white/90">{tOs('optionPersonal')}</span>
+                      <span className="block text-sm text-white/50">
+                        {tOs('optionPersonalHint')}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.replace('/cafe-os/new')}
+                    className="flex w-full items-center gap-4 rounded-2xl border border-white/12 bg-white/5 p-4 text-start transition hover:bg-white/10 active:scale-[0.98]"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400">
+                      <Coffee className="h-6 w-6" />
+                    </span>
+                    <span>
+                      <span className="block font-semibold text-white/90">{tOs('optionCafe')}</span>
+                      <span className="block text-sm text-white/50">
+                        {tOs('optionCafeHint')}
+                      </span>
+                    </span>
+                  </button>
+
+                  <p className="text-center text-xs text-white/40">
+                    {tOs('onboardingBothHint')}
+                  </p>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </LazyMotion>
       </div>
-      <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('name')} />
-      <select
-        className="w-full rounded-lg border border-neutral-300 px-3 py-2"
-        value={cityId}
-        onChange={(e) => setCityId(e.target.value)}
-      >
-        <option value="">{t('city')}</option>
-        {cities?.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      {citiesError && (
-        <p className="text-sm text-red-600">
-          Could not load cities. Is the API running on port 3001?
-        </p>
-      )}
-      <Input
-        value={referralCode}
-        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-        placeholder={t('referralCode')}
-        dir="ltr"
-        className="font-mono text-start"
-      />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <Button
-        onClick={submit}
-        disabled={loading || !usernameOk || !cityId}
-        className="w-full"
-      >
-        {t('save')}
-      </Button>
     </div>
   );
 }

@@ -28,7 +28,6 @@ import {
 type Phase = 'phone' | 'otp';
 type PhoneStatus = 'idle' | 'error' | 'loading' | 'success';
 
-const MIN_NATIONAL_DIGITS = 8;
 const RESEND_SECONDS = 60;
 
 const fadeSlide = {
@@ -85,7 +84,12 @@ export function LoginScreen() {
     [country, national],
   );
 
-  const canContinue = national.replace(/\D/g, '').length >= MIN_NATIONAL_DIGITS;
+  const expectedDigits = useMemo(
+    () => country.groups.reduce((sum, g) => sum + g, 0),
+    [country.groups],
+  );
+
+  const canContinue = national.replace(/\D/g, '').length === expectedDigits;
 
   useEffect(() => {
     if (resendIn <= 0) return;

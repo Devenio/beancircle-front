@@ -95,7 +95,11 @@ export function PhoneField({
             aria-expanded={open}
             className="flex items-center gap-1.5 rounded-s-2xl px-3.5 text-white/90 transition-colors hover:bg-white/5"
           >
-            <span className="text-lg leading-none">{country.flag}</span>
+            <img 
+              src={`https://flagcdn.com/${country.code.toLowerCase()}.svg`} 
+              alt={country.name}
+              className="w-[1.25em] shrink-0 rounded-[2px] object-cover" 
+            />
             <span className="text-sm font-medium tabular-nums">{country.dial}</span>
             <ChevronDown
               className={cn(
@@ -128,9 +132,11 @@ export function PhoneField({
               dir="ltr"
               aria-invalid={status === 'error'}
               value={formatNational(value, country.groups)}
-              onChange={(e) =>
-                onChange(e.target.value.replace(/\D/g, '').slice(0, 13))
-              }
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '');
+                const maxDigits = country.groups.reduce((a, b) => a + b, 0);
+                onChange(digits.slice(0, maxDigits));
+              }}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               onKeyDown={(e) => e.key === 'Enter' && onEnter?.()}
@@ -207,7 +213,11 @@ export function PhoneField({
                         c.code === country.code && 'bg-white/10',
                       )}
                     >
-                      <span className="text-lg">{c.flag}</span>
+                      <img 
+                        src={`https://flagcdn.com/${c.code.toLowerCase()}.svg`} 
+                        alt={c.name}
+                        className="w-[1.5em] shrink-0 rounded-[2px] object-cover" 
+                      />
                       <span className="flex-1">{c.name}</span>
                       <span className="text-white/50 tabular-nums">{c.dial}</span>
                     </button>
