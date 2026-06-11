@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useParams, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api/client';
+import { cafeConsumerApi } from '@/lib/api/cafe-os';
 import type { CheckinResult, PassportMe } from '@/lib/api/passport';
 import { BeanScorePanel } from '@/components/beanscore/beanscore-panel';
 import { StampGrid } from '@/components/passport/stamp-grid';
@@ -24,6 +25,11 @@ export function PassportContent() {
   const { data, isLoading } = useQuery({
     queryKey: ['passport', locale],
     queryFn: () => api<PassportMe>('/passport/me', { locale }),
+  });
+
+  const { data: cafeCards } = useQuery({
+    queryKey: ['my-loyalty', locale],
+    queryFn: () => cafeConsumerApi.myLoyalty(),
   });
 
   const checkinMutation = useMutation({
@@ -132,6 +138,53 @@ export function PassportContent() {
         <h2 className="mb-3 text-sm font-semibold">{t('yourStamps')}</h2>
         <StampGrid stamps={data.stamps} />
       </section>
+
+      {cafeCards?.length ? (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold">{t('cafeCards')}</h2>
+          <div className="space-y-2">
+            {cafeCards.map((card) => (
+              <div
+                key={card.id}
+                className="rounded-xl border border-border bg-card p-3"
+              >
+                <div className="flex items-center gap-3">
+                  {card.cafe.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={card.cafe.logoUrl}
+                      alt=""
+                      className="h-9 w-9 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-lg bg-muted" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{card.cafe.name}</p>
+                    <p className="text-xs text-muted-foreground">{card.program.title}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-bold text-primary">
+                    {card.progress}/{card.program.goal}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-accent">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{
+                      width: `${Math.min(100, (card.progress / card.program.goal) * 100)}%`,
+                    }}
+                  />
+                </div>
+                {card.completedAt ? (
+                  <p className="mt-1.5 text-xs font-medium text-green-600">
+                    {t('cardCompleted', { reward: card.program.rewardLabel })}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {badges.length > 0 && (
         <section>

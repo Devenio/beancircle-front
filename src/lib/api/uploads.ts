@@ -85,11 +85,24 @@ function putWithProgress(
       if (xhr.status >= 200 && xhr.status < 300) {
         onProgress?.(1);
         resolve();
-      } else {
-        reject(new Error('Upload failed. Please try again.'));
+        return;
       }
+      const detail = xhr.responseText?.trim();
+      reject(
+        new Error(
+          detail
+            ? `Upload failed (${xhr.status}): ${detail.slice(0, 200)}`
+            : `Upload failed (${xhr.status || 'network'}). Check that MinIO is running and the bucket exists.`,
+        ),
+      );
     });
-    xhr.addEventListener('error', () => reject(new Error('Upload failed. Please try again.')));
+    xhr.addEventListener('error', () =>
+      reject(
+        new Error(
+          'Upload failed (network/CORS). Run npm run setup:minio:win in beancircle-api if using local MinIO.',
+        ),
+      ),
+    );
     xhr.addEventListener('abort', () => reject(new Error('Upload cancelled.')));
     xhr.send(file);
   });
@@ -100,6 +113,16 @@ function putWithProgress(
  * directly to object storage (S3/R2/MinIO), and return only the public URL +
  * metadata. We NEVER embed file bytes (base64 data URLs) into messages.
  */
+/** Convenience: upload a file to a folder and return only its public URL. */
+export async function presignAndUpload(
+  file: File,
+  folder: string,
+  onProgress?: (fraction: number) => void,
+): Promise<string> {
+  const result = await uploadMessageFile(file, folder, onProgress);
+  return result.url;
+}
+
 export async function uploadMessageFile(
   file: File,
   folder = 'messages',

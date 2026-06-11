@@ -2,37 +2,93 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
+import { cafeConsumerApi } from '@/lib/api/cafe-os';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ConsumerLoyaltyCards } from '@/components/cafe-os/consumer-loyalty';
 import { WorkReportSection } from '@/components/cafe/work-report-section';
 import { CheckinSheet } from '@/components/checkin/checkin-sheet';
 import { ReportDialog } from '@/components/report/report-dialog';
 import { Link } from '@/i18n/navigation';
+import {
+  BadgePercent,
+  CalendarDays,
+  Megaphone,
+  Tag,
+  UtensilsCrossed,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
+
+type CafeDetail = {
+  id: string;
+  name: string;
+  address: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  avgRating: number;
+  followerCount?: number;
+  isFollowing?: boolean;
+  checkinCode?: string | null;
+  photos?: { url: string }[];
+  reviews?: { body?: string; rating: number; author?: { username?: string } }[];
+  menu?: { slug: string; isPublished: boolean } | null;
+  squads?: {
+    id: string;
+    name: string;
+    slug: string;
+    emoji?: string | null;
+    memberCount: number;
+    description?: string | null;
+  }[];
+};
+
+type CafeEventRow = {
+  id: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  locationLabel?: string | null;
+  _count?: { rsvps: number };
+};
+
+const TABS = ['overview', 'menu', 'events', 'updates', 'community'] as const;
+type Tab = (typeof TABS)[number];
+
+const ANNOUNCEMENT_ICONS = {
+  ANNOUNCEMENT: Megaphone,
+  PROMOTION: BadgePercent,
+  DISCOUNT: Tag,
+} as const;
 
 export default function CafePage() {
   const { id, locale } = useParams<{ id: string; locale: string }>();
   const t = useTranslations('cafe');
+  const format = useFormatter();
   const qc = useQueryClient();
+  const [tab, setTab] = useState<Tab>('overview');
   const [rating, setRating] = useState(5);
   const [reviewBody, setReviewBody] = useState('');
   const [checkinMessage, setCheckinMessage] = useState('');
 
   const { data: cafe } = useQuery({
     queryKey: ['cafe', id, locale],
-    queryFn: () =>
-      api<{
-        id: string;
-        name: string;
-        address: string;
-        avgRating: number;
-        isFollowing?: boolean;
-        checkinCode?: string | null;
-        photos?: { url: string }[];
-        reviews?: unknown[];
-      }>(`/cafes/${id}`, { locale }),
+    queryFn: () => api<CafeDetail>(`/cafes/${id}`, { locale }),
+  });
+
+  const { data: announcements } = useQuery({
+    queryKey: ['cafe-updates', id],
+    queryFn: () => cafeConsumerApi.announcements(id),
+    enabled: tab === 'updates',
+  });
+
+  const { data: events } = useQuery({
+    queryKey: ['cafe-public-events', id],
+    queryFn: () => api<CafeEventRow[]>(`/events?cafeId=${id}`, { locale }),
+    enabled: tab === 'events',
   });
 
   const followMutation = useMutation({
@@ -59,16 +115,42 @@ export default function CafePage() {
 
   if (!cafe) return null;
 
+  const cover = cafe.coverUrl || cafe.photos?.[0]?.url;
+  const hasMenu = !!cafe.menu?.isPublished && !!cafe.menu?.slug;
+
   return (
-    <div>
-      {cafe.photos?.[0] && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={cafe.photos[0].url} alt="" className="aspect-video w-full object-cover" />
-      )}
-      <div className="p-4">
+    <div className="pb-8">
+      {/* Header */}
+      <div className="relative">
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover} alt="" className="aspect-[2/1] w-full object-cover" />
+        ) : (
+          <div className="aspect-[2/1] w-full bg-muted" />
+        )}
+        {cafe.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cafe.logoUrl}
+            alt=""
+            className="absolute -bottom-7 start-4 h-16 w-16 rounded-2xl border-2 border-background object-cover shadow"
+          />
+        ) : null}
+      </div>
+
+      <div className={`p-4 ${cafe.logoUrl ? 'pt-9' : ''}`}>
         <h1 className="text-xl font-bold">{cafe.name}</h1>
-        <p className="text-sm text-neutral-500">{cafe.address}</p>
-        <p className="mt-1 text-sm">★ {cafe.avgRating.toFixed(1)}</p>
+        <p className="text-sm text-muted-foreground">{cafe.address}</p>
+        <p className="mt-1 flex items-center gap-3 text-sm">
+          <span>★ {cafe.avgRating.toFixed(1)}</span>
+          {typeof cafe.followerCount === 'number' ? (
+            <span className="text-muted-foreground">
+              {t('followers', { count: cafe.followerCount })}
+            </span>
+          ) : null}
+        </p>
+        {cafe.description ? <p className="mt-2 text-sm">{cafe.description}</p> : null}
+
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant={cafe.isFollowing ? 'outline' : 'default'}
@@ -86,6 +168,12 @@ export default function CafePage() {
               </Button>
             }
           />
+          {hasMenu ? (
+            <Button variant="outline" render={<Link href={`/m/${cafe.menu!.slug}`} />}>
+              <UtensilsCrossed className="h-4 w-4" />
+              {t('viewMenu')}
+            </Button>
+          ) : null}
           <ReportDialog
             targetType="CAFE"
             targetId={id}
@@ -110,39 +198,187 @@ export default function CafePage() {
             </Link>
           </p>
         ) : null}
-        <WorkReportSection cafeId={id} locale={locale} />
-        <section className="mt-6">
-          <h2 className="font-semibold">{t('writeReview')}</h2>
-          <Input
-            type="number"
-            min={1}
-            max={5}
-            value={rating}
-            onChange={(e) => setRating(parseInt(e.target.value, 10))}
-            className="mt-2"
-          />
-          <textarea
-            className="mt-2 w-full rounded-lg border p-2 text-sm"
-            value={reviewBody}
-            onChange={(e) => setReviewBody(e.target.value)}
-            rows={3}
-          />
-          <Button className="mt-2" onClick={() => reviewMutation.mutate()}>
-            Submit
-          </Button>
-        </section>
-        <section className="mt-6">
-          <h2 className="font-semibold">{t('reviews')}</h2>
-          {(cafe.reviews as { body?: string; rating: number; author?: { username?: string } }[])?.map(
-            (r, i) => (
-              <div key={i} className="border-b py-3">
-                <p className="font-medium">{r.author?.username}</p>
-                <p className="text-sm">★ {r.rating}</p>
-                <p className="text-sm">{r.body}</p>
+
+        {/* Tabs */}
+        <div className="-mx-4 mt-4 flex gap-1 overflow-x-auto border-b border-border px-4 scrollbar-none">
+          {TABS.map((tb) => (
+            <button
+              key={tb}
+              type="button"
+              onClick={() => setTab(tb)}
+              className={`shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+                tab === tb
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground'
+              }`}
+            >
+              {t(`tabs.${tb}`)}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {tab === 'overview' ? (
+          <div className="mt-4 space-y-6">
+            <ConsumerLoyaltyCards cafeId={id} />
+            <WorkReportSection cafeId={id} locale={locale} />
+            <section>
+              <h2 className="font-semibold">{t('writeReview')}</h2>
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={rating}
+                onChange={(e) => setRating(parseInt(e.target.value, 10))}
+                className="mt-2"
+              />
+              <textarea
+                className="mt-2 w-full rounded-lg border p-2 text-sm"
+                value={reviewBody}
+                onChange={(e) => setReviewBody(e.target.value)}
+                rows={3}
+              />
+              <Button className="mt-2" onClick={() => reviewMutation.mutate()}>
+                {t('submitReview')}
+              </Button>
+            </section>
+            <section>
+              <h2 className="font-semibold">{t('reviews')}</h2>
+              {cafe.reviews?.map((r, i) => (
+                <div key={i} className="border-b py-3">
+                  <p className="font-medium">{r.author?.username}</p>
+                  <p className="text-sm">★ {r.rating}</p>
+                  <p className="text-sm">{r.body}</p>
+                </div>
+              ))}
+            </section>
+          </div>
+        ) : null}
+
+        {tab === 'menu' ? (
+          <div className="mt-4">
+            {hasMenu ? (
+              <div className="rounded-2xl border border-border p-6 text-center">
+                <UtensilsCrossed className="mx-auto h-8 w-8 text-primary" />
+                <p className="mt-2 text-sm text-muted-foreground">{t('menuHint')}</p>
+                <Button className="mt-4" render={<Link href={`/m/${cafe.menu!.slug}`} />}>
+                  {t('openMenu')}
+                </Button>
               </div>
-            ),
-          )}
-        </section>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                {t('noMenu')}
+              </p>
+            )}
+          </div>
+        ) : null}
+
+        {tab === 'events' ? (
+          <div className="mt-4 space-y-2">
+            {!events?.length ? (
+              <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                {t('noEvents')}
+              </p>
+            ) : (
+              events.map((event) => (
+                <Link
+                  key={event.id}
+                  href={`/events/${event.id}`}
+                  className="block rounded-2xl border border-border bg-card p-3 transition hover:bg-accent"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <CalendarDays className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format.dateTime(new Date(event.startsAt), {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {t('rsvps', { count: event._count?.rsvps ?? 0 })}
+                    </span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        ) : null}
+
+        {tab === 'updates' ? (
+          <div className="mt-4 space-y-2">
+            {!announcements?.length ? (
+              <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                {t('noUpdates')}
+              </p>
+            ) : (
+              announcements.map((a) => {
+                const Icon = ANNOUNCEMENT_ICONS[a.kind] ?? Megaphone;
+                return (
+                  <article
+                    key={a.id}
+                    className="overflow-hidden rounded-2xl border border-border bg-card"
+                  >
+                    {a.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={a.imageUrl} alt="" className="aspect-[3/1] w-full object-cover" />
+                    ) : null}
+                    <div className="p-3">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0 text-primary" />
+                        <h3 className="text-sm font-semibold">{a.title}</h3>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>
+                      {a.publishedAt ? (
+                        <p className="mt-1.5 text-[10px] text-muted-foreground">
+                          {format.relativeTime(new Date(a.publishedAt))}
+                        </p>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        ) : null}
+
+        {tab === 'community' ? (
+          <div className="mt-4 space-y-2">
+            {!cafe.squads?.length ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                <Users className="mx-auto h-8 w-8 text-muted-foreground" />
+                <p className="mt-2 text-sm text-muted-foreground">{t('noCommunity')}</p>
+                {!cafe.isFollowing ? (
+                  <Button className="mt-4" onClick={() => followMutation.mutate()}>
+                    {t('follow')}
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              cafe.squads.map((squad) => (
+                <Link
+                  key={squad.id}
+                  href={`/squads/${squad.id}`}
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:bg-accent"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg">
+                    {squad.emoji || '☕'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{squad.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('members', { count: squad.memberCount })}
+                    </p>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

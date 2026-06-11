@@ -1,5 +1,6 @@
 'use client';
 
+import { IdentitySwitcher } from '@/components/cafe-os/identity-switcher';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { PageTransition } from '@/components/layout/page-transition';
 import { useSocket } from '@/hooks/use-socket';
@@ -38,6 +39,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <PageTransition>{children}</PageTransition>
       </main>
       {!isChatRoom && !isSettings ? <BottomNav /> : null}
+      <IdentitySwitcher />
     </>
   );
 }

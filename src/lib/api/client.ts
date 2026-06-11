@@ -63,6 +63,25 @@ export async function api<T>(
   return res.json();
 }
 
+/** Authenticated fetch returning a Blob — used for QR/file downloads. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let res = await fetch(`${API_URL}${path}`, { headers });
+  if (res.status === 401 && typeof window !== 'undefined') {
+    const ok = await refreshTokens();
+    if (ok) {
+      headers.Authorization = `Bearer ${localStorage.getItem('accessToken')}`;
+      res = await fetch(`${API_URL}${path}`, { headers });
+    }
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.blob();
+}
+
 export function getGoogleAuthUrl() {
   return `${API_URL.replace('/api/v1', '')}/api/v1/auth/google`;
 }

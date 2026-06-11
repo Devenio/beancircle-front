@@ -89,7 +89,7 @@ export default function OwnerDashboardPage() {
             {cafes.map(({ cafe }) => (
               <li key={cafe.id}>
                 <Link
-                  href={`/owner/${cafe.id}`}
+                  href={`/cafe-os/${cafe.id}`}
                   className="flex items-center gap-3 rounded-lg border p-3"
                 >
                   {cafe.photos?.[0] ? (

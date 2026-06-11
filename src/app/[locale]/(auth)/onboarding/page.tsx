@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Coffee, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api/client';
@@ -13,9 +15,11 @@ import { useQuery } from '@tanstack/react-query';
 
 export default function OnboardingPage() {
   const t = useTranslations('auth');
+  const tOs = useTranslations('cafeOs');
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
   const { setUser } = useAuthStore();
+  const [step, setStep] = useState<'profile' | 'identity'>('profile');
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [cityId, setCityId] = useState('');
@@ -69,12 +73,65 @@ export default function OnboardingPage() {
           /* optional */
         }
       }
-      router.replace('/');
+      setStep('identity');
     } catch (e) {
       setError(e instanceof Error ? e.message : t('usernameInvalid'));
     } finally {
       setLoading(false);
     }
+  }
+
+  if (step === 'identity') {
+    return (
+      <motion.div
+        className="space-y-5"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div>
+          <h1 className="text-2xl font-bold">{tOs('onboardingTitle')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {tOs('onboardingSubtitle')}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => router.replace('/')}
+          className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition active:scale-[0.98]"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <UserRound className="h-6 w-6" />
+          </span>
+          <span>
+            <span className="block font-semibold">{tOs('optionPersonal')}</span>
+            <span className="block text-sm text-muted-foreground">
+              {tOs('optionPersonalHint')}
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => router.replace('/cafe-os/new')}
+          className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition active:scale-[0.98]"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+            <Coffee className="h-6 w-6" />
+          </span>
+          <span>
+            <span className="block font-semibold">{tOs('optionCafe')}</span>
+            <span className="block text-sm text-muted-foreground">
+              {tOs('optionCafeHint')}
+            </span>
+          </span>
+        </button>
+
+        <p className="text-center text-xs text-muted-foreground">
+          {tOs('onboardingBothHint')}
+        </p>
+      </motion.div>
+    );
   }
 
   return (

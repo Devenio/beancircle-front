@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CalendarDays, ChevronRight, Settings, Stamp, Users } from 'lucide-react';
 import { api } from '@/lib/api/client';
+import { IdentityPill } from '@/components/cafe-os/identity-switcher';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
@@ -78,9 +79,12 @@ export default function ProfilePage() {
       <div className="flex items-center justify-between px-4 pt-4">
         <h1 className="text-lg font-bold">@{profile.username}</h1>
         {profile.isSelf ? (
-          <Button variant="ghost" size="icon" render={<Link href="/settings" />}>
-            <Settings className="size-5" />
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <IdentityPill />
+            <Button variant="ghost" size="icon" render={<Link href="/settings" />}>
+              <Settings className="size-5" />
+            </Button>
+          </div>
         ) : null}
       </div>
 
