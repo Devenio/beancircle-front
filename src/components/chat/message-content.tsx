@@ -1,9 +1,35 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
-import { ExternalLink, FileText, MapPin, Play } from 'lucide-react';
+import { Eye, ExternalLink, FileText, MapPin, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractUrls, formatDuration, formatFileSize, renderMentionParts } from '@/components/chat/utils';
+
+function SpoilerMedia({ children }: { children: React.ReactNode }) {
+  const [revealed, setRevealed] = useState(false);
+
+  if (revealed) return <>{children}</>;
+
+  return (
+    <button
+      type="button"
+      onClick={() => setRevealed(true)}
+      className="relative block w-full overflow-hidden rounded-xl text-left"
+      aria-label="Reveal spoiler"
+    >
+      <div className="pointer-events-none select-none blur-2xl saturate-50" aria-hidden>
+        {children}
+      </div>
+      <span className="absolute inset-0 flex items-center justify-center">
+        <span className="flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+          <Eye className="size-3.5" />
+          Spoiler
+        </span>
+      </span>
+    </button>
+  );
+}
 
 export function LinkPreviewCard({ url, isMine }: { url: string; isMine?: boolean }) {
   let hostname = url;
@@ -189,6 +215,7 @@ export function MessageBodyContent({
   location,
   imageUrl,
   isMine,
+  spoiler,
 }: {
   type: string;
   body?: string;
@@ -197,6 +224,7 @@ export function MessageBodyContent({
   location?: { lat: number; lng: number; label?: string };
   imageUrl?: string;
   isMine?: boolean;
+  spoiler?: boolean;
 }) {
   if (type === 'sticker') {
     return <p className="text-4xl leading-none">{sticker ?? '😀'}</p>;
@@ -205,21 +233,24 @@ export function MessageBodyContent({
   const mediaUrl = attachment?.url ?? imageUrl;
 
   if (type === 'image' && mediaUrl) {
-    return (
+    const image = (
       <div className="overflow-hidden rounded-xl">
         <Image
           src={mediaUrl}
           alt={attachment?.name ?? 'Image'}
           width={280}
           height={200}
-          className="max-h-56 w-full object-cover transition-opacity duration-200"
+          loading="lazy"
+          className="max-h-56 w-full bg-muted/40 object-cover transition-opacity duration-200"
         />
       </div>
     );
+    return spoiler ? <SpoilerMedia>{image}</SpoilerMedia> : image;
   }
 
   if (type === 'video' && mediaUrl) {
-    return <video controls className="max-h-56 w-full rounded-xl" src={mediaUrl} />;
+    const video = <video controls className="max-h-56 w-full rounded-xl" src={mediaUrl} />;
+    return spoiler ? <SpoilerMedia>{video}</SpoilerMedia> : video;
   }
 
   if (type === 'voice' && attachment?.url) {

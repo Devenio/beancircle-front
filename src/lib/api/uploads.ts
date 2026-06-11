@@ -15,6 +15,86 @@ export type UploadResult = {
   size: number;
 };
 
+const SUPPORTED_MIME: Record<string, true> = {
+  'image/jpeg': true,
+  'image/png': true,
+  'image/webp': true,
+  'image/gif': true,
+  'video/mp4': true,
+  'video/webm': true,
+  'video/quicktime': true,
+  'audio/webm': true,
+  'audio/mpeg': true,
+  'audio/mp4': true,
+  'audio/ogg': true,
+};
+
+function resolveUploadMimeType(file: File): string {
+  const raw = file.type?.toLowerCase().trim();
+  if (raw === 'image/jpg') return 'image/jpeg';
+  if (raw && SUPPORTED_MIME[raw]) return raw;
+
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'mp4':
+      return 'video/mp4';
+    case 'webm':
+      return raw?.startsWith('audio/') ? 'audio/webm' : 'video/webm';
+    case 'mov':
+      return 'video/quicktime';
+    case 'm4a':
+      return 'audio/mp4';
+    case 'mp3':
+      return 'audio/mpeg';
+    case 'ogg':
+      return 'audio/ogg';
+    case 'jpg':
+    case 'jpeg':
+    case 'heic':
+    case 'heif':
+      return 'image/jpeg';
+    default:
+      if (raw?.startsWith('video/')) return 'video/mp4';
+      if (raw?.startsWith('audio/')) return 'audio/webm';
+      return 'image/jpeg';
+  }
+}
+
+function putWithProgress(
+  url: string,
+  file: File,
+  mimeType: string,
+  onProgress?: (fraction: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', mimeType);
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(event.loaded / event.total);
+      }
+    });
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress?.(1);
+        resolve();
+      } else {
+        reject(new Error('Upload failed. Please try again.'));
+      }
+    });
+    xhr.addEventListener('error', () => reject(new Error('Upload failed. Please try again.')));
+    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled.')));
+    xhr.send(file);
+  });
+}
+
 /**
  * Production media flow: ask the API for a presigned URL, upload the bytes
  * directly to object storage (S3/R2/MinIO), and return only the public URL +
@@ -23,10 +103,12 @@ export type UploadResult = {
 export async function uploadMessageFile(
   file: File,
   folder = 'messages',
+  onProgress?: (fraction: number) => void,
 ): Promise<UploadResult> {
+  const mimeType = resolveUploadMimeType(file);
   const presign = await api<PresignResponse>('/uploads/presign', {
     method: 'POST',
-    body: JSON.stringify({ contentType: file.type, folder }),
+    body: JSON.stringify({ contentType: mimeType, folder }),
   });
 
   if (file.size > presign.maxBytes) {
@@ -35,19 +117,12 @@ export async function uploadMessageFile(
     );
   }
 
-  const res = await fetch(presign.uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: { 'Content-Type': file.type },
-  });
-  if (!res.ok) {
-    throw new Error('Upload failed. Please try again.');
-  }
+  await putWithProgress(presign.uploadUrl, file, mimeType, onProgress);
 
   return {
     url: presign.publicUrl,
     name: file.name,
-    mimeType: file.type,
+    mimeType,
     size: file.size,
   };
 }

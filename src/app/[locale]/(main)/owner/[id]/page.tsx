@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
 
 type Analytics = {
@@ -76,6 +77,14 @@ export default function OwnerCafePage() {
           {t('checkinCode')}: {cafe.checkinCode}
         </p>
       ) : null}
+
+      <Link
+        href={`/owner/${id}/menu`}
+        className="block rounded-xl border bg-gradient-to-br from-[#2C1810] to-[#4A3228] p-4 text-white"
+      >
+        <p className="font-semibold">{t('manageMenu')}</p>
+        <p className="mt-1 text-sm text-white/75">{t('manageMenuHint')}</p>
+      </Link>
 
       <section className="rounded-xl border p-4">
         <h2 className="font-semibold">{t('editCafe')}</h2>

@@ -725,6 +725,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
         onOpenChange={room.setMediaComposerOpen}
         onSend={room.sendMediaFromComposer}
         uploading={room.uploadingCount > 0}
+        uploadProgress={room.uploadProgress}
       />
 
       <LocationPickerModal

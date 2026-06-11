@@ -46,6 +46,7 @@ export type ChatMessage = {
   editedAt?: string;
   deletedAt?: string;
   pinned?: boolean;
+  spoiler?: boolean;
   seenBy?: string[];
   reactions?: ReactionGroup[];
   /** Client-only: shared layout id while optimistic send resolves */
@@ -68,6 +69,7 @@ export type MessagePayload = {
   sticker?: string;
   replyToId?: string;
   replyToSnippet?: string;
+  spoiler?: boolean;
 };
 
 export type Conversation = {

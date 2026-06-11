@@ -59,6 +59,7 @@ export function MessagesHub({ locale }: { locale: string }) {
   const [deleteAllAlsoForPeer, setDeleteAllAlsoForPeer] = useState(false);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [startingUserId, setStartingUserId] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   const currentUserId = useAuthStore((s) => s.user?.id);
 
@@ -102,21 +103,23 @@ export function MessagesHub({ locale }: { locale: string }) {
     onSuccess: (conv) => {
       qc.invalidateQueries({ queryKey: ['conversations'] });
       setQuery('');
+      setChatError(null);
       haptic('success');
       router.push(`/messages/${conv.id}`);
+    },
+    onError: (err: Error) => {
+      const msg = err.message.toLowerCase();
+      if (msg.includes('block')) {
+        setChatError(t('messageBlocked'));
+      } else {
+        setChatError(err.message || t('messageStartFailed'));
+      }
+      haptic('error');
     },
     onSettled: () => {
       setStartingUserId(null);
     },
   });
-
-  const handleStartChat = useCallback(
-    (user: SearchUser) => {
-      if (!user.id || startChatMutation.isPending) return;
-      startChatMutation.mutate(user.id);
-    },
-    [startChatMutation],
-  );
 
   const archivedIds = useMemo(() => new Set(Object.keys(archivedAt)), [archivedAt]);
   const archivedCount = archivedIds.size;
@@ -140,6 +143,39 @@ export function MessagesHub({ locale }: { locale: string }) {
       (user) => user.id && user.id !== currentUserId && !activePeerIds.has(user.id),
     );
   }, [activePeerIds, currentUserId, isUserSearch, searchData?.users]);
+
+  const existingChatUserIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const chat of data ?? []) {
+      if (chat.otherMember?.id) ids.add(chat.otherMember.id);
+    }
+    return ids;
+  }, [data]);
+
+  const findConversationForUser = useCallback(
+    (userId: string) =>
+      (data ?? []).find((conversation) => conversation.otherMember?.id === userId),
+    [data],
+  );
+
+  const handleStartChat = useCallback(
+    (user: SearchUser) => {
+      if (!user.id || startChatMutation.isPending) return;
+      setChatError(null);
+      const existing = findConversationForUser(user.id);
+      if (existing) {
+        if (archivedIds.has(existing.id)) {
+          unarchive(existing.id);
+        }
+        setQuery('');
+        haptic('success');
+        router.push(`/messages/${existing.id}`);
+        return;
+      }
+      startChatMutation.mutate(user.id);
+    },
+    [archivedIds, findConversationForUser, router, startChatMutation, unarchive],
+  );
 
   const archivedChats = useMemo(
     () => (data ?? []).filter((c) => archivedIds.has(c.id)),
@@ -424,7 +460,10 @@ export function MessagesHub({ locale }: { locale: string }) {
             <input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (chatError) setChatError(null);
+              }}
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
               className="h-full min-h-0 min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
@@ -433,7 +472,10 @@ export function MessagesHub({ locale }: { locale: string }) {
               <button
                 type="button"
                 className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted"
-                onClick={() => setQuery('')}
+                onClick={() => {
+                  setQuery('');
+                  setChatError(null);
+                }}
                 aria-label={t('clearSearch')}
               >
                 <X className="size-3.5" />
@@ -540,6 +582,8 @@ export function MessagesHub({ locale }: { locale: string }) {
                       <UserSearchResults
                         users={newUsers}
                         startingUserId={startingUserId}
+                        existingChatUserIds={existingChatUserIds}
+                        errorMessage={chatError}
                         onStartChat={handleStartChat}
                       />
                       {filteredActive.length > 0 ? (

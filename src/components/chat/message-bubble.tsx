@@ -231,6 +231,7 @@ function MessageBubbleInner({
         location={message.location}
         imageUrl={message.imageUrl}
         isMine={isMine}
+        spoiler={message.spoiler}
       />
 
       {reactions.length > 0 ? (

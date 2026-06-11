@@ -66,6 +66,7 @@ export function useChatRoom(conversationId: string, locale: string) {
   const [recordingMode, setRecordingMode] = useState<'none' | 'voice' | 'video'>('none');
   const [recordingElapsedSec, setRecordingElapsedSec] = useState(0);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [mediaComposerOpen, setMediaComposerOpen] = useState(false);
   const [mediaComposerItems, setMediaComposerItems] = useState<MediaComposerItem[]>([]);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
@@ -911,30 +912,41 @@ export function useChatRoom(conversationId: string, locale: string) {
   const sendMediaFromComposer = useCallback(
     async (items: MediaComposerItem[], caption: string) => {
       setComposerError('');
-      for (const item of items) {
-        setUploadingCount((c) => c + 1);
-        try {
-          const uploaded = await uploadMessageFile(item.file);
-          sendPayload({
-            type: item.type,
-            body: caption || (item.type === 'file' ? item.file.name : undefined),
-            imageUrl: item.type === 'image' ? uploaded.url : undefined,
-            attachment: {
-              url: uploaded.url,
-              name: uploaded.name,
-              mimeType: uploaded.mimeType,
-              size: uploaded.size,
-            },
-            replyToId: replyTo?.id,
-            replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
-          });
-        } catch (err) {
-          setComposerError(
-            err instanceof Error ? err.message : 'Upload failed. Please try again.',
-          );
-        } finally {
-          setUploadingCount((c) => Math.max(0, c - 1));
+      setUploadProgress(0);
+      const total = items.length;
+      try {
+        for (let i = 0; i < total; i += 1) {
+          const item = items[i];
+          setUploadingCount((c) => c + 1);
+          try {
+            const uploaded = await uploadMessageFile(item.file, 'messages', (fraction) => {
+              setUploadProgress(Math.round(((i + fraction) / total) * 100));
+            });
+            sendPayload({
+              type: item.type,
+              body: caption || (item.type === 'file' ? item.file.name : undefined),
+              imageUrl: item.type === 'image' ? uploaded.url : undefined,
+              attachment: {
+                url: uploaded.url,
+                name: uploaded.name,
+                mimeType: uploaded.mimeType,
+                size: uploaded.size,
+              },
+              spoiler: item.spoiler || undefined,
+              replyToId: replyTo?.id,
+              replyToSnippet: replyTo ? messagePreview(replyTo) : undefined,
+            });
+          } catch (err) {
+            const message =
+              err instanceof Error ? err.message : 'Upload failed. Please try again.';
+            setComposerError(message);
+            throw err instanceof Error ? err : new Error(message);
+          } finally {
+            setUploadingCount((c) => Math.max(0, c - 1));
+          }
         }
+      } finally {
+        setUploadProgress(null);
       }
     },
     [replyTo, sendPayload],
@@ -1111,6 +1123,7 @@ export function useChatRoom(conversationId: string, locale: string) {
     currentUserId,
     currentUsername,
     uploadingCount,
+    uploadProgress,
     mediaComposerOpen,
     setMediaComposerOpen,
     mediaComposerItems,
