@@ -48,16 +48,6 @@ export type AvailabilityIntent =
   | 'walking'
   | 'coworking';
 
-export type ActivityCircle = {
-  id: string;
-  emoji: string;
-  label: string;
-  interest: string;
-  memberCount: number;
-  lat?: number;
-  lng?: number;
-};
-
 export type DiscoverMode = 'galaxy' | 'radar' | 'heatmap';
 
 export type FriendRequestItem = {
@@ -113,10 +103,3 @@ export function layoutOrbits(people: DiscoverPerson[], maxRadiusKm = 5): OrbitPe
   });
 }
 
-export const MOCK_ACTIVITIES: ActivityCircle[] = [
-  { id: 'act-coffee', emoji: '☕', label: 'Coffee nearby', interest: 'COFFEE', memberCount: 12 },
-  { id: 'act-startup', emoji: '🚀', label: 'Startup discussion', interest: 'STARTUPS', memberCount: 8 },
-  { id: 'act-gaming', emoji: '🎮', label: 'Gaming meetup', interest: 'GAMING', memberCount: 5 },
-  { id: 'act-cowork', emoji: '💻', label: 'Co-working', interest: 'TECH', memberCount: 9 },
-  { id: 'act-music', emoji: '🎵', label: 'Music lovers', interest: 'MUSIC', memberCount: 6 },
-];

@@ -9,7 +9,9 @@ import { useDeviceTilt } from '../hooks/use-device-tilt';
 import type { OrbitPerson } from '../types';
 
 type Props = {
-  person: OrbitPerson | null;
+  person:
+    | (OrbitPerson & { context?: { cafeId: string; cafeName: string } | null })
+    | null;
   onClose: () => void;
   onFriendAction?: () => void;
 };
@@ -68,6 +70,11 @@ export function DiscoveryCard({ person, onClose, onFriendAction }: Props) {
                     <h3 className="text-lg font-bold">{person.name ?? person.username}</h3>
                     {person.distanceLabel ? (
                       <p className="text-sm font-medium text-primary">{person.distanceLabel}</p>
+                    ) : null}
+                    {person.context ? (
+                      <p className="mt-0.5 text-xs text-amber-500">
+                        ☕ {t('atCafe', { name: person.context.cafeName })}
+                      </p>
                     ) : null}
                     {person.availability ? (
                       <p className="mt-1 text-xs text-amber-500">

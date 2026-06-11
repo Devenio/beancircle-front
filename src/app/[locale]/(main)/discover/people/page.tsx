@@ -1,5 +1,10 @@
-import { PeopleDiscoverPage } from '@/components/discover/people/people-discover-page';
+import { redirect } from 'next/navigation';
 
-export default function DiscoverPeoplePage() {
-  return <PeopleDiscoverPage />;
+export default async function DiscoverPeopleRedirectPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  redirect(`/${locale}/discover`);
 }

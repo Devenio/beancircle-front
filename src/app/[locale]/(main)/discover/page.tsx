@@ -1,8 +1,5 @@
-import { redirect } from 'next/navigation';
+import { WorldExperience } from '@/components/discover/world/world-experience';
 
-type Props = { params: Promise<{ locale: string }> };
-
-export default async function DiscoverIndexPage({ params }: Props) {
-  const { locale } = await params;
-  redirect(`/${locale}/discover/people`);
+export default function DiscoverWorldPage() {
+  return <WorldExperience />;
 }

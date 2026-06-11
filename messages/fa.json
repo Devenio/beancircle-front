@@ -121,6 +121,108 @@
       "dateFriendly": "مناسب قرار",
       "petFriendly": "حیوان‌دوست"
     },
+    "world": {
+      "refresh": "تازه‌سازی",
+      "greeting": {
+        "morning": "صبح بخیر {name}",
+        "afternoon": "ظهر بخیر {name}",
+        "evening": "عصر بخیر {name}",
+        "night": "شب بخیر {name}"
+      },
+      "aroundYou": "همین حالا اطراف تو · در شعاع {km} کیلومتر",
+      "counts": {
+        "people": "نفر",
+        "cafes": "کافه",
+        "events": "رویداد",
+        "communities": "گروه"
+      },
+      "layers": {
+        "all": "همه",
+        "people": "آدم‌ها",
+        "cafes": "کافه‌ها",
+        "events": "رویدادها",
+        "communities": "گروه‌ها"
+      },
+      "heat": {
+        "TRENDING": "🔥 داغ",
+        "BUSY": "⚡ شلوغ",
+        "POPULAR": "🌟 محبوب این هفته",
+        "NEW": "🚀 جدید"
+      },
+      "vibes": {
+        "remote_work_hub": "💼 مناسب دورکاری",
+        "quiet_study": "📚 مطالعه و سکوت",
+        "best_coffee": "☕ بهترین قهوه",
+        "date_night": "🌹 قرار دونفره",
+        "outdoor": "🌿 فضای باز",
+        "pet_friendly": "🐾 پت‌فرندلی"
+      },
+      "cafe": {
+        "open": "باز",
+        "closed": "بسته",
+        "inside": "{count} نفر داخل",
+        "friendsHere": "{count} دوست اینجا",
+        "checkin": "چک‌این",
+        "view": "مشاهده کافه"
+      },
+      "event": {
+        "happeningNow": "در حال برگزاری",
+        "startsInMinutes": "شروع تا {minutes} دقیقه دیگر",
+        "startsInHours": "شروع تا {hours} ساعت دیگر",
+        "ended": "تمام شد",
+        "attendees": "{count} شرکت‌کننده",
+        "rsvp": "می‌روم",
+        "view": "مشاهده رویداد"
+      },
+      "community": {
+        "members": "{count} عضو",
+        "activeNow": "{count} نفر آنلاین",
+        "nearbyMembers": "{count} عضو در نزدیکی",
+        "upcomingEvents": "{count} رویداد پیش‌رو",
+        "join": "عضویت",
+        "joined": "عضو شدی",
+        "view": "مشاهده گروه"
+      },
+      "feed": {
+        "title": "زنده از اطراف تو",
+        "empty": "فعلاً اطراف ساکت است",
+        "verbs": {
+          "FRIEND_CHECKIN": "در {target} چک‌این کرد",
+          "FRIEND_JOINED_EVENT": "به {target} پیوست",
+          "FRIEND_EARNED_BADGE": "نشان جدیدی گرفت",
+          "FRIEND_COMPLETED_CHALLENGE": "یک چالش را کامل کرد",
+          "FRIEND_JOINED_SQUAD": "به {target} پیوست",
+          "FRIEND_STREAK_MILESTONE": "به رکورد استریک رسید",
+          "FRIEND_COLLECTED_CARD": "کارت جدیدی جمع کرد",
+          "CAFE_TRENDING": "{target} داغ شده است",
+          "EVENT_ANNOUNCED": "{target} را اعلام کرد",
+          "SQUAD_ACTIVITY": "در {target} فعال است"
+        }
+      },
+      "empty": {
+        "title": {
+          "all": "دنیای اطرافت فعلاً ساکت است…",
+          "people": "فعلاً کسی در نزدیکی نیست",
+          "cafes": "کافه‌ای در این شعاع نیست",
+          "events": "رویدادی در نزدیکی نیست",
+          "communities": "گروهی در نزدیکی نیست"
+        },
+        "fallbackHint": {
+          "people": "اما {count} نفر اطراف تو هستند",
+          "cafes": "اما {count} کافه اطراف تو هست",
+          "communities": "اما {count} گروه نزدیک تو فعال‌اند",
+          "events": "اما {count} رویداد به‌زودی نزدیک تو برگزار می‌شود"
+        },
+        "fallbackCta": {
+          "people": "نمایش آدم‌ها",
+          "cafes": "نمایش کافه‌ها",
+          "communities": "نمایش گروه‌ها",
+          "events": "نمایش رویدادها"
+        },
+        "quietHint": "شعاع دنیای خود را بزرگ‌تر کن تا فعالیت بیشتری پیدا کنی",
+        "expandCta": "گسترش تا {km} کیلومتر"
+      }
+    },
     "people": {
       "title": "افراد نزدیک",
       "subtitle": "علاقه‌مندان به قهوه در اطرافت را کشف کن",
@@ -139,6 +241,7 @@
       "noIncoming": "درخواستی نیست",
       "noOutgoing": "درخواست ارسالی نیست",
       "pending": "در انتظار",
+      "atCafe": "در {name}",
       "empty": "کسی نزدیک نیست. فیلتر فاصله را بیشتر کن.",
       "locationRequired": "برای نقشه موقعیت را فعال کن",
       "close": "بستن",

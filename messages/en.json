@@ -121,6 +121,108 @@
       "dateFriendly": "Date friendly",
       "petFriendly": "Pet friendly"
     },
+    "world": {
+      "refresh": "Refresh",
+      "greeting": {
+        "morning": "Good morning {name}",
+        "afternoon": "Good afternoon {name}",
+        "evening": "Good evening {name}",
+        "night": "Good night {name}"
+      },
+      "aroundYou": "Around you right now · within {km} km",
+      "counts": {
+        "people": "people",
+        "cafes": "cafés",
+        "events": "events",
+        "communities": "communities"
+      },
+      "layers": {
+        "all": "All",
+        "people": "People",
+        "cafes": "Cafés",
+        "events": "Events",
+        "communities": "Communities"
+      },
+      "heat": {
+        "TRENDING": "🔥 Trending",
+        "BUSY": "⚡ Busy",
+        "POPULAR": "🌟 Popular this week",
+        "NEW": "🚀 New"
+      },
+      "vibes": {
+        "remote_work_hub": "💼 Remote Work Hub",
+        "quiet_study": "📚 Quiet Study",
+        "best_coffee": "☕ Best Coffee",
+        "date_night": "🌹 Date Night",
+        "outdoor": "🌿 Outdoor Seating",
+        "pet_friendly": "🐾 Pet Friendly"
+      },
+      "cafe": {
+        "open": "Open",
+        "closed": "Closed",
+        "inside": "{count} inside",
+        "friendsHere": "{count} friends here",
+        "checkin": "Check in",
+        "view": "View cafe"
+      },
+      "event": {
+        "happeningNow": "Happening now",
+        "startsInMinutes": "Starts in {minutes} min",
+        "startsInHours": "Starts in {hours}h",
+        "ended": "Ended",
+        "attendees": "{count} going",
+        "rsvp": "I'm going",
+        "view": "View event"
+      },
+      "community": {
+        "members": "{count} members",
+        "activeNow": "{count} active now",
+        "nearbyMembers": "{count} members nearby",
+        "upcomingEvents": "{count} upcoming events",
+        "join": "Join",
+        "joined": "Joined",
+        "view": "View community"
+      },
+      "feed": {
+        "title": "Live around you",
+        "empty": "The world is quiet right now",
+        "verbs": {
+          "FRIEND_CHECKIN": "checked into {target}",
+          "FRIEND_JOINED_EVENT": "joined {target}",
+          "FRIEND_EARNED_BADGE": "earned a badge",
+          "FRIEND_COMPLETED_CHALLENGE": "completed a challenge",
+          "FRIEND_JOINED_SQUAD": "joined {target}",
+          "FRIEND_STREAK_MILESTONE": "hit a streak milestone",
+          "FRIEND_COLLECTED_CARD": "collected a card",
+          "CAFE_TRENDING": "{target} is trending",
+          "EVENT_ANNOUNCED": "announced {target}",
+          "SQUAD_ACTIVITY": "is active in {target}"
+        }
+      },
+      "empty": {
+        "title": {
+          "all": "The world around you is quiet… for now",
+          "people": "No people nearby right now",
+          "cafes": "No cafés in this radius",
+          "events": "No events nearby",
+          "communities": "No communities nearby"
+        },
+        "fallbackHint": {
+          "people": "But {count} people are around you",
+          "cafes": "But {count} cafés are around you",
+          "communities": "But {count} communities are active near you",
+          "events": "But {count} events are coming up near you"
+        },
+        "fallbackCta": {
+          "people": "Show people instead",
+          "cafes": "Show cafés instead",
+          "communities": "Show communities instead",
+          "events": "Show events instead"
+        },
+        "quietHint": "Try expanding your world to find more activity",
+        "expandCta": "Expand to {km} km"
+      }
+    },
     "people": {
       "title": "People nearby",
       "subtitle": "Discover coffee lovers around you",
@@ -139,6 +241,7 @@
       "noIncoming": "No pending requests",
       "noOutgoing": "No sent requests",
       "pending": "Pending",
+      "atCafe": "At {name}",
       "empty": "No one nearby yet. Try widening your distance filter.",
       "locationRequired": "Enable location to see the map",
       "close": "Close",
