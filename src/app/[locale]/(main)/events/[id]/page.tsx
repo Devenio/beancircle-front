@@ -5,6 +5,9 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Bell, BellRing, CalendarDays, MapPin } from 'lucide-react';
 import { UserAvatar } from '@/components/chat/user-avatar';
+import { BeanComposer } from '@/components/beans/bean-composer';
+import { BeanFeed } from '@/components/beans/bean-feed';
+import { getBeansForEvent } from '@/lib/api/beans';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link, useRouter } from '@/i18n/navigation';
@@ -20,6 +23,7 @@ import {
 
 export default function EventDetailPage() {
   const t = useTranslations('eventsPage');
+  const tBeans = useTranslations('beans');
   const { id, locale } = useParams<{ id: string; locale: string }>();
   const router = useRouter();
   const qc = useQueryClient();
@@ -139,6 +143,27 @@ export default function EventDetailPage() {
             {!participants?.length ? (
               <p className="text-sm text-muted-foreground">—</p>
             ) : null}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-sm font-semibold">{tBeans('eventSectionTitle')}</h2>
+          <div className="-mx-4">
+            <div className="border-b border-border px-4 pb-3">
+              <BeanComposer
+                locale={locale}
+                context={{ eventId: id, label: event.title }}
+                compact
+              />
+            </div>
+            <BeanFeed
+              queryKey={['beans', 'event', id, locale]}
+              fetchPage={(cursor) => getBeansForEvent(id, locale, cursor)}
+              locale={locale}
+              emptyTitle={tBeans('eventEmptyTitle')}
+              emptyBody={tBeans('eventEmptyBody')}
+              composerContext={{ eventId: id, label: event.title }}
+            />
           </div>
         </div>
 

@@ -73,6 +73,7 @@
     "viewMenu": "مشاهده منو",
     "tabs": {
       "overview": "نمای کلی",
+      "beans": "دانه‌ها",
       "menu": "منو",
       "events": "رویدادها",
       "updates": "اخبار",
@@ -1441,6 +1442,62 @@
     "withFriends": "با {count} دوست",
     "checkInNow": "چک‌این"
   },
+  "beans": {
+    "title": "دانه‌ها",
+    "subtitle": "حرف‌های دور میز کافه",
+    "tab": "دانه‌ها",
+    "scopes": {
+      "feed": "تازه‌ها",
+      "trending": "داغ",
+      "local": "اطراف من",
+      "friends": "دوستان"
+    },
+    "shareTitle": "یک دانه به اشتراک بگذار",
+    "quoteTitle": "روی این ایده دم کن",
+    "detailTitle": "دانه",
+    "rebeanedBy": "{name} بازدانه کرد",
+    "replyingTo": "در پاسخ به {name}",
+    "viewConversation": "مشاهده گفتگو",
+    "delete": "حذف دانه",
+    "rebean": "بازدانه",
+    "undoRebean": "لغو بازدانه",
+    "quote": "دم کردن روی این ایده",
+    "replies": "پاسخ‌ها",
+    "noRepliesTitle": "هنوز پاسخی نیست",
+    "noRepliesBody": "صندلی را جلو بکش و گفتگو را شروع کن.",
+    "emptyTitle": "هنوز دانه‌ای نیست",
+    "emptyBody": "آنچه در ذهنت دم می‌کشد را به اشتراک بگذار — یا افراد، کافه‌ها و جامعه‌ها را دنبال کن.",
+    "loadMore": "دانه‌های بیشتر",
+    "hashtagSubtitle": "دانه‌های مرتبط با این موضوع",
+    "myBeans": "دانه‌های من",
+    "userBeans": "دانه‌ها",
+    "profileEmptyTitle": "هنوز دانه‌ای نیست",
+    "profileEmptyBody": "دانه‌های به‌اشتراک‌گذاشته‌شده اینجا نمایش داده می‌شوند.",
+    "cafeEmptyTitle": "هنوز دانه‌ای در این کافه نیست",
+    "cafeEmptyBody": "اینجایی؟ درباره اسپرسو، وای‌فای یا دورهمی امشب یک دانه به اشتراک بگذار.",
+    "eventSectionTitle": "دانه‌های رویداد",
+    "eventEmptyTitle": "هنوز دانه‌ای برای این رویداد نیست",
+    "eventEmptyBody": "می‌روی؟ یک دانه به اشتراک بگذار و گفتگو را شروع کن.",
+    "poll": {
+      "votes": "{count} رأی",
+      "ended": "نتیجه نهایی"
+    },
+    "composer": {
+      "prompts": {
+        "brewing": "چه چیزی در ذهنت دم می‌کشد؟",
+        "thought": "یک فکر به اشتراک بگذار...",
+        "working": "روی چه چیزی کار می‌کنی؟",
+        "cafeToday": "امروز کافه جالبی رفتی؟",
+        "conversation": "یک گفتگو شروع کن..."
+      },
+      "replyPlaceholder": "یک پاسخ دم کن...",
+      "pollOption": "گزینه {n}",
+      "addOption": "افزودن گزینه",
+      "locationPlaceholder": "کجایی؟",
+      "reply": "پاسخ",
+      "share": "اشتراک دانه"
+    }
+  },
   "eventsPage": {
     "title": "رویدادها",
     "subtitle": "برنامه‌های واقعی با آدم‌های واقعی",
@@ -1481,6 +1538,7 @@
     "memberList": "اعضا",
     "leaderboard": "جدول برترین‌ها",
     "chat": "گفتگو",
+    "beans": "دانه‌ها",
     "chatPlaceholder": "به اسکواد پیام بده…",
     "send": "ارسال",
     "emptyTitle": "هنوز اسکوادی نیست",

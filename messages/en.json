@@ -73,6 +73,7 @@
     "viewMenu": "View menu",
     "tabs": {
       "overview": "Overview",
+      "beans": "Beans",
       "menu": "Menu",
       "events": "Events",
       "updates": "Updates",
@@ -1442,6 +1443,62 @@
     "withFriends": "with {count} friends",
     "checkInNow": "Check in"
   },
+  "beans": {
+    "title": "Beans",
+    "subtitle": "Thoughts around the café table",
+    "tab": "Beans",
+    "scopes": {
+      "feed": "Latest",
+      "trending": "Trending",
+      "local": "Local",
+      "friends": "Friends"
+    },
+    "shareTitle": "Share a Bean",
+    "quoteTitle": "Brew on this idea",
+    "detailTitle": "Bean",
+    "rebeanedBy": "{name} ReBeaned",
+    "replyingTo": "Replying to {name}",
+    "viewConversation": "View conversation",
+    "delete": "Delete Bean",
+    "rebean": "ReBean",
+    "undoRebean": "Undo ReBean",
+    "quote": "Brew on this",
+    "replies": "Replies",
+    "noRepliesTitle": "No replies yet",
+    "noRepliesBody": "Pull up a chair and start the conversation.",
+    "emptyTitle": "No Beans yet",
+    "emptyBody": "Share what's brewing in your mind — or follow people, cafés and communities.",
+    "loadMore": "More Beans",
+    "hashtagSubtitle": "Beans about this topic",
+    "myBeans": "My Beans",
+    "userBeans": "Beans",
+    "profileEmptyTitle": "No Beans yet",
+    "profileEmptyBody": "Beans shared here will show up on the profile.",
+    "cafeEmptyTitle": "No Cafe Beans yet",
+    "cafeEmptyBody": "Visiting? Share a Bean about the espresso, the wifi, or tonight's meetup.",
+    "eventSectionTitle": "Event Beans",
+    "eventEmptyTitle": "No Event Beans yet",
+    "eventEmptyBody": "Going? Share a Bean and get the conversation going.",
+    "poll": {
+      "votes": "{count} votes",
+      "ended": "Final results"
+    },
+    "composer": {
+      "prompts": {
+        "brewing": "What's brewing in your mind?",
+        "thought": "Share a thought...",
+        "working": "What are you working on?",
+        "cafeToday": "Any interesting café today?",
+        "conversation": "Start a conversation..."
+      },
+      "replyPlaceholder": "Brew a reply...",
+      "pollOption": "Option {n}",
+      "addOption": "Add option",
+      "locationPlaceholder": "Where are you?",
+      "reply": "Reply",
+      "share": "Share Bean"
+    }
+  },
   "eventsPage": {
     "title": "Events",
     "subtitle": "Real plans with real people",
@@ -1482,6 +1539,7 @@
     "memberList": "Members",
     "leaderboard": "Leaderboard",
     "chat": "Chat",
+    "beans": "Beans",
     "chatPlaceholder": "Message your squad…",
     "send": "Send",
     "emptyTitle": "No squads yet",

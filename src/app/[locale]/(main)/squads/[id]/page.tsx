@@ -7,6 +7,9 @@ import { ArrowLeft, Crown, Send, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSocket } from '@/lib/realtime/socket';
 import { UserAvatar } from '@/components/chat/user-avatar';
+import { BeanComposer } from '@/components/beans/bean-composer';
+import { BeanFeed } from '@/components/beans/bean-feed';
+import { getBeansForCommunity } from '@/lib/api/beans';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from '@/i18n/navigation';
@@ -23,7 +26,7 @@ import {
   type SquadMessage,
 } from '@/lib/api/squads';
 
-type Tab = 'chat' | 'members' | 'leaderboard';
+type Tab = 'chat' | 'beans' | 'members' | 'leaderboard';
 
 export default function SquadDetailPage() {
   const t = useTranslations('squads');
@@ -80,7 +83,7 @@ export default function SquadDetailPage() {
           </Button>
         </div>
         <div className="mt-3 flex gap-1 rounded-full bg-muted p-1">
-          {(['chat', 'members', 'leaderboard'] as const).map((key) => (
+          {(['chat', 'beans', 'members', 'leaderboard'] as const).map((key) => (
             <button
               key={key}
               type="button"
@@ -105,6 +108,24 @@ export default function SquadDetailPage() {
           isMember={squad.isMember}
           meId={me?.id}
         />
+      ) : tab === 'beans' ? (
+        <div className="pb-24">
+          {squad.isMember ? (
+            <div className="border-b border-border px-4 py-3">
+              <BeanComposer
+                locale={locale}
+                context={{ squadId: id, label: squad.name }}
+                compact
+              />
+            </div>
+          ) : null}
+          <BeanFeed
+            queryKey={['beans', 'community', id, locale]}
+            fetchPage={(cursor) => getBeansForCommunity(id, locale, cursor)}
+            locale={locale}
+            composerContext={{ squadId: id, label: squad.name }}
+          />
+        </div>
       ) : tab === 'members' ? (
         <MembersTab squadId={id} locale={locale} />
       ) : (

@@ -13,10 +13,13 @@ import { BeanScorePanel } from '@/components/beanscore/beanscore-panel';
 import { CollectionCard, StreakCard } from '@/components/profile/profile-stats';
 import { FriendActionButton } from '@/components/discover/people/friend-action-button';
 import type { DiscoverPerson } from '@/components/discover/people/types';
+import { BeanFeed } from '@/components/beans/bean-feed';
+import { getBeansForUser } from '@/lib/api/beans';
 
 export default function ProfilePage() {
   const { username, locale } = useParams<{ username: string; locale: string }>();
   const tp = useTranslations('profile');
+  const tb = useTranslations('beans');
 
   const { data: profile } = useQuery({
     queryKey: ['profile', username, locale],
@@ -118,6 +121,23 @@ export default function ProfilePage() {
             <NavRow href="/squads" icon={<Users className="size-4" />} label={tp('mySquads')} />
             <NavRow href="/events" icon={<CalendarDays className="size-4" />} label={tp('upcomingEvents')} />
           </div>
+        </div>
+      ) : null}
+
+      {profile.username ? (
+        <div className="mt-6">
+          <h2 className="border-b border-border px-4 pb-2 text-sm font-semibold text-muted-foreground">
+            {profile.isSelf ? tb('myBeans') : tb('userBeans')}
+          </h2>
+          <BeanFeed
+            queryKey={['beans', 'user', profile.username, locale]}
+            fetchPage={(cursor) =>
+              getBeansForUser(profile.username!, locale, cursor)
+            }
+            locale={locale}
+            emptyTitle={tb('profileEmptyTitle')}
+            emptyBody={tb('profileEmptyBody')}
+          />
         </div>
       ) : null}
     </div>

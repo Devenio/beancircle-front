@@ -5,6 +5,9 @@ import { useParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
 import { cafeConsumerApi } from '@/lib/api/cafe-os';
+import { getBeansForCafe } from '@/lib/api/beans';
+import { BeanComposer } from '@/components/beans/bean-composer';
+import { BeanFeed } from '@/components/beans/bean-feed';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConsumerLoyaltyCards } from '@/components/cafe-os/consumer-loyalty';
@@ -55,7 +58,7 @@ type CafeEventRow = {
   _count?: { rsvps: number };
 };
 
-const TABS = ['overview', 'menu', 'events', 'updates', 'community'] as const;
+const TABS = ['overview', 'beans', 'menu', 'events', 'updates', 'community'] as const;
 type Tab = (typeof TABS)[number];
 
 const ANNOUNCEMENT_ICONS = {
@@ -67,6 +70,7 @@ const ANNOUNCEMENT_ICONS = {
 export default function CafePage() {
   const { id, locale } = useParams<{ id: string; locale: string }>();
   const t = useTranslations('cafe');
+  const tBeans = useTranslations('beans');
   const format = useFormatter();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('overview');
@@ -252,6 +256,26 @@ export default function CafePage() {
                 </div>
               ))}
             </section>
+          </div>
+        ) : null}
+
+        {tab === 'beans' ? (
+          <div className="-mx-4 mt-2">
+            <div className="border-b border-border px-4 py-3">
+              <BeanComposer
+                locale={locale}
+                context={{ cafeId: id, label: cafe.name }}
+                compact
+              />
+            </div>
+            <BeanFeed
+              queryKey={['beans', 'cafe', id, locale]}
+              fetchPage={(cursor) => getBeansForCafe(id, locale, cursor)}
+              locale={locale}
+              emptyTitle={tBeans('cafeEmptyTitle')}
+              emptyBody={tBeans('cafeEmptyBody')}
+              composerContext={{ cafeId: id, label: cafe.name }}
+            />
           </div>
         ) : null}
 
