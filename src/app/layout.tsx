@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import './globals.css';
-import { Geist } from 'next/font/google';
-import { getLocaleFontClass } from '@/lib/fonts';
-
-const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
+import { fontVariables } from '@/lib/fonts';
 
 export const metadata: Metadata = {
   title: 'Bean Circle',
@@ -16,12 +13,11 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
   const dir = locale === 'fa' ? 'rtl' : 'ltr';
-  const fontClass = getLocaleFontClass(locale);
 
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
+    <html lang={locale} dir={dir} className={fontVariables} suppressHydrationWarning>
       <body
-        className={`${geist.variable} min-h-screen bg-background antialiased ${fontClass}`}
+        className="min-h-screen bg-background antialiased"
         suppressHydrationWarning
       >
         {children}

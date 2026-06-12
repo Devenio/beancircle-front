@@ -2,11 +2,98 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ── Vazirmatn FD — local, arabic-only unicode-range ─────────────────────────
+   The unicode-range tells the browser to use this font face exclusively for
+   Arabic/Persian codepoints. Latin characters always fall through to
+   Plus Jakarta Sans. This works on every page and locale without any
+   JavaScript or runtime locale detection.                                    */
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-ExtraLight.woff2') format('woff2');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+@font-face {
+  font-family: 'Vazirmatn FD';
+  src: url('/font/vazir/webfonts/Vazirmatn-FD-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF, U+FE70-U+FEFF,
+    U+200C, U+200D, U+25CC, U+0660-U+0669, U+06F0-U+06F9;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
+    --font-sans: var(--font-en);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -172,7 +259,10 @@ html[data-font-size='large'] {
     @apply bg-background text-foreground;
     }
   html {
-    @apply font-sans;
+    font-family: var(--font-en), 'Vazirmatn FD', sans-serif;
+    }
+  html:lang(fa) {
+    font-family: 'Vazirmatn FD', var(--font-en), sans-serif;
     }
 }
 
