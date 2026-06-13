@@ -172,7 +172,10 @@ export default function NewCafePage() {
   // ── Stable click handler ref ────────────────────────────────────────────────
 
   // Updated every render so it sees fresh state/setters, called from stable callbacks
-  const onPickRef = useRef<(clickLat: number, clickLng: number, src: MapInstance) => void>();
+  const onPickRef =
+    useRef<
+      ((clickLat: number, clickLng: number, src: MapInstance) => void) | undefined
+    >(undefined);
   onPickRef.current = async (clickLat, clickLng, src) => {
     setLat(clickLat);
     setLng(clickLng);

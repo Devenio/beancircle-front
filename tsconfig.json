@@ -7,6 +7,10 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
+    // Explicit allowlist so the deprecated, empty @types/mapbox-gl stub isn't
+    // auto-included (the app uses @neshan-maps-platform/mapbox-gl, which ships
+    // its own types). Without this it breaks `next build`'s type-check.
+    "types": ["node", "react", "react-dom", "three"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,

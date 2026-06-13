@@ -243,7 +243,13 @@
       "noOutgoing": "No sent requests",
       "pending": "Pending",
       "atCafe": "At {name}",
-      "empty": "No one nearby yet. Try widening your distance filter.",
+      "empty": {
+        "expandTitle": "The galaxy is quiet… for now",
+        "peakEvening": "New people usually appear around 6 PM",
+        "peakGeneric": "Try expanding your orbit to find more creators",
+        "expandCta": "Expand to {km} km",
+        "tryInterest": "Try {interest} nearby"
+      },
       "locationRequired": "Enable location to see the map",
       "close": "Close",
       "mutualFriends": "{count} mutual friends",
@@ -297,13 +303,6 @@
       "rewards": {
         "explorerLevel": "Explorer Lv.{level}",
         "streak": "{days} day discovery streak"
-      },
-      "empty": {
-        "expandTitle": "The galaxy is quiet… for now",
-        "peakEvening": "New people usually appear around 6 PM",
-        "peakGeneric": "Try expanding your orbit to find more creators",
-        "expandCta": "Expand to {km} km",
-        "tryInterest": "Try {interest} nearby"
       },
       "meetNow": {
         "cta": "Meet People Now",
@@ -943,7 +942,6 @@
     "file": "File",
     "video": "Video",
     "location": "Location",
-    "send": "Send",
     "recordVoice": "Record voice message",
     "stopVideoRecording": "Stop video recording",
     "mediaComposerTitle": "Send media",
@@ -1661,5 +1659,155 @@
     "message": "Message",
     "seeAll": "See all",
     "retry": "Retry"
+  },
+  "bugReport": {
+    "title": "Report a Problem",
+    "subtitle": "Tell us what happened.",
+    "titlePlaceholder": "Issue title",
+    "descriptionPlaceholder": "Describe what happened…",
+    "categoryLabel": "Category",
+    "categories": {
+      "BUG": "Bug",
+      "PERFORMANCE": "Performance",
+      "UI_UX": "UI / UX",
+      "CHAT": "Chat",
+      "NOTIFICATIONS": "Notifications",
+      "PAYMENTS": "Payments",
+      "ACCOUNT": "Account",
+      "FEATURE_REQUEST": "Feature Request",
+      "OTHER": "Other"
+    },
+    "shakeToggle": "Shake to report",
+    "submit": "Send report",
+    "submitting": "Sending…",
+    "privacyNote": "Passwords, tokens and payment details are never collected. Emails and phone numbers are masked.",
+    "successTitle": "Thanks for helping improve BeanCircle",
+    "successBody": "Our team will look into it shortly.",
+    "ticketLabel": "Ticket",
+    "done": "Done",
+    "queuedTitle": "Saved offline",
+    "queuedBody": "We'll send your report automatically when you're back online."
+  },
+  "pwa": {
+    "install": "Install app",
+    "banner": {
+      "title": "Install Bean Circle",
+      "subtitle": "Add it to your home screen for a faster, fullscreen experience.",
+      "install": "Install",
+      "howto": "How to",
+      "dismiss": "Dismiss"
+    },
+    "update": {
+      "title": "New version available",
+      "subtitle": "Refresh to get the latest features.",
+      "now": "Update",
+      "later": "Later"
+    },
+    "offline": {
+      "title": "You're offline",
+      "subtitle": "Some features may be unavailable.",
+      "retry": "Retry",
+      "dismiss": "Dismiss"
+    },
+    "online": {
+      "back": "Back online"
+    },
+    "cta": {
+      "title": "Install the app",
+      "subtitle": "Faster, fullscreen, and works offline."
+    }
+  },
+  "install": {
+    "back": "Back",
+    "meta": {
+      "title": "Install",
+      "description": "Install Bean Circle on your device."
+    },
+    "hero": {
+      "badge": "Progressive Web App",
+      "title": "Get the full Bean Circle app",
+      "subtitle": "Install Bean Circle for a faster, fullscreen, app-like experience — no app store needed.",
+      "installCta": "Install now",
+      "seeSteps": "See how to install",
+      "installedTitle": "Bean Circle is installed",
+      "openApp": "Open the app",
+      "shot1": "Bean Circle passport screen",
+      "shot2": "Discover cafés screen"
+    },
+    "benefits": {
+      "title": "Why install?",
+      "fast": {
+        "title": "Faster startup",
+        "desc": "Launches instantly from your home screen."
+      },
+      "fullscreen": {
+        "title": "Fullscreen",
+        "desc": "No browser bars — just the app."
+      },
+      "notifications": {
+        "title": "Push notifications",
+        "desc": "Never miss a message or a new stamp."
+      },
+      "offline": {
+        "title": "Works offline",
+        "desc": "Browse cached pages without a connection."
+      },
+      "performance": {
+        "title": "Better performance",
+        "desc": "Smoother, more responsive interactions."
+      },
+      "native": {
+        "title": "Native feeling",
+        "desc": "Looks and feels like a real app."
+      }
+    },
+    "steps": {
+      "heading": "How to install"
+    },
+    "platform": {
+      "detected": "We detected {device}."
+    },
+    "tabs": {
+      "android": "Android",
+      "ios": "iPhone & iPad",
+      "desktop": "Desktop"
+    },
+    "prompt": {
+      "title": "Ready to install",
+      "body": "Tap the button below and confirm in your browser."
+    },
+    "desktop": {
+      "promptBody": "Click the button below and confirm in your browser.",
+      "chrome": {
+        "title": "Google Chrome",
+        "step1": "Click the install icon on the right of the address bar (or open the ⋮ menu).",
+        "step2": "Choose “Install Bean Circle”.",
+        "step3": "Click “Install” to confirm."
+      },
+      "edge": {
+        "title": "Microsoft Edge",
+        "step1": "Open the ⋯ menu, then “Apps”.",
+        "step2": "Choose “Install this site as an app”.",
+        "step3": "Click “Install” to confirm."
+      }
+    },
+    "android": {
+      "menu": {
+        "title": "Install from the menu",
+        "step1": "Open your browser's menu (⋮).",
+        "step2": "Tap “Install app” or “Add to Home screen”.",
+        "step3": "Confirm to add Bean Circle to your home screen."
+      }
+    },
+    "ios": {
+      "openInSafari": "On iPhone and iPad, you can only install from Safari. Open this page in Safari, then follow the steps below.",
+      "step1": "Tap the Share button",
+      "step1hint": "It's in Safari's toolbar (the square with an upward arrow).",
+      "step2": "Tap “Add to Home Screen”",
+      "step2hint": "Scroll down in the share sheet if you don't see it.",
+      "step3": "Tap “Add”",
+      "step3hint": "Bean Circle will appear on your home screen.",
+      "stepsLabel": "Installation steps"
+    }
   }
 }

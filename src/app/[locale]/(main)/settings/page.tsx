@@ -11,6 +11,7 @@ import { SettingsSearch } from '@/components/settings/settings-search';
 import { SettingsHubSkeleton } from '@/components/settings/settings-profile-header';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { ReferralPanel } from '@/components/growth/referral-panel';
+import { InstallCtaRow } from '@/components/pwa/install-cta-row';
 import { useAuthStore } from '@/stores/auth-store';
 import { api } from '@/lib/api/client';
 import { useRouter } from '@/i18n/navigation';
@@ -67,6 +68,7 @@ function SettingsHubContent() {
       </div>
 
       <SettingsList className="mt-2">
+        <InstallCtaRow source="settings" />
         <SettingsRow
           label={t('giftCoffee')}
           description={t('giftCoffeeDesc')}

@@ -4,7 +4,8 @@ import { routing } from './i18n/routing';
 
 const handleI18nRouting = createMiddleware(routing);
 
-const PUBLIC_PATHS = ['/login', '/auth/callback', '/m'];
+// `/install` is public so users can read install instructions before signing in.
+const PUBLIC_PATHS = ['/login', '/auth/callback', '/m', '/install'];
 
 function pathWithoutLocale(pathname: string) {
   const match = pathname.match(/^\/(fa|en)(\/.*)?$/);
