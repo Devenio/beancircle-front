@@ -1,9 +1,8 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
-import { Button } from '@/components/ui/button';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 
 type BeanScoreProfile = {
@@ -26,7 +25,6 @@ type LeaderRow = {
 
 export function BeanScorePanel({ locale, cityId }: { locale: string; cityId?: string }) {
   const t = useTranslations('beanscore');
-  const qc = useQueryClient();
 
   const { data: me } = useQuery({
     queryKey: ['beanscore', locale],
@@ -40,12 +38,6 @@ export function BeanScorePanel({ locale, cityId }: { locale: string; cityId?: st
         `/beanscore/leaderboard${cityId ? `?cityId=${cityId}` : ''}`,
         { locale },
       ),
-  });
-
-  const dailyMutation = useMutation({
-    mutationFn: () =>
-      api('/beanscore/daily', { method: 'POST', locale }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['beanscore', locale] }),
   });
 
   if (!me) return null;
@@ -64,15 +56,6 @@ export function BeanScorePanel({ locale, cityId }: { locale: string; cityId?: st
             {t('level', { level: me.level })} · {me.totalPoints} {t('points')}
           </p>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => dailyMutation.mutate()}
-          disabled={dailyMutation.isPending}
-        >
-          {t('dailyBonus')}
-        </Button>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
         <div

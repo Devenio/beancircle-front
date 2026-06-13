@@ -18,6 +18,7 @@ import { Link } from '@/i18n/navigation';
 import {
   BadgePercent,
   CalendarDays,
+  Heart,
   Megaphone,
   Tag,
   UtensilsCrossed,
@@ -95,6 +96,21 @@ export default function CafePage() {
     enabled: tab === 'events',
   });
 
+  const { data: favoriteCafes } = useQuery({
+    queryKey: ['favorite-cafes', locale],
+    queryFn: () => api<{ id: string }[]>('/users/me/favorite-cafes', { locale }),
+  });
+  const isFavorite = favoriteCafes?.some((c) => c.id === id) ?? false;
+
+  const favoriteMutation = useMutation({
+    mutationFn: () =>
+      api(`/users/me/favorite-cafes/${id}`, {
+        method: isFavorite ? 'DELETE' : 'POST',
+        locale,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['favorite-cafes', locale] }),
+  });
+
   const followMutation = useMutation({
     mutationFn: () =>
       api(`/cafes/${id}/follow`, {
@@ -124,7 +140,6 @@ export default function CafePage() {
 
   return (
     <div className="pb-8">
-      {/* Header */}
       <div className="relative">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -161,6 +176,20 @@ export default function CafePage() {
             onClick={() => followMutation.mutate()}
           >
             {cafe.isFollowing ? t('unfollow') : t('follow')}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => favoriteMutation.mutate()}
+            disabled={favoriteMutation.isPending}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Heart
+              className="h-4 w-4"
+              fill={isFavorite ? 'currentColor' : 'none'}
+              strokeWidth={isFavorite ? 0 : 2}
+              style={{ color: isFavorite ? '#ef4444' : undefined }}
+            />
           </Button>
           <CheckinSheet
             cafeId={id}
@@ -203,7 +232,6 @@ export default function CafePage() {
           </p>
         ) : null}
 
-        {/* Tabs */}
         <div className="-mx-4 mt-4 flex gap-1 overflow-x-auto border-b border-border px-4 scrollbar-none">
           {TABS.map((tb) => (
             <button
@@ -221,7 +249,6 @@ export default function CafePage() {
           ))}
         </div>
 
-        {/* Tab content */}
         {tab === 'overview' ? (
           <div className="mt-4 space-y-6">
             <ConsumerLoyaltyCards cafeId={id} />
@@ -262,11 +289,7 @@ export default function CafePage() {
         {tab === 'beans' ? (
           <div className="-mx-4 mt-2">
             <div className="border-b border-border px-4 py-3">
-              <BeanComposer
-                locale={locale}
-                context={{ cafeId: id, label: cafe.name }}
-                compact
-              />
+              <BeanComposer locale={locale} context={{ cafeId: id, label: cafe.name }} compact />
             </div>
             <BeanFeed
               queryKey={['beans', 'cafe', id, locale]}

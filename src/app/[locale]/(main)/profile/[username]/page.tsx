@@ -15,6 +15,8 @@ import { FriendActionButton } from '@/components/discover/people/friend-action-b
 import type { DiscoverPerson } from '@/components/discover/people/types';
 import { BeanFeed } from '@/components/beans/bean-feed';
 import { getBeansForUser } from '@/lib/api/beans';
+import { ReportDialog } from '@/components/report/report-dialog';
+import { CollectiblesBadges } from '@/components/profile/collectibles-badges';
 
 export default function ProfilePage() {
   const { username, locale } = useParams<{ username: string; locale: string }>();
@@ -104,9 +106,32 @@ export default function ProfilePage() {
         {profile.bio ? <p className="mt-1 text-sm">{profile.bio}</p> : null}
       </div>
 
+      <div className="mt-4">
+        <CollectiblesBadges
+          userId={profile.id}
+          isSelf={!!profile.isSelf}
+          locale={locale}
+        />
+      </div>
+
       {person ? (
-        <div className="mt-4 px-4">
-          <FriendActionButton person={person} />
+        <div className="mt-4 flex items-center gap-2 px-4">
+          <div className="flex-1">
+            <FriendActionButton person={person} />
+          </div>
+          <ReportDialog
+            targetType="USER"
+            targetId={profile.id}
+            locale={locale}
+            trigger={
+              <button
+                type="button"
+                className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:text-destructive"
+              >
+                Report
+              </button>
+            }
+          />
         </div>
       ) : null}
 
@@ -131,9 +156,7 @@ export default function ProfilePage() {
           </h2>
           <BeanFeed
             queryKey={['beans', 'user', profile.username, locale]}
-            fetchPage={(cursor) =>
-              getBeansForUser(profile.username!, locale, cursor)
-            }
+            fetchPage={(cursor) => getBeansForUser(profile.username!, locale, cursor)}
             locale={locale}
             emptyTitle={tb('profileEmptyTitle')}
             emptyBody={tb('profileEmptyBody')}
@@ -165,11 +188,11 @@ function NavRow({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-muted/50"
+      className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 transition hover:bg-accent"
     >
       <span className="text-muted-foreground">{icon}</span>
       <span className="flex-1 text-sm font-medium">{label}</span>
-      <ChevronRight className="size-4 text-muted-foreground rtl:rotate-180" />
+      <ChevronRight className="size-4 text-muted-foreground" />
     </Link>
   );
 }

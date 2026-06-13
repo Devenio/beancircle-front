@@ -1,11 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 import { Bell, Mail, Megaphone, MessageSquare, AtSign, Users, Volume2, Smartphone } from 'lucide-react';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import { SettingsList, SettingsSectionLabel, SettingsToggleRow } from '@/components/settings/settings-row';
 import { useSettingsApi } from '@/hooks/use-settings-api';
 import { pushNotificationsHint, marketingHint } from '@/lib/settings-hints';
+import { subscribeToPush, unsubscribeFromPush } from '@/lib/push';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function NotificationPreview({ sound, vibration }: { sound: boolean; vibration: boolean }) {
@@ -24,7 +26,21 @@ function NotificationPreview({ sound, vibration }: { sound: boolean; vibration: 
 
 export default function SettingsNotificationsPage() {
   const t = useTranslations('settings');
+  const { locale } = useParams<{ locale: string }>();
   const { settings, isLoading, update } = useSettingsApi();
+
+  // Drive the real browser push subscription from the toggle. On enable we
+  // request permission + register the device; the saved preference only flips
+  // on once a subscription actually exists.
+  const handlePushToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const subscribed = await subscribeToPush(locale);
+      update({ pushNotifications: subscribed });
+    } else {
+      await unsubscribeFromPush(locale);
+      update({ pushNotifications: false });
+    }
+  };
 
   if (isLoading || !settings) {
     return (
@@ -45,7 +61,7 @@ export default function SettingsNotificationsPage() {
           label={t('items.push')}
           description={pushNotificationsHint(t, settings.pushNotifications)}
           checked={settings.pushNotifications}
-          onCheckedChange={(v) => update({ pushNotifications: v })}
+          onCheckedChange={(v) => handlePushToggle(v)}
         />
         <SettingsToggleRow
           icon={<Mail className="size-5" />}

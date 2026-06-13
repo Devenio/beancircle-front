@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, CalendarDays, Compass, MessageCircle } from 'lucide-react';
+import { Home, Stamp, Compass, MessageCircle } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import {
 } from '@/stores/chat-archive-store';
 import type { Conversation, ChatMember } from '@/components/chat/types';
 
-type TabKey = 'home' | 'events' | 'explore' | 'messages' | 'profile';
+type TabKey = 'home' | 'passport' | 'explore' | 'messages' | 'profile';
 
 type NavTab = {
   href: string;
@@ -26,7 +26,7 @@ type NavTab = {
 
 const TABS: NavTab[] = [
   { href: '/', key: 'home', Icon: Home },
-  { href: '/events', key: 'events', Icon: CalendarDays },
+  { href: '/passport', key: 'passport', Icon: Stamp },
   { href: '/discover', key: 'explore', Icon: Compass },
   { href: '/messages', key: 'messages', Icon: MessageCircle },
   { href: '/profile', key: 'profile', Icon: Home, avatar: true },

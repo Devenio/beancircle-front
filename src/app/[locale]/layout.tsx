@@ -5,6 +5,7 @@ import { routing } from '@/i18n/routing';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { PushBootstrap } from '@/components/push/push-bootstrap';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -27,6 +28,7 @@ export default async function LocaleLayout({
       <ThemeProvider>
         <QueryProvider>
           <TooltipProvider>
+            <PushBootstrap />
             <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
           </TooltipProvider>
         </QueryProvider>

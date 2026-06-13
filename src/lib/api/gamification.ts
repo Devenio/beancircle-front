@@ -27,6 +27,17 @@ export function registerVisit(locale: string) {
   return api('/streaks/visit', { method: 'POST', locale }).catch(() => null);
 }
 
+export type DailyBonusResult = {
+  claimed: boolean;
+  points: number;
+  totalPoints: number;
+  level: number;
+};
+
+export function claimDailyBonus(locale: string): Promise<DailyBonusResult> {
+  return api<DailyBonusResult>('/beanscore/daily', { method: 'POST', locale });
+}
+
 export type CardRarity =
   | 'COMMON'
   | 'UNCOMMON'

@@ -7,6 +7,7 @@ import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FeedCard } from '@/components/feed/feed-card';
+import { ReportDialog } from '@/components/report/report-dialog';
 
 export default function PostDetailPage() {
   const { id, locale } = useParams<{ id: string; locale: string }>();
@@ -59,18 +60,46 @@ export default function PostDetailPage() {
   return (
     <div>
       {post ? <FeedCard post={post} locale={locale} /> : null}
+      {post && (
+        <div className="flex justify-end px-4 py-1">
+          <ReportDialog
+            targetType="POST"
+            targetId={id}
+            locale={locale}
+            trigger={
+              <button type="button" className="text-xs text-muted-foreground hover:text-destructive">
+                Report post
+              </button>
+            }
+          />
+        </div>
+      )}
       <div className="border-t p-4">
         <h2 className="mb-2 font-semibold">Comments</h2>
         {comments?.map((c) => (
-          <p key={c.id} className="mb-2 text-sm">
-            <span className="font-medium">{c.author?.username}: </span>
-            {c.body}
-          </p>
+          <div key={c.id} className="border-b py-2">
+            <p className="text-xs font-medium text-muted-foreground">@{c.author.username}</p>
+            <p className="text-sm">{c.body}</p>
+          </div>
         ))}
-        <div className="mt-4 flex gap-2">
-          <Input value={comment} onChange={(e) => setComment(e.target.value)} />
-          <Button onClick={() => addComment.mutate()} disabled={!comment}>
-            Post
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Add a comment..."
+            className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (comment.trim()) addComment.mutate();
+              }
+            }}
+          />
+          <Button
+            onClick={() => addComment.mutate()}
+            disabled={addComment.isPending || !comment.trim()}
+          >
+            Send
           </Button>
         </div>
       </div>

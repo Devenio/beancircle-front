@@ -1,6 +1,6 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { Bell, Coffee, MapPin } from 'lucide-react';
@@ -21,6 +21,9 @@ import { getBeanFeed, type BeanFeedScope } from '@/lib/api/beans';
 import { registerVisit } from '@/lib/api/gamification';
 import { useAuthStore } from '@/stores/auth-store';
 import { UserAvatar } from '@/components/chat/user-avatar';
+import { StreakIndicator } from '@/components/streak/streak-indicator';
+import { DailyBonusCard } from '@/components/beanscore/daily-bonus-card';
+import { HomeChallengesStrip } from '@/components/home/home-challenges-strip';
 
 const SCOPES: BeanFeedScope[] = ['feed', 'trending', 'local', 'friends'];
 
@@ -32,10 +35,13 @@ export default function HomePage() {
   const [tab, setTab] = useState<'beans' | 'activity'>('beans');
   const [scope, setScope] = useState<BeanFeedScope>('feed');
   const [composing, setComposing] = useState(false);
+  const qc = useQueryClient();
 
   useEffect(() => {
-    registerVisit(locale);
-  }, [locale]);
+    registerVisit(locale).then(() => {
+      qc.invalidateQueries({ queryKey: ['streaks', locale] });
+    });
+  }, [locale, qc]);
 
   return (
     <div className="min-h-dvh">
@@ -49,14 +55,17 @@ export default function HomePage() {
               {tab === 'beans' ? tb('subtitle') : t('subtitle')}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            render={<Link href="/notifications" />}
-          >
-            <Bell className="size-6" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+          <div className="flex items-center gap-1">
+            <StreakIndicator locale={locale} />
+            <Button
+              variant="ghost"
+              size="icon"
+              render={<Link href="/notifications" />}
+            >
+              <Bell className="size-6" />
+              <span className="sr-only">Notifications</span>
+            </Button>
+          </div>
         </div>
         <div className="mt-2 flex gap-1 px-4 pb-2">
           {(['beans', 'activity'] as const).map((key) => (
@@ -79,6 +88,7 @@ export default function HomePage() {
 
       {tab === 'beans' ? (
         <div className="pb-4">
+          <DailyBonusCard locale={locale} />
           <button
             type="button"
             onClick={() => setComposing(true)}
@@ -89,6 +99,8 @@ export default function HomePage() {
               {tb('composer.prompts.brewing')}
             </span>
           </button>
+
+          <HomeChallengesStrip locale={locale} />
 
           <div className="flex gap-1.5 overflow-x-auto px-4 py-2.5 scrollbar-none">
             {SCOPES.map((key) => (

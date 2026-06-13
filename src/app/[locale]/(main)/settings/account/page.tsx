@@ -3,9 +3,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import { AtSign, Globe, Mail, Phone, Plug } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  AtSign,
+  Camera,
+  Globe,
+  Loader2,
+  Mail,
+  Monitor,
+  Phone,
+  Plug,
+  Smartphone,
+} from 'lucide-react';
 import { api } from '@/lib/api/client';
+import { presignAndUpload } from '@/lib/api/uploads';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { Button } from '@/components/ui/button';
@@ -28,7 +39,31 @@ type Me = {
   bio?: string | null;
   email?: string | null;
   phone?: string | null;
+  avatarUrl?: string | null;
+  cityId?: string | null;
+  city?: { id: string; name: string } | null;
 };
+
+type City = { id: string; name: string };
+
+type SessionRow = {
+  id: string;
+  deviceName?: string | null;
+  browser?: string | null;
+  os?: string | null;
+  location?: string | null;
+  loginAt: string;
+  lastUsedAt: string;
+  current: boolean;
+};
+
+function initials(me?: Me | null) {
+  const source = me?.name || me?.username || '';
+  const parts = source.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '·';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
 
 function FieldLabel({ label, hint }: { label: string; hint: string }) {
   return (
@@ -50,15 +85,32 @@ export default function SettingsAccountPage() {
     queryFn: () => api<Me>('/users/me', { locale }),
   });
 
+  const { data: cities } = useQuery({
+    queryKey: ['cities', locale],
+    queryFn: () => api<City[]>('/users/cities', { locale }),
+  });
+
+  const { data: sessions } = useQuery({
+    queryKey: ['sessions', locale],
+    queryFn: () =>
+      api<SessionRow[]>('/settings/sessions?currentSessionId=', { locale }),
+  });
+
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
+  const [cityId, setCityId] = useState('');
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (!me) return;
     setName(me.name ?? '');
     setUsername(me.username ?? '');
     setBio(me.bio ?? '');
+    setCityId(me.cityId ?? '');
   }, [me]);
 
   const saveMutation = useMutation({
@@ -70,6 +122,48 @@ export default function SettingsAccountPage() {
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
   });
+
+  const cityMutation = useMutation({
+    mutationFn: (newCityId: string) =>
+      api('/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ cityId: newCityId }),
+        locale,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (sessionId: string) =>
+      api(`/settings/sessions/${sessionId}`, { method: 'DELETE', locale }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sessions', locale] }),
+  });
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setAvatarError(false);
+    setAvatarUploading(true);
+    try {
+      const url = await presignAndUpload(file, 'avatars');
+      await api('/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ avatarUrl: url }),
+        locale,
+      });
+      qc.invalidateQueries({ queryKey: ['me'] });
+    } catch {
+      setAvatarError(true);
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  function handleCityChange(newCityId: string) {
+    setCityId(newCityId);
+    cityMutation.mutate(newCityId);
+  }
 
   function switchLocale(newLocale: string) {
     const path = pathname.replace(`/${locale}`, `/${newLocale}`);
@@ -86,6 +180,57 @@ export default function SettingsAccountPage() {
 
   return (
     <SettingsScreen title={t('sections.account')}>
+      {/* Avatar — header display + upload control */}
+      <SettingsSectionLabel>{t('profilePhoto')}</SettingsSectionLabel>
+      <div className="flex flex-col items-center gap-2 border-y border-border/80 bg-card px-4 py-5">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={avatarUploading}
+          className="relative size-20 rounded-full"
+          aria-label={t('changePhoto')}
+        >
+          {me?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={me.avatarUrl}
+              alt=""
+              className="size-20 rounded-full object-cover"
+            />
+          ) : (
+            <span className="grid size-20 place-items-center rounded-full bg-muted text-xl font-semibold text-muted-foreground">
+              {initials(me)}
+            </span>
+          )}
+          <span className="absolute bottom-0 end-0 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+            <Camera className="size-3.5" />
+          </span>
+          {avatarUploading ? (
+            <span className="absolute inset-0 grid place-items-center rounded-full bg-black/40">
+              <Loader2 className="size-6 animate-spin text-white" />
+            </span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={avatarUploading}
+          className="text-sm font-medium text-primary disabled:opacity-60"
+        >
+          {t('changePhoto')}
+        </button>
+        {avatarError ? (
+          <p className="text-xs text-destructive">{t('photoError')}</p>
+        ) : null}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+      </div>
+
       <SettingsSectionLabel>{t('items.profile')}</SettingsSectionLabel>
       <p className="px-4 pb-2 text-xs text-muted-foreground">{t('items.profileDesc')}</p>
       <div className="space-y-4 border-y border-border/80 bg-card px-4 py-4">
@@ -103,6 +248,27 @@ export default function SettingsAccountPage() {
         <div>
           <FieldLabel label={t('bio')} hint={t('items.profileDesc')} />
           <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
+        </div>
+        <div>
+          <FieldLabel label={t('cityLabel')} hint={t('cityDesc')} />
+          <select
+            value={cityId}
+            onChange={(e) => handleCityChange(e.target.value)}
+            disabled={cityMutation.isPending}
+            className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm disabled:opacity-60"
+          >
+            <option value="" disabled>
+              {t('selectCity')}
+            </option>
+            {cities?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {cityMutation.isError ? (
+            <p className="mt-1 text-xs text-destructive">{t('cityError')}</p>
+          ) : null}
         </div>
         <Button className="min-h-11 w-full" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
           {saveMutation.isPending ? t('saving') : t('saveChanges')}
@@ -174,6 +340,57 @@ export default function SettingsAccountPage() {
           {locale === 'en' ? <span className="text-primary">✓</span> : null}
         </button>
       </SettingsList>
+
+      <SettingsSectionLabel>{t('activeSessions')}</SettingsSectionLabel>
+      <p className="px-4 pb-1 text-xs text-muted-foreground">{t('activeSessionsDesc')}</p>
+      <SettingsList>
+        {sessions && sessions.length > 0 ? (
+          sessions.map((s) => {
+            const mobile = /iphone|android|mobile|ios|ipad/i.test(
+              `${s.os ?? ''} ${s.deviceName ?? ''}`,
+            );
+            const DeviceIcon = mobile ? Smartphone : Monitor;
+            const meta = [
+              s.location,
+              new Date(s.lastUsedAt).toLocaleDateString(locale),
+            ]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <div key={s.id} className="flex items-center gap-3 px-4 py-3">
+                <DeviceIcon className="size-5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px]">
+                    {s.deviceName || s.browser || s.os || '—'}
+                    {s.os && s.deviceName ? ` · ${s.os}` : ''}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{meta}</p>
+                </div>
+                {s.current ? (
+                  <span className="shrink-0 text-xs font-medium text-primary">
+                    {t('currentSession')}
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={revokeMutation.isPending}
+                    onClick={() => revokeMutation.mutate(s.id)}
+                  >
+                    {t('signOutSession')}
+                  </Button>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="px-4 py-3 text-sm text-muted-foreground">{t('noSessions')}</p>
+        )}
+      </SettingsList>
+      {revokeMutation.isError ? (
+        <p className="px-4 pt-2 text-xs text-destructive">{t('signOutSessionError')}</p>
+      ) : null}
     </SettingsScreen>
   );
 }
