@@ -25,8 +25,10 @@ export function proxy(request: NextRequest) {
 
   // The root path is the public marketing landing. Signed-in visitors are sent
   // straight into the app feed; everyone else sees the landing page.
+  // `?preview=1` lets a signed-in dev view the landing without being redirected.
   if (subpath === '/') {
-    if (hasSession) {
+    const preview = request.nextUrl.searchParams.get('preview') === '1';
+    if (hasSession && !preview) {
       const locale = localeFromPath(pathname);
       return NextResponse.redirect(new URL(`/${locale}/feed`, request.url));
     }

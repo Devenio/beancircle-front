@@ -30,8 +30,11 @@ export default function MarketingPage() {
   const router = useRouter();
 
   // Public landing for logged-out visitors; authenticated users go to the app.
+  // `?preview=1` lets a signed-in dev stay on the landing for development.
   useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('accessToken')) {
+    if (typeof window === 'undefined') return;
+    const preview = new URLSearchParams(window.location.search).get('preview') === '1';
+    if (!preview && localStorage.getItem('accessToken')) {
       router.replace('/feed');
     }
   }, [router]);
