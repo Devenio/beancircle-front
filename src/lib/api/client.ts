@@ -1,25 +1,6 @@
 import { fetchMock, isMockMode } from './mock';
 
-/**
- * Resolve the API base URL.
- *
- * In the browser we use the *same origin* the page was served from (the Next
- * dev server proxies `/api/v1/*` to the backend — see `next.config.ts`
- * rewrites). This is what lets the app work unchanged on localhost, a LAN IP,
- * or a phone over a tunnel: there is no hardcoded `localhost` baked into the
- * client bundle and no HTTPS→HTTP mixed-content problem. Set
- * `NEXT_PUBLIC_API_URL` only when the API lives on a different origin (e.g.
- * production with a separate API host).
- */
-function resolveApiUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  if (typeof window !== 'undefined') return `${window.location.origin}/api/v1`;
-  // SSR / build time: reach the backend directly.
-  const target = process.env.API_PROXY_TARGET ?? 'http://localhost:3002';
-  return `${target}/api/v1`;
-}
-
-const API_URL = resolveApiUrl();
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 type RequestOptions = RequestInit & { locale?: string };
 

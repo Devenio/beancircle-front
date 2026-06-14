@@ -12,20 +12,8 @@ import { io, type Socket } from 'socket.io-client';
  * that previously existed (global layout + per chat room + per squad room).
  */
 
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:3001';
 const RECONNECT_BACKOFF_MAX_MS = 30000;
-
-/**
- * Resolve the realtime (Socket.IO) origin. Mirrors the API client: in the
- * browser we connect to the same origin that served the page so the app works
- * on localhost, a LAN IP, or a phone over a tunnel without a rebuild. The Next
- * dev server proxies `/socket.io/*` to the backend (see `next.config.ts`).
- * Set `NEXT_PUBLIC_WS_URL` only when realtime lives on a different origin.
- */
-function resolveWsUrl(): string {
-  if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
-  if (typeof window !== 'undefined') return window.location.origin;
-  return process.env.API_PROXY_TARGET ?? 'http://localhost:3002';
-}
 
 let socket: Socket | null = null;
 let activeToken: string | null = null;
@@ -52,7 +40,7 @@ export function getSocket(): Socket | null {
     socket = null;
   }
   activeToken = token;
-  socket = io(resolveWsUrl(), {
+  socket = io(WS_URL, {
     auth: { token },
     transports: ['websocket', 'polling'],
     reconnection: true,
