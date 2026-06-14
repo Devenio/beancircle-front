@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { CalendarDays, ChevronRight, Settings, Stamp, Users } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { IdentityPill } from '@/components/cafe-os/identity-switcher';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
@@ -89,7 +90,18 @@ export default function ProfilePage() {
         <h1 className="text-lg font-bold">@{profile.username}</h1>
         {profile.isSelf ? (
           <div className="flex items-center gap-1.5">
-            <IdentityPill />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <IdentityPill />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Switch between your personal profile and your café(s)
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button variant="ghost" size="icon" render={<Link href="/settings" />}>
               <Settings className="size-5" />
             </Button>
@@ -98,16 +110,26 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex items-center gap-4 px-4 pt-3">
-        <Avatar src={profile.avatarUrl} name={profile.name} className="h-20 w-20" />
+        <Avatar src={profile.avatarUrl} name={profile.name} className="h-24 w-24" />
         <div className="flex flex-1 justify-around text-center">
           <Stat value={profile.postsCount} label={tp('posts')} />
-          <Stat value={profile.followersCount} label={tp('friends')} />
-          <Stat value={profile.followingCount} label={tp('connections')} />
+          <Stat
+            value={profile.followersCount}
+            label={tp('friends')}
+            tooltip="People who mutually follow each other"
+          />
+          <Stat
+            value={profile.followingCount}
+            label={tp('connections')}
+            tooltip="People you follow"
+          />
         </div>
       </div>
       <div className="px-4">
         <h2 className="mt-3 font-bold">{profile.name}</h2>
-        {profile.bio ? <p className="mt-1 text-sm">{profile.bio}</p> : null}
+        {profile.bio ? (
+          <p className="mt-2 text-sm text-muted-foreground">{profile.bio}</p>
+        ) : null}
 
         {profile.isSelf ? (
           <div className="mt-3 flex gap-2">
@@ -207,7 +229,7 @@ function ProfileSkeleton() {
       </div>
 
       <div className="flex items-center gap-4 px-4 pt-3">
-        <Skeleton className="h-20 w-20 rounded-full" />
+        <Skeleton className="h-24 w-24 rounded-full" />
         <div className="flex flex-1 justify-around">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-1.5">
@@ -231,12 +253,23 @@ function ProfileSkeleton() {
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
+function Stat({ value, label, tooltip }: { value: number; label: string; tooltip?: string }) {
+  const inner = (
+    <div className={tooltip ? 'cursor-help' : ''}>
       <p className="font-bold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
+  );
+
+  if (!tooltip) return inner;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{inner}</TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
