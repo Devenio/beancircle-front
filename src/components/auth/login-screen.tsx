@@ -367,14 +367,14 @@ export function LoginScreen() {
             >
               {t('termsPrefix')}{' '}
               <Link
-                href="/settings"
+                href="/terms"
                 className="text-white/55 underline underline-offset-2 hover:text-white/75"
               >
                 {t('terms')}
               </Link>{' '}
               {t('and')}{' '}
               <Link
-                href="/settings"
+                href="/privacy"
                 className="text-white/55 underline underline-offset-2 hover:text-white/75"
               >
                 {t('privacy')}

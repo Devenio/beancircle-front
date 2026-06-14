@@ -16,6 +16,18 @@ const nextConfig: NextConfig = {
       { protocol: 'http', hostname: '**' },
     ],
   },
+  async rewrites() {
+    // Same-origin proxy: the browser only ever talks to the host that served
+    // the page (localhost, a LAN IP, or a tunnel), and Next forwards API +
+    // realtime traffic to the backend. This is what makes the app work on a
+    // phone over a tunnel with no hardcoded localhost, no mixed-content
+    // blocking, and no CORS — the phone sees everything as one origin.
+    const target = process.env.API_PROXY_TARGET ?? 'http://localhost:3002';
+    return [
+      { source: '/api/v1/:path*', destination: `${target}/api/v1/:path*` },
+      { source: '/socket.io/:path*', destination: `${target}/socket.io/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

@@ -1809,5 +1809,166 @@
       "step3hint": "Bean Circle will appear on your home screen.",
       "stepsLabel": "Installation steps"
     }
+  },
+  "legal": {
+    "back": "Back",
+    "contact": "Questions? Reach us at",
+    "contactEmail": "support@beancircle.app",
+    "terms": {
+      "title": "Terms of Service",
+      "effective": "Effective June 2026",
+      "intro": "Welcome to Bean Circle. These Terms of Service govern your access to and use of the Bean Circle app, website, and related services (the “Service”). By creating an account or using the Service, you agree to these Terms.",
+      "sections": [
+        {
+          "heading": "Acceptance of Terms",
+          "body": [
+            "By accessing or using Bean Circle, you confirm that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree, please do not use the Service."
+          ]
+        },
+        {
+          "heading": "Eligibility",
+          "body": [
+            "You must be at least 13 years old to use Bean Circle. If you are under the age of majority in your country, you may only use the Service with the involvement of a parent or guardian."
+          ]
+        },
+        {
+          "heading": "Your Account",
+          "body": [
+            "You are responsible for the activity that happens on your account and for keeping your login credentials secure. Provide accurate information when you sign up and keep it up to date.",
+            "Notify us promptly if you believe your account has been accessed without your permission."
+          ]
+        },
+        {
+          "heading": "Acceptable Use",
+          "body": [
+            "You agree not to misuse the Service. This includes not posting unlawful, harassing, hateful, or misleading content, not impersonating others, not spamming, and not attempting to disrupt or gain unauthorized access to our systems.",
+            "We may remove content or suspend accounts that violate these Terms."
+          ]
+        },
+        {
+          "heading": "Your Content",
+          "body": [
+            "You retain ownership of the photos, reviews, and other content you share. By posting, you grant Bean Circle a worldwide, non-exclusive, royalty-free license to host, display, and distribute that content for the purpose of operating and promoting the Service.",
+            "You are responsible for the content you post and confirm that you have the rights to share it."
+          ]
+        },
+        {
+          "heading": "Cafes, Events, and Rewards",
+          "body": [
+            "Bean Circle lets you discover cafes, join events, and earn rewards such as BeanScore and collectibles. Rewards have no cash value, are non-transferable unless stated otherwise, and may change or expire. Cafe listings and menus are provided for convenience and may not always be accurate or current."
+          ]
+        },
+        {
+          "heading": "Intellectual Property",
+          "body": [
+            "The Bean Circle name, logo, and the software and design of the Service are owned by us and protected by intellectual property laws. You may not copy, modify, or distribute them without our permission."
+          ]
+        },
+        {
+          "heading": "Third-Party Services",
+          "body": [
+            "The Service may link to or rely on third-party services such as Google sign-in and mapping providers. We are not responsible for the content or practices of those third parties, and their own terms apply to your use of them."
+          ]
+        },
+        {
+          "heading": "Termination",
+          "body": [
+            "You may stop using Bean Circle at any time and delete your account from Settings. We may suspend or terminate your access if you violate these Terms or if we discontinue the Service."
+          ]
+        },
+        {
+          "heading": "Disclaimers and Limitation of Liability",
+          "body": [
+            "The Service is provided “as is” without warranties of any kind. To the fullest extent permitted by law, Bean Circle is not liable for any indirect, incidental, or consequential damages arising from your use of the Service."
+          ]
+        },
+        {
+          "heading": "Changes to These Terms",
+          "body": [
+            "We may update these Terms from time to time. If we make material changes, we will notify you within the app or by other means. Continuing to use the Service after changes take effect means you accept the updated Terms."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "body": [
+            "If you have any questions about these Terms, contact us at the email below."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "effective": "Effective June 2026",
+      "intro": "This Privacy Policy explains what information Bean Circle collects, how we use it, and the choices you have. We are committed to protecting your privacy and handling your data responsibly.",
+      "sections": [
+        {
+          "heading": "Information We Collect",
+          "body": [
+            "Account information such as your phone number, name, username, and city. Content you create, including posts, photos, reviews, and messages. Usage and device information such as app interactions, device type, and approximate location when you enable it.",
+            "When you sign in with Google, we receive basic profile information you authorize, such as your email address and name."
+          ]
+        },
+        {
+          "heading": "How We Use Your Information",
+          "body": [
+            "We use your information to provide and improve the Service, personalize your experience, recommend cafes and events, deliver notifications, keep the community safe, and comply with legal obligations."
+          ]
+        },
+        {
+          "heading": "How We Share Information",
+          "body": [
+            "We do not sell your personal information. We share information with service providers who help us operate the app, with other users when you choose to post publicly, and when required by law or to protect the rights and safety of our users."
+          ]
+        },
+        {
+          "heading": "Location Data",
+          "body": [
+            "If you grant location permission, we use your location to show nearby cafes, events, and people. You can turn location access off at any time in your device settings, though some features may then be limited."
+          ]
+        },
+        {
+          "heading": "Cookies and Similar Technologies",
+          "body": [
+            "We use cookies and local storage to keep you signed in, remember your preferences, and understand how the Service is used so we can improve it."
+          ]
+        },
+        {
+          "heading": "Data Retention",
+          "body": [
+            "We keep your information for as long as your account is active or as needed to provide the Service. When you delete your account, we delete or anonymize your personal data, except where we are required to retain it by law."
+          ]
+        },
+        {
+          "heading": "Your Rights and Choices",
+          "body": [
+            "You can access and update your profile, control privacy settings, and delete your account at any time. Depending on your location, you may have additional rights to access, correct, or erase your data — contact us to exercise them."
+          ]
+        },
+        {
+          "heading": "Security",
+          "body": [
+            "We use technical and organizational measures to protect your information. No method of transmission or storage is completely secure, but we work to safeguard your data and respond promptly to any incidents."
+          ]
+        },
+        {
+          "heading": "Children's Privacy",
+          "body": [
+            "Bean Circle is not intended for children under 13. We do not knowingly collect personal information from children under 13, and we will delete such information if we become aware of it."
+          ]
+        },
+        {
+          "heading": "Changes to This Policy",
+          "body": [
+            "We may update this Privacy Policy from time to time. We will notify you of material changes within the app, and the “effective” date above shows when the latest version took effect."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "body": [
+            "If you have questions about this Privacy Policy or your data, contact us at the email below."
+          ]
+        }
+      ]
+    }
   }
 }
