@@ -65,6 +65,7 @@ export function useChatRoom(conversationId: string, locale: string) {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [recordingMode, setRecordingMode] = useState<'none' | 'voice' | 'video'>('none');
   const [recordingElapsedSec, setRecordingElapsedSec] = useState(0);
+  const [recordingPaused, setRecordingPaused] = useState(false);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [mediaComposerOpen, setMediaComposerOpen] = useState(false);
@@ -94,6 +95,9 @@ export function useChatRoom(conversationId: string, locale: string) {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
   const recordingStartedAtRef = useRef<number>(0);
+  const pausedElapsedRef = useRef<number>(0);
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -307,16 +311,18 @@ export function useChatRoom(conversationId: string, locale: string) {
   useEffect(() => {
     if (recordingMode === 'none') {
       setRecordingElapsedSec(0);
+      pausedElapsedRef.current = 0;
       return;
     }
+    if (recordingPaused) return;
     const tick = () =>
       setRecordingElapsedSec(
-        Math.max(0, Math.floor((Date.now() - recordingStartedAtRef.current) / 1000)),
+        Math.max(0, pausedElapsedRef.current + Math.floor((Date.now() - recordingStartedAtRef.current) / 1000)),
       );
     tick();
     const interval = setInterval(tick, 250);
     return () => clearInterval(interval);
-  }, [recordingMode]);
+  }, [recordingMode, recordingPaused]);
 
   // ---- Mark read (server authoritative) -----------------------------------
 
@@ -982,7 +988,20 @@ export function useChatRoom(conversationId: string, locale: string) {
         mediaRecorderRef.current = recorder;
         mediaStreamRef.current = stream;
         recordingStartedAtRef.current = Date.now();
+        pausedElapsedRef.current = 0;
+        setRecordingPaused(false);
         setRecordingMode(mode);
+        if (mode === 'voice') {
+          try {
+            const ctx = new AudioContext();
+            const source = ctx.createMediaStreamSource(stream);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 64;
+            source.connect(analyser);
+            audioContextRef.current = ctx;
+            audioAnalyserRef.current = analyser;
+          } catch { /* analyser optional */ }
+        }
         recorder.ondataavailable = (event) => {
           if (event.data.size > 0) mediaChunksRef.current.push(event.data);
         };
@@ -1038,6 +1057,43 @@ export function useChatRoom(conversationId: string, locale: string) {
     for (const track of mediaStreamRef.current?.getTracks() ?? []) track.stop();
     mediaRecorderRef.current = null;
     mediaStreamRef.current = null;
+    audioAnalyserRef.current = null;
+    void audioContextRef.current?.close();
+    audioContextRef.current = null;
+  }, []);
+
+  const pauseRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== 'recording') return;
+    recorder.pause();
+    pausedElapsedRef.current += Math.floor((Date.now() - recordingStartedAtRef.current) / 1000);
+    setRecordingPaused(true);
+  }, []);
+
+  const resumeRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== 'paused') return;
+    recorder.resume();
+    recordingStartedAtRef.current = Date.now();
+    setRecordingPaused(false);
+  }, []);
+
+  const cancelRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.ondataavailable = null;
+      recorder.onstop = null;
+      recorder.stop();
+    }
+    for (const track of mediaStreamRef.current?.getTracks() ?? []) track.stop();
+    mediaRecorderRef.current = null;
+    mediaStreamRef.current = null;
+    mediaChunksRef.current = [];
+    audioAnalyserRef.current = null;
+    void audioContextRef.current?.close();
+    audioContextRef.current = null;
+    setRecordingMode('none');
+    setRecordingPaused(false);
   }, []);
 
   const toggleMute = useCallback(async () => {
@@ -1115,6 +1171,8 @@ export function useChatRoom(conversationId: string, locale: string) {
     setReplyTo,
     recordingMode,
     recordingElapsedSec,
+    recordingPaused,
+    audioAnalyserRef,
     composerError,
     connectionState,
     liveEnabled,
@@ -1146,6 +1204,9 @@ export function useChatRoom(conversationId: string, locale: string) {
     sendLocationFromPicker,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
+    cancelRecording,
     toggleMute,
     blockPeer,
     unblockPeer,

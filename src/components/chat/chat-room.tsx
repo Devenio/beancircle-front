@@ -709,8 +709,13 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
           onOpenLocation={() => room.setLocationPickerOpen(true)}
           recordingMode={room.recordingMode}
           recordingElapsedSec={room.recordingElapsedSec}
+          recordingPaused={room.recordingPaused}
           onStartRecording={room.startRecording}
           onStopRecording={room.stopRecording}
+          onPauseRecording={room.pauseRecording}
+          onResumeRecording={room.resumeRecording}
+          onCancelRecording={room.cancelRecording}
+          audioAnalyser={room.audioAnalyserRef.current}
           composerError={room.composerError}
           uploading={room.uploadingCount > 0}
           placeholder={t('typeMessage')}

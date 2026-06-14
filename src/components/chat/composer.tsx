@@ -34,8 +34,13 @@ type ChatComposerProps = {
   onOpenLocation: () => void;
   recordingMode: 'none' | 'voice' | 'video';
   recordingElapsedSec: number;
+  recordingPaused?: boolean;
   onStartRecording: (mode: 'voice' | 'video') => void;
   onStopRecording: () => void;
+  onPauseRecording?: () => void;
+  onResumeRecording?: () => void;
+  onCancelRecording?: () => void;
+  audioAnalyser?: AnalyserNode | null;
   composerError?: string;
   uploading?: boolean;
   placeholder: string;
@@ -64,8 +69,13 @@ export function ChatComposer({
   onOpenLocation,
   recordingMode,
   recordingElapsedSec,
+  recordingPaused = false,
   onStartRecording,
   onStopRecording,
+  onPauseRecording,
+  onResumeRecording,
+  onCancelRecording,
+  audioAnalyser,
   composerError,
   uploading,
   placeholder,
@@ -199,7 +209,15 @@ export function ChatComposer({
         )}
 
         {recordingMode === 'voice' ? (
-          <VoiceRecordingBar elapsedSec={recordingElapsedSec} onStop={onStopRecording} />
+          <VoiceRecordingBar
+            elapsedSec={recordingElapsedSec}
+            isPaused={recordingPaused}
+            onStop={onStopRecording}
+            onPause={onPauseRecording ?? (() => {})}
+            onResume={onResumeRecording ?? (() => {})}
+            onCancel={onCancelRecording ?? (() => {})}
+            analyser={audioAnalyser}
+          />
         ) : (
           <div className="relative min-w-0 flex-1">
             <Textarea

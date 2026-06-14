@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Eye, ExternalLink, FileText, MapPin, Play } from 'lucide-react';
+import { Eye, ExternalLink, FileText, MapPin, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractUrls, formatDuration, formatFileSize, renderMentionParts } from '@/components/chat/utils';
 
@@ -92,6 +92,7 @@ export function FileAttachmentCard({
 }
 
 const VOICE_WAVE_HEIGHTS = [4, 7, 5, 9, 6, 8, 4, 10, 5, 7, 6, 9, 4, 8, 5, 7, 6, 10, 4, 8];
+const SPEEDS = [1, 1.5, 2] as const;
 
 export function VoiceMessagePlayer({
   url,
@@ -102,47 +103,136 @@ export function VoiceMessagePlayer({
   durationSec?: number;
   isMine?: boolean;
 }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentSec, setCurrentSec] = useState(0);
+  const [duration, setDuration] = useState(durationSec ?? 0);
+  const [speedIdx, setSpeedIdx] = useState(0);
+
+  const speed = SPEEDS[speedIdx];
+  const progress = duration > 0 ? (currentSec / duration) * 100 : 0;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTime = () => setCurrentSec(audio.currentTime);
+    const onMeta = () => {
+      if (isFinite(audio.duration)) setDuration(audio.duration);
+    };
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => { setPlaying(false); setCurrentSec(0); };
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('loadedmetadata', onMeta);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('loadedmetadata', onMeta);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) void audio.play();
+    else audio.pause();
+  };
+
+  const seek = (pct: number) => {
+    const audio = audioRef.current;
+    if (!audio || !isFinite(audio.duration)) return;
+    audio.currentTime = (pct / 100) * audio.duration;
+    setCurrentSec(audio.currentTime);
+  };
+
+  const cycleSpeed = () => {
+    const next = (speedIdx + 1) % SPEEDS.length;
+    setSpeedIdx(next);
+    if (audioRef.current) audioRef.current.playbackRate = SPEEDS[next];
+  };
+
   return (
     <div
       className={cn(
-        'flex min-w-[220px] items-center gap-3 rounded-xl px-1 py-1',
+        'flex min-w-[240px] flex-col gap-2 rounded-xl px-1 py-1',
         isMine ? 'text-primary-foreground' : 'text-foreground',
       )}
     >
-      <button
-        type="button"
-        className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
-          isMine ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted hover:bg-muted/80',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          'active:scale-95',
-        )}
-        onClick={(event) => {
-          const audio = event.currentTarget.parentElement?.querySelector('audio');
-          if (!audio) return;
-          if (audio.paused) void audio.play();
-          else audio.pause();
-        }}
-        aria-label="Play voice message"
-      >
-        <Play className="size-4" />
-      </button>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="flex items-end gap-[3px]" aria-hidden>
-          {VOICE_WAVE_HEIGHTS.map((height, index) => (
-            <span
-              key={index}
-              className={cn(
-                'w-[3px] shrink-0 rounded-full',
-                isMine ? 'bg-primary-foreground/80' : 'bg-primary/80',
-              )}
-              style={{ height: `${height}px` }}
-            />
-          ))}
+      <div className="flex items-center gap-2">
+        {/* Play / Pause */}
+        <button
+          type="button"
+          className={cn(
+            'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
+            isMine ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted hover:bg-muted/80',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95',
+          )}
+          onClick={togglePlay}
+          aria-label={playing ? 'Pause voice message' : 'Play voice message'}
+        >
+          {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+        </button>
+
+        {/* Waveform / Progress track */}
+        <div className="relative flex min-w-0 flex-1 cursor-pointer items-center" aria-hidden>
+          <div className="flex w-full items-end gap-[2px]">
+            {VOICE_WAVE_HEIGHTS.map((height, index) => {
+              const barPct = ((index + 1) / VOICE_WAVE_HEIGHTS.length) * 100;
+              return (
+                <span
+                  key={index}
+                  className={cn(
+                    'w-[3px] shrink-0 rounded-full transition-colors duration-150',
+                    barPct <= progress
+                      ? isMine ? 'bg-primary-foreground' : 'bg-primary'
+                      : isMine ? 'bg-primary-foreground/30' : 'bg-primary/30',
+                  )}
+                  style={{ height: `${height}px` }}
+                />
+              );
+            })}
+          </div>
+          {/* Invisible scrub slider over waveform */}
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={0.1}
+            value={progress}
+            onChange={(e) => seek(Number(e.target.value))}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            aria-label="Seek"
+          />
         </div>
-        <span className="text-[10px] tabular-nums opacity-70">{formatDuration(durationSec)}</span>
+
+        {/* Speed toggle */}
+        <button
+          type="button"
+          onClick={cycleSpeed}
+          className={cn(
+            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors duration-150',
+            isMine
+              ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground'
+              : 'bg-muted hover:bg-muted/80 text-foreground',
+          )}
+          aria-label={`Playback speed ${speed}x, tap to change`}
+        >
+          {speed}x
+        </button>
       </div>
-      <audio src={url} preload="metadata" className="sr-only" />
+
+      {/* Time display */}
+      <div className={cn('flex justify-between px-1 text-[10px] tabular-nums', isMine ? 'opacity-70' : 'opacity-60')}>
+        <span>{formatDuration(Math.floor(currentSec))}</span>
+        <span>{formatDuration(Math.floor(duration))}</span>
+      </div>
+
+      <audio ref={audioRef} src={url} preload="metadata" className="sr-only" />
     </div>
   );
 }
