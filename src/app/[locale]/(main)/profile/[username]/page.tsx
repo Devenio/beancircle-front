@@ -17,6 +17,7 @@ import { BeanFeed } from '@/components/beans/bean-feed';
 import { getBeansForUser } from '@/lib/api/beans';
 import { ReportDialog } from '@/components/report/report-dialog';
 import { CollectiblesBadges } from '@/components/profile/collectibles-badges';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
   const { username, locale } = useParams<{ username: string; locale: string }>();
@@ -56,7 +57,7 @@ export default function ProfilePage() {
     enabled: !!profile?.isSelf,
   });
 
-  if (!profile) return null;
+  if (!profile) return <ProfileSkeleton />;
 
   const person: DiscoverPerson | null =
     !profile.isSelf && relationship && relationship !== 'self'
@@ -163,6 +164,38 @@ export default function ProfilePage() {
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="min-h-dvh pb-4">
+      <div className="flex items-center justify-between px-4 pt-4">
+        <Skeleton className="h-6 w-32" />
+      </div>
+
+      <div className="flex items-center gap-4 px-4 pt-3">
+        <Skeleton className="h-20 w-20 rounded-full" />
+        <div className="flex flex-1 justify-around">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-1.5">
+              <Skeleton className="h-5 w-8" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4">
+        <Skeleton className="mt-3 h-5 w-40" />
+        <Skeleton className="mt-2 h-4 w-3/4" />
+      </div>
+
+      <div className="mt-6 space-y-4 px-4">
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-24 w-full rounded-2xl" />
+      </div>
     </div>
   );
 }

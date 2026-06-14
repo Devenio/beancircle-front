@@ -65,14 +65,10 @@ export function BugReportLauncher() {
     capturingRef.current = false;
   }, [open, openSheet]);
 
-  function handleTabTap() {
-    if (revealed) {
-      void trigger();
-    } else {
-      haptic('selection');
-      setRevealed(true);
-      scheduleCollapse();
-    }
+  function reveal() {
+    haptic('selection');
+    setRevealed(true);
+    scheduleCollapse();
   }
 
   useShake({ enabled: shakeEnabled && !!user && !open, onShake: trigger });
@@ -128,51 +124,60 @@ export function BugReportLauncher() {
       </AnimatePresence>
 
       {/*
-       * Right-edge peek tab — sits flush with the right edge of the 430px
-       * content column. Collapses to a 5px peek when idle; slides in to reveal
-       * the full Bug button on tap.
-       *
-       * The outer wrapper is pointer-events-none so it never blocks scroll on
-       * the content underneath. Only the tab itself gets pointer events.
+       * Right-edge peek tab. Two distinct hit targets so taps never leak onto
+       * content underneath:
+       *  - Collapsed: only a ~10px peek strip is interactive. The full tab is
+       *    translated off-screen AND pointer-events:none, so it can't swallow
+       *    taps meant for content (e.g. a conversation row) beneath it.
+       *  - Revealed: a transparent backdrop catches outside clicks to collapse,
+       *    and the full tab becomes interactive to launch the reporter.
        */}
       {!open && (
-        <div
-          className="pointer-events-none fixed inset-0 z-50 flex justify-center"
-          data-bug-report-ignore="true"
-        >
-          <div className="relative w-full max-w-[430px]">
-            {/* Peek strip — visible even when collapsed */}
-            <motion.div
-              className="pointer-events-auto absolute right-0 top-[38%] flex cursor-pointer select-none flex-col items-end"
-              onClick={handleTabTap}
-              aria-label={revealed ? 'Report a bug' : 'Open bug reporter'}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleTabTap(); }}
-            >
-              {/* The sliding body */}
-              <motion.div
-                animate={{ x: revealed ? 0 : 'calc(100% - 5px)' }}
-                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                className="flex items-center gap-2 rounded-l-2xl border border-r-0 border-border/60 bg-background/90 py-2.5 pl-3 pr-2 shadow-lg backdrop-blur-md rtl:rounded-l-none rtl:rounded-r-2xl rtl:border-l-0 rtl:border-r rtl:pl-2 rtl:pr-3"
+        <>
+          {revealed && (
+            <div
+              className="fixed inset-0 z-40"
+              data-bug-report-ignore="true"
+              onClick={() => setRevealed(false)}
+            />
+          )}
+
+          <div
+            className="pointer-events-none fixed inset-0 z-50 flex justify-center"
+            data-bug-report-ignore="true"
+          >
+            <div className="relative w-full max-w-[430px]">
+              {/* Collapsed peek strip — the only hit target when idle */}
+              {!revealed && (
+                <button
+                  type="button"
+                  aria-label="Open bug reporter"
+                  onClick={reveal}
+                  className="pointer-events-auto absolute right-0 top-[38%] h-14 w-2.5 rounded-l-full bg-foreground/20 active:bg-foreground/30 rtl:left-0 rtl:right-auto rtl:rounded-l-none rtl:rounded-r-full"
+                />
+              )}
+
+              {/* Revealed tab — slides in; inert while collapsed */}
+              <motion.button
+                type="button"
+                aria-label="Report a bug"
+                onClick={() => void trigger()}
+                initial={false}
+                animate={{ x: revealed ? 0 : '115%', opacity: revealed ? 1 : 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                style={{ pointerEvents: revealed ? 'auto' : 'none' }}
+                className="absolute right-0 top-[37%] flex items-center gap-2 rounded-l-2xl border border-r-0 border-border/60 bg-background/90 py-2.5 pl-4 pr-3 shadow-lg backdrop-blur-md rtl:left-0 rtl:right-auto rtl:rounded-l-none rtl:rounded-r-2xl rtl:border-l-0 rtl:border-r rtl:pl-3 rtl:pr-4"
               >
-                <span className="text-[11px] font-medium leading-none text-muted-foreground">
-                  {revealed ? 'Report' : ''}
-                </span>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground/10">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-foreground/10">
                   <Bug className="h-4 w-4 text-foreground/70" />
                 </span>
-              </motion.div>
-
-              {/* Thin accent line that's always visible (the "peek") */}
-              <motion.div
-                animate={{ opacity: revealed ? 0 : 1 }}
-                transition={{ duration: 0.18 }}
-                className="absolute inset-y-0 right-0 w-[5px] rounded-l-full bg-foreground/20"
-              />
-            </motion.div>
+                <span className="text-xs font-medium leading-none text-foreground/80">
+                  Report a bug
+                </span>
+              </motion.button>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <BugReportSheet />

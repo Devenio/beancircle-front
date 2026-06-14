@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client';
+import { isMockMode } from '@/lib/api/mock';
 
 type PresignResponse = {
   uploadUrl: string;
@@ -66,6 +67,15 @@ function resolveUploadMimeType(file: File): string {
   }
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function putWithProgress(
   url: string,
   file: File,
@@ -129,6 +139,15 @@ export async function uploadMessageFile(
   onProgress?: (fraction: number) => void,
 ): Promise<UploadResult> {
   const mimeType = resolveUploadMimeType(file);
+
+  // In mock mode there is no object storage to PUT bytes to, so we skip the
+  // presign + upload dance and return the file as a local data URL.
+  if (isMockMode()) {
+    const url = await readFileAsDataUrl(file);
+    onProgress?.(1);
+    return { url, name: file.name, mimeType, size: file.size };
+  }
+
   const presign = await api<PresignResponse>('/uploads/presign', {
     method: 'POST',
     body: JSON.stringify({ contentType: mimeType, folder }),
