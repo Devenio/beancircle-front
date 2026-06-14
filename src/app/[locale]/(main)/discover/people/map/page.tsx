@@ -1,5 +1,6 @@
-import { DiscoverMapView } from '@/components/discover/people/discover-map';
+import { redirect } from 'next/navigation';
 
-export default function DiscoverPeopleMapPage() {
-  return <DiscoverMapView />;
+// Unified discover map now lives at /discover/map
+export default function DiscoverPeopleMapPage({ params }: { params: { locale: string } }) {
+  redirect(`/${params.locale}/discover/map`);
 }
