@@ -30,7 +30,7 @@ export default function InstallPage() {
 
   function goBack() {
     if (typeof window !== 'undefined' && window.history.length > 1) router.back();
-    else router.push('/');
+    else router.push('/feed');
   }
 
   return (
@@ -116,7 +116,7 @@ function PrimaryCta({ isInstalled, mounted }: { isInstalled: boolean; mounted: b
           <Check className="size-4" />
           {t('hero.installedTitle')}
         </div>
-        <Button size="lg" variant="outline" className="w-full" render={<Link href="/" />}>
+        <Button size="lg" variant="outline" className="w-full" render={<Link href="/feed" />}>
           {t('hero.openApp')}
           <ExternalLink />
         </Button>

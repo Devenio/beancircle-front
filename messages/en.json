@@ -1970,5 +1970,269 @@
         }
       ]
     }
+  },
+  "marketing": {
+    "meta": {
+      "title": "Bean Circle — Discover, connect & build community around coffee",
+      "description": "Bean Circle is the most modern way to discover cafés, meet coffee people near you, share thoughts, and build real communities — one circle at a time."
+    },
+    "nav": {
+      "product": "Product",
+      "nearby": "Nearby",
+      "communities": "Communities",
+      "creators": "For Cafés",
+      "signin": "Sign in",
+      "getStarted": "Get started",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
+    "hero": {
+      "badge": "Now brewing in your city",
+      "titleLine1": "Your city runs",
+      "titleLine2": "on coffee.",
+      "titleLine3": "So do we.",
+      "subtitle": "Discover the cafés around you, meet the people in them, and build the community that turns a coffee run into your favorite part of the day.",
+      "ctaPrimary": "Join Bean Circle",
+      "ctaSecondary": "Take the tour",
+      "scroll": "Scroll to explore",
+      "stats": {
+        "cafes": "cafés mapped",
+        "members": "coffee people",
+        "checkins": "check-ins logged"
+      }
+    },
+    "proof": {
+      "title": "Built for the people who never skip the coffee",
+      "subtitle": "From corner roasters to study-all-day spaces — it all lives in one circle.",
+      "tags": [
+        "Specialty roasters",
+        "Study-friendly spaces",
+        "Coffee creators",
+        "Neighborhood regulars",
+        "Remote workers",
+        "Café owners",
+        "Weekend explorers"
+      ]
+    },
+    "story": {
+      "eyebrow": "The journey",
+      "title": "One app, the whole coffee ritual",
+      "body": "Bean Circle connects every part of coffee culture — the place, the people, and the moments in between.",
+      "steps": [
+        {
+          "title": "Discover",
+          "body": "Find trending cafés, hidden gems, and the best workspaces near you — ranked by people who actually go."
+        },
+        {
+          "title": "Connect",
+          "body": "See who is around right now, scan to add friends, and turn a shared table into a real connection."
+        },
+        {
+          "title": "Belong",
+          "body": "Join squads, collect café cards, climb the leaderboard, and build streaks that keep you coming back."
+        }
+      ]
+    },
+    "nearby": {
+      "eyebrow": "Nearby discovery",
+      "title": "See who is around, right now",
+      "body": "Open the radar and Bean Circle reveals coffee people near you — matched on shared interests, favorite cafés, and the streaks you keep.",
+      "points": [
+        "Real-time radar with privacy-first scanning",
+        "Smart matching on interests & taste",
+        "Scan a QR to connect instantly"
+      ],
+      "cta": "Start a scan",
+      "radarLabel": "Scanning nearby",
+      "matchLabel": "Match potential",
+      "matchHigh": "High"
+    },
+    "beans": {
+      "eyebrow": "Beans & Activity",
+      "title": "Thoughts around the café table",
+      "body": "Drop a Bean about the pour-over that changed your morning, ReBean what your friends are loving, and watch your circle’s activity unfold live.",
+      "feedTabs": [
+        "Latest",
+        "Trending",
+        "Local",
+        "Friends"
+      ],
+      "sampleBeans": [
+        {
+          "user": "Mina",
+          "handle": "@minabrews",
+          "text": "The new Ethiopian single-origin at Rumi is unreal. Notes of blueberry, no joke. ☕️",
+          "meta": "2m · ReBeaned by 3 friends"
+        },
+        {
+          "user": "Arman",
+          "handle": "@armanpours",
+          "text": "Found a corner café with the fastest wifi downtown. My new office. 🛜",
+          "meta": "11m · Trending in your city"
+        },
+        {
+          "user": "Sara",
+          "handle": "@sarasips",
+          "text": "Day 14 streak. The barista knows my order now. We have a bond. 🔥",
+          "meta": "24m · Local"
+        }
+      ],
+      "activity": [
+        "Mina checked in at Rumi Café",
+        "Arman earned the Hidden Gems badge",
+        "Sara hit a 14-day streak",
+        "Your squad collected the Rumi card"
+      ]
+    },
+    "communities": {
+      "eyebrow": "Communities & Squads",
+      "title": "Find your people",
+      "body": "Squads gather the regulars around a café, a hobby, or a city. Chat, share Beans, climb the leaderboard, and show up together.",
+      "points": [
+        "Squad chat & shared feeds",
+        "Leaderboards & weekly challenges",
+        "Events and meetups that fill the room"
+      ],
+      "squadNames": [
+        "Gamers",
+        "Latte Art",
+        "Remote Workers",
+        "Bookworms",
+        "Weekend Roasters"
+      ],
+      "members": "members"
+    },
+    "passport": {
+      "eyebrow": "Passport & Collectibles",
+      "title": "Every café is a card worth collecting",
+      "body": "Check in to stamp your Passport, unlock badges, and collect a unique card for every café — from Common to Legendary.",
+      "rarities": [
+        "Common",
+        "Uncommon",
+        "Rare",
+        "Epic",
+        "Legendary"
+      ],
+      "points": [
+        "Collectible café cards with rarity",
+        "Streaks, badges & daily bonuses",
+        "BeanScore levels and city leaderboards"
+      ]
+    },
+    "safety": {
+      "eyebrow": "Safety & trust",
+      "title": "A circle that feels safe to be in",
+      "body": "Privacy-first location, granular controls, and human moderation keep Bean Circle a place you actually want to spend time.",
+      "points": [
+        {
+          "title": "You control your location",
+          "body": "Go visible only when you want to. Scanning is opt-in, always."
+        },
+        {
+          "title": "Report & moderate",
+          "body": "One tap to report anything. A real moderation team has your back."
+        },
+        {
+          "title": "Private by default",
+          "body": "Your data stays yours. No selling, no creepy tracking."
+        }
+      ]
+    },
+    "creators": {
+      "eyebrow": "For cafés & creators",
+      "title": "Run your café like it’s 2026",
+      "body": "Cafe OS gives owners a digital menu with QR, loyalty and promotions, CRM, and analytics — plus a verified café identity to post as.",
+      "points": [
+        "Digital QR menus & promotions",
+        "Loyalty, CRM & 30-day analytics",
+        "Post as your café, build your regulars"
+      ],
+      "cta": "Claim your café"
+    },
+    "future": {
+      "eyebrow": "The vision",
+      "title": "We’re just getting started",
+      "body": "Bean Circle is building the social layer for the third place — the spot that isn’t home and isn’t work.",
+      "items": [
+        {
+          "title": "City-wide events",
+          "body": "Coffee festivals, cuppings, and meetups, all in-app."
+        },
+        {
+          "title": "Creator economy",
+          "body": "Tools for coffee creators to grow and earn."
+        },
+        {
+          "title": "Beyond coffee",
+          "body": "The same circle, for every place worth gathering."
+        }
+      ]
+    },
+    "testimonials": {
+      "eyebrow": "Loved by early circles",
+      "title": "People are already finding their people",
+      "items": [
+        {
+          "quote": "I moved to a new city and Bean Circle gave me a friend group in two weeks. All over coffee.",
+          "name": "Leila R.",
+          "role": "Designer"
+        },
+        {
+          "quote": "My café’s regulars finally have a home. Our weekend traffic doubled.",
+          "name": "Kaveh M.",
+          "role": "Café owner"
+        },
+        {
+          "quote": "The nearby radar is genuinely magic. I’ve met three of my closest friends through it.",
+          "name": "Daniel T.",
+          "role": "Student"
+        },
+        {
+          "quote": "It’s the only app that makes me put my phone down and actually talk to someone.",
+          "name": "Niloofar S.",
+          "role": "Writer"
+        }
+      ]
+    },
+    "cta": {
+      "eyebrow": "Pull up a chair",
+      "title": "Your circle is already here.",
+      "body": "Join free. Find a café, meet the room, and never drink coffee alone again.",
+      "primary": "Get Bean Circle",
+      "secondary": "Browse the web app",
+      "note": "Free to join · iOS, Android & Web"
+    },
+    "footer": {
+      "tagline": "The social layer for coffee culture.",
+      "columns": {
+        "product": {
+          "title": "Product",
+          "links": [
+            "Discover",
+            "Nearby",
+            "Beans",
+            "Passport",
+            "Squads"
+          ]
+        },
+        "company": {
+          "title": "Company",
+          "links": [
+            "About",
+            "Careers",
+            "Blog",
+            "Contact"
+          ]
+        },
+        "legal": {
+          "title": "Legal",
+          "links": [
+            "Privacy",
+            "Terms"
+          ]
+        }
+      },
+      "rights": "All rights reserved."
+    }
   }
 }

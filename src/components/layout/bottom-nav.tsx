@@ -25,7 +25,7 @@ type NavTab = {
 };
 
 const TABS: NavTab[] = [
-  { href: '/', key: 'home', Icon: Home },
+  { href: '/feed', key: 'home', Icon: Home },
   { href: '/passport', key: 'passport', Icon: Stamp },
   { href: '/discover', key: 'explore', Icon: Compass },
   { href: '/messages', key: 'messages', Icon: MessageCircle },

@@ -18,7 +18,7 @@ export default function AdminPage() {
   const tab: Tab = 'users';
 
   useEffect(() => {
-    if (user && user.role !== 'ADMIN') router.replace('/');
+    if (user && user.role !== 'ADMIN') router.replace('/feed');
   }, [user, router]);
 
   const enabled = user?.role === 'ADMIN';
@@ -74,7 +74,7 @@ export default function AdminPage() {
     <div className="p-4">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-bold">{t('title')}</h1>
-        <Link href="/" className="text-sm text-blue-600">
+        <Link href="/feed" className="text-sm text-blue-600">
           ← Home
         </Link>
       </div>

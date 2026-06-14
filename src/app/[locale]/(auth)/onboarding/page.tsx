@@ -168,7 +168,7 @@ export default function OnboardingPage() {
 
                   <button
                     type="button"
-                    onClick={() => router.replace('/')}
+                    onClick={() => router.replace('/feed')}
                     className="flex w-full items-center gap-4 rounded-2xl border border-white/12 bg-white/5 p-4 text-start transition hover:bg-white/10 active:scale-[0.98]"
                   >
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400">

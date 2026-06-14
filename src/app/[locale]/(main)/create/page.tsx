@@ -74,7 +74,7 @@ export default function CreatePostPage() {
         body: JSON.stringify({ type, caption: caption || undefined, photoUrls }),
         locale,
       });
-      router.push('/');
+      router.push('/feed');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post. Try again.');
     } finally {

@@ -152,7 +152,7 @@ export function LoginScreen() {
         });
         setTokens(res.accessToken, res.refreshToken);
         setUser(res.user);
-        router.replace(res.user.needsOnboarding ? '/onboarding' : '/');
+        router.replace(res.user.needsOnboarding ? '/onboarding' : '/feed');
       } catch (e) {
         setOtpError(true);
         setOtp('');

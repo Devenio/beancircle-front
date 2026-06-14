@@ -103,7 +103,7 @@ export function IdentitySwitcher() {
             type="button"
             onClick={() => {
               switchToPersonal();
-              router.push('/');
+              router.push('/feed');
             }}
             className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-start transition hover:bg-accent"
           >

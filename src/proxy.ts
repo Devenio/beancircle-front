@@ -21,10 +21,21 @@ function localeFromPath(pathname: string) {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const subpath = pathWithoutLocale(pathname);
+  const hasSession = request.cookies.get('bc_session')?.value === '1';
+
+  // The root path is the public marketing landing. Signed-in visitors are sent
+  // straight into the app feed; everyone else sees the landing page.
+  if (subpath === '/') {
+    if (hasSession) {
+      const locale = localeFromPath(pathname);
+      return NextResponse.redirect(new URL(`/${locale}/feed`, request.url));
+    }
+    return handleI18nRouting(request);
+  }
+
   const isPublic = PUBLIC_PATHS.some(
     (p) => subpath === p || subpath.startsWith(`${p}/`),
   );
-  const hasSession = request.cookies.get('bc_session')?.value === '1';
 
   if (!isPublic && !hasSession) {
     const locale = localeFromPath(pathname);
