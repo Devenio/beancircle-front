@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -18,11 +19,13 @@ import { getBeansForUser } from '@/lib/api/beans';
 import { ReportDialog } from '@/components/report/report-dialog';
 import { CollectiblesBadges } from '@/components/profile/collectibles-badges';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ShareProfileSheet } from '@/components/profile/share-profile-sheet';
 
 export default function ProfilePage() {
   const { username, locale } = useParams<{ username: string; locale: string }>();
   const tp = useTranslations('profile');
   const tb = useTranslations('beans');
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ['profile', username, locale],
@@ -105,7 +108,35 @@ export default function ProfilePage() {
       <div className="px-4">
         <h2 className="mt-3 font-bold">{profile.name}</h2>
         {profile.bio ? <p className="mt-1 text-sm">{profile.bio}</p> : null}
+
+        {profile.isSelf ? (
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              render={<Link href="/settings/account" />}
+            >
+              Edit Profile
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShareOpen(true)}
+            >
+              Share Profile
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      {profile.isSelf ? (
+        <ShareProfileSheet
+          username={profile.username ?? username}
+          locale={locale}
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+        />
+      ) : null}
 
       <div className="mt-4">
         <CollectiblesBadges
