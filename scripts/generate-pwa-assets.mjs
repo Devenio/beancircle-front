@@ -82,7 +82,7 @@ function iconSvg(size = 512) {
     <rect x="${size * 0.012}" y="${size * 0.012}" width="${size * 0.976}" height="${size * 0.976}"
           rx="${r * 0.95}" ry="${r * 0.95}" fill="none" stroke="#ffffff" stroke-opacity="0.06"
           stroke-width="${size * 0.012}" />
-    ${beanMark(size, 0.46)}
+    ${beanMark(size, 0.66)}
   </svg>`;
 }
 
@@ -92,7 +92,7 @@ function maskableSvg(size = 512) {
     ${defs()}
     <rect width="${size}" height="${size}" fill="url(#bg)" />
     <rect width="${size}" height="${size}" fill="url(#glow)" />
-    ${beanMark(size, 0.34)}
+    ${beanMark(size, 0.56)}
   </svg>`;
 }
 
@@ -102,7 +102,7 @@ function appleSvg(size = 180) {
     ${defs()}
     <rect width="${size}" height="${size}" fill="url(#bg)" />
     <rect width="${size}" height="${size}" fill="url(#glow)" />
-    ${beanMark(size, 0.44)}
+    ${beanMark(size, 0.64)}
   </svg>`;
 }
 

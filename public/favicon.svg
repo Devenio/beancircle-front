@@ -21,7 +21,7 @@
           rx="97.28" ry="97.28" fill="none" stroke="#ffffff" stroke-opacity="0.06"
           stroke-width="6.144" />
     
-    <g transform="translate(79.36 79.36) scale(3.6800)">
+    <g transform="translate(2.56 2.56) scale(5.2800)">
       <ellipse cx="48" cy="48" rx="20" ry="27" fill="url(#ring)" transform="rotate(32 48 48)" />
       <path d="M48 24 C40 36, 56 60, 48 72" fill="none" stroke="#160d08"
             stroke-width="4" stroke-linecap="round" transform="rotate(32 48 48)" />
