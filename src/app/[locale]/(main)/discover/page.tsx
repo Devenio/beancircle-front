@@ -18,7 +18,7 @@ const NeshanDiscoverMap = dynamic(
 
 export default function DiscoverPage() {
   return (
-    <div className="relative -mx-2 -mt-2 h-[calc(100dvh-7.5rem)] min-h-[420px] overflow-hidden rounded-2xl border border-border/40">
+    <div className="relative -mx-2 -mt-2 h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] min-h-[420px] overflow-hidden rounded-2xl border border-border/40">
       <NeshanDiscoverMap />
     </div>
   );
