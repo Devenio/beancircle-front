@@ -95,16 +95,37 @@ export type TemplateCategory = {
   order?: number;
   items?: TemplateItem[];
 };
+export type MenuThemeName =
+  | 'MINIMAL'
+  | 'MODERN'
+  | 'LUXURY'
+  | 'DARK'
+  | 'VINTAGE'
+  | 'NEON'
+  | 'CUSTOM';
 export type MenuTemplate = {
   id: string;
   name: string;
   description: string | null;
+  previewImageUrl: string | null;
+  welcomeTitle: string | null;
+  welcomeMessage: string | null;
   accentColor: string;
-  theme: string;
+  theme: MenuThemeName;
+  themeConfig: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
-  _count?: { categories: number };
+  _count?: { categories: number; assignments: number };
   categories?: TemplateCategory[];
+};
+
+export type TemplateAssignment = {
+  cafeId: string;
+  name: string;
+  slug: string | null;
+  assignedAt: string;
+  active: boolean;
+  published: boolean;
 };
 
 export type AuditEntry = {
@@ -247,11 +268,29 @@ export const adminDeleteTemplate = (id: string) =>
 export const adminApplyTemplate = (
   cafeId: string,
   templateId: string,
-  payload: { slug?: string; publish?: boolean } = {},
+  payload: { slug?: string; publish?: boolean; includeContent?: boolean } = {},
 ) =>
   api<unknown>(
     `/super-admin/cafes/${cafeId}/menu/apply-template/${templateId}`,
     { method: 'POST', body: JSON.stringify(payload) },
+  );
+
+export const adminTemplateAssignments = (id: string, locale?: string) =>
+  api<TemplateAssignment[]>(
+    `/super-admin/menu-templates/${id}/assignments`,
+    opts(locale),
+  );
+
+export const adminAssignTemplate = (id: string, cafeIds: string[]) =>
+  api<TemplateAssignment[]>(`/super-admin/menu-templates/${id}/assign`, {
+    method: 'POST',
+    body: JSON.stringify({ cafeIds }),
+  });
+
+export const adminUnassignTemplate = (id: string, cafeId: string) =>
+  api<TemplateAssignment[]>(
+    `/super-admin/menu-templates/${id}/assign/${cafeId}`,
+    { method: 'DELETE' },
   );
 
 // ---------- Analytics ----------
