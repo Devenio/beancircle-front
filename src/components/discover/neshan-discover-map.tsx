@@ -60,6 +60,20 @@ function createCafeMarkerEl(): HTMLElement {
   return el;
 }
 
+/** Only allow http(s) image URLs so attacker-controlled values can't smuggle
+ *  javascript:/data: payloads into the marker. */
+function safeImageUrl(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? parsed.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function createPersonMarkerEl(
   avatarUrl?: string | null,
   name?: string | null,
@@ -74,17 +88,30 @@ function createPersonMarkerEl(
     .map((w) => w[0])
     .join('')
     .toUpperCase();
-  const dot = online
-    ? `<span style="position:absolute;bottom:0;right:0;width:12px;height:12px;background:#22c55e;border-radius:50%;border:2px solid #fff;z-index:1"></span>`
-    : '';
 
-  el.innerHTML = avatarUrl
-    ? `<div style="width:44px;height:44px;border-radius:50%;border:3px solid ${ring};overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.3)">
-         <img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover" />
-       </div>${dot}`
-    : `<div style="width:44px;height:44px;border-radius:50%;background:#3b82f6;border:3px solid ${ring};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;box-shadow:0 3px 12px rgba(59,130,246,.45)">
-         ${initials}
-       </div>${dot}`;
+  // Build nodes via the DOM (textContent / .src) rather than innerHTML so
+  // user-controlled `name` and `avatarUrl` can never be parsed as markup.
+  const safeAvatar = safeImageUrl(avatarUrl);
+  const circle = document.createElement('div');
+  if (safeAvatar) {
+    circle.style.cssText = `width:44px;height:44px;border-radius:50%;border:3px solid ${ring};overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.3)`;
+    const img = document.createElement('img');
+    img.src = safeAvatar;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    circle.appendChild(img);
+  } else {
+    circle.style.cssText = `width:44px;height:44px;border-radius:50%;background:#3b82f6;border:3px solid ${ring};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;box-shadow:0 3px 12px rgba(59,130,246,.45)`;
+    circle.textContent = initials;
+  }
+  el.appendChild(circle);
+
+  if (online) {
+    const dot = document.createElement('span');
+    dot.style.cssText =
+      'position:absolute;bottom:0;right:0;width:12px;height:12px;background:#22c55e;border-radius:50%;border:2px solid #fff;z-index:1';
+    el.appendChild(dot);
+  }
+
   return el;
 }
 

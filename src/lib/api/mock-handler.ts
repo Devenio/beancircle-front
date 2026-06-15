@@ -30,6 +30,17 @@ function notFound(path: string): never {
   throw new Error(`Mock API: no handler for ${path}`);
 }
 
+/** In-memory onboarding state for mock mode (resets on full reload). */
+const mockOnboarding = {
+  currentStep: 'welcome',
+  completedSteps: [] as string[],
+  skippedSteps: [] as string[],
+  stepTimings: {} as Record<string, number>,
+  completedAt: null as string | null,
+  interests: [] as string[],
+  avatar: null as Record<string, unknown> | null,
+};
+
 /** user ids blocked by the mock current user */
 const mockBlockedUserIds = new Set<string>();
 /** message ids hidden for the mock current user only */
@@ -485,6 +496,78 @@ export async function handleMockRequest<T>(
   }
   if (pathname === '/friends/list' && method === 'GET') {
     return { items: [], nextCursor: null, hasMore: false } as T;
+  }
+
+  // Onboarding
+  if (pathname === '/onboarding/me' && method === 'GET') {
+    const links = MOCK_CURRENT_USER as { bio?: string; favoriteCoffee?: string };
+    const signals = [
+      !!MOCK_CURRENT_USER.name,
+      !!links.bio,
+      !!MOCK_CURRENT_USER.avatarUrl || !!mockOnboarding.avatar,
+      !!links.favoriteCoffee,
+      false,
+      true,
+      mockOnboarding.interests.length > 0,
+    ];
+    const filled = signals.filter(Boolean).length;
+    return {
+      progress: {
+        userId: MOCK_CURRENT_USER.id,
+        currentStep: mockOnboarding.currentStep,
+        completedSteps: mockOnboarding.completedSteps,
+        skippedSteps: mockOnboarding.skippedSteps,
+        stepTimings: mockOnboarding.stepTimings,
+        startedAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString(),
+        completedAt: mockOnboarding.completedAt,
+      },
+      avatar: mockOnboarding.avatar,
+      interests: mockOnboarding.interests,
+      completion: {
+        filled,
+        total: signals.length,
+        percent: Math.round((filled / signals.length) * 100),
+      },
+    } as T;
+  }
+  if (pathname === '/onboarding/me' && method === 'PATCH') {
+    const body = parseBody(options.body);
+    if (typeof body.currentStep === 'string') mockOnboarding.currentStep = body.currentStep;
+    if (typeof body.completeStep === 'string' && !mockOnboarding.completedSteps.includes(body.completeStep))
+      mockOnboarding.completedSteps.push(body.completeStep);
+    if (typeof body.skipStep === 'string' && !mockOnboarding.skippedSteps.includes(body.skipStep))
+      mockOnboarding.skippedSteps.push(body.skipStep);
+    if (body.stepTimings && typeof body.stepTimings === 'object')
+      Object.assign(mockOnboarding.stepTimings, body.stepTimings);
+    return { ...mockOnboarding, userId: MOCK_CURRENT_USER.id } as T;
+  }
+  if (pathname === '/onboarding/complete' && method === 'POST') {
+    mockOnboarding.completedAt = new Date().toISOString();
+    return { completed: true, badge: 'FIRST_SIP' } as T;
+  }
+  if (pathname === '/onboarding/interests' && method === 'PUT') {
+    const body = parseBody(options.body);
+    mockOnboarding.interests = Array.isArray(body.interests) ? (body.interests as string[]) : [];
+    return { interests: mockOnboarding.interests } as T;
+  }
+  if (pathname === '/onboarding/avatar' && method === 'GET') {
+    return mockOnboarding.avatar as T;
+  }
+  if (pathname === '/onboarding/avatar' && method === 'PUT') {
+    mockOnboarding.avatar = parseBody(options.body);
+    return mockOnboarding.avatar as T;
+  }
+  if (pathname === '/onboarding/events' && method === 'POST') {
+    return { tracked: true } as T;
+  }
+  if (pathname === '/growth/referrals/me' && method === 'GET') {
+    return {
+      code: 'BEAN1234',
+      total: 0,
+      pointsEarned: 0,
+      referrals: [],
+    } as T;
   }
 
   notFound(`${method} ${pathname}`);

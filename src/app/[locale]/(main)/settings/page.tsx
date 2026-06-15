@@ -11,6 +11,7 @@ import { SettingsSearch } from '@/components/settings/settings-search';
 import { SettingsHubSkeleton } from '@/components/settings/settings-profile-header';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { ReferralPanel } from '@/components/growth/referral-panel';
+import { OnboardingResumeRow } from '@/components/onboarding/onboarding-resume-row';
 import { InstallCtaRow } from '@/components/pwa/install-cta-row';
 import { useAuthStore } from '@/stores/auth-store';
 import { api } from '@/lib/api/client';
@@ -39,6 +40,7 @@ function SettingsHubContent() {
       </SettingsHubHeader>
 
       <SettingsAccountRow locale={locale} />
+      <OnboardingResumeRow locale={locale} />
       <SettingsHubMenu />
 
       {(user?.role === 'ADMIN' ||
