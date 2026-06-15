@@ -4,8 +4,16 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { CalendarDays, ChevronRight, Settings, Stamp, Users } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronRight,
+  Settings,
+  ShieldCheck,
+  Stamp,
+  Users,
+} from 'lucide-react';
 import { api } from '@/lib/api/client';
+import { useAuthStore } from '@/stores/auth-store';
 import { IdentityPill } from '@/components/cafe-os/identity-switcher';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfileAvatar as Avatar } from '@/components/chat/user-avatar';
@@ -27,6 +35,7 @@ export default function ProfilePage() {
   const tp = useTranslations('profile');
   const tb = useTranslations('beans');
   const [shareOpen, setShareOpen] = useState(false);
+  const isSuperAdmin = useAuthStore((s) => s.user?.role === 'SUPER_ADMIN');
 
   const { data: profile } = useQuery({
     queryKey: ['profile', username, locale],
@@ -148,6 +157,13 @@ export default function ProfilePage() {
               Share Profile
             </Button>
           </div>
+        ) : null}
+
+        {profile.isSelf && isSuperAdmin ? (
+          <Button className="mt-2 w-full" render={<Link href="/admin" />}>
+            <ShieldCheck className="size-4" />
+            Admin Panel
+          </Button>
         ) : null}
       </div>
 

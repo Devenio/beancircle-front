@@ -128,6 +128,24 @@ export type TemplateAssignment = {
   published: boolean;
 };
 
+export type FileTemplateSummary = {
+  key: string;
+  file: string;
+  valid: boolean;
+  error: string | null;
+  name: string | null;
+  description: string | null;
+  theme: MenuThemeName | null;
+  accentColor: string | null;
+  categoryCount: number;
+  itemCount: number;
+  fileUpdatedAt: string;
+  imported: boolean;
+  importedId: string | null;
+  importedAt: string | null;
+  stale: boolean;
+};
+
 export type AuditEntry = {
   id: string;
   action: string;
@@ -291,6 +309,34 @@ export const adminUnassignTemplate = (id: string, cafeId: string) =>
   api<TemplateAssignment[]>(
     `/super-admin/menu-templates/${id}/assign/${cafeId}`,
     { method: 'DELETE' },
+  );
+
+// ---------- File templates (drop-in project folder) ----------
+
+export const adminListFileTemplates = (locale?: string) =>
+  api<FileTemplateSummary[]>('/super-admin/menu-templates/files', opts(locale));
+
+export const adminGetFileTemplate = (key: string, locale?: string) =>
+  api<MenuTemplate>(`/super-admin/menu-templates/files/${key}`, opts(locale));
+
+export const adminImportFileTemplate = (key: string) =>
+  api<MenuTemplate>(`/super-admin/menu-templates/files/${key}/import`, {
+    method: 'POST',
+  });
+
+export const adminImportAllFileTemplates = () =>
+  api<{ key: string; ok: boolean; id?: string; error?: string }[]>(
+    '/super-admin/menu-templates/files/import-all',
+    { method: 'POST' },
+  );
+
+export const adminImportAndAssignFileTemplate = (
+  key: string,
+  cafeIds: string[],
+) =>
+  api<{ template: MenuTemplate; assignments: TemplateAssignment[] }>(
+    `/super-admin/menu-templates/files/${key}/assign`,
+    { method: 'POST', body: JSON.stringify({ cafeIds }) },
   );
 
 // ---------- Analytics ----------

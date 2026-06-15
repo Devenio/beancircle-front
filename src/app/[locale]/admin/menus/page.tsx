@@ -4,11 +4,15 @@ import { Suspense, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'next/navigation';
 import {
+  AlertTriangle,
   Check,
+  Download,
+  FileJson,
   GripVertical,
   Layers,
   Palette,
   Plus,
+  RefreshCw,
   Search,
   Store,
   Trash2,
@@ -26,11 +30,15 @@ import {
   adminCreateTemplate,
   adminDeleteTemplate,
   adminGetTemplate,
+  adminImportAllFileTemplates,
+  adminImportFileTemplate,
   adminListCafes,
+  adminListFileTemplates,
   adminListTemplates,
   adminTemplateAssignments,
   adminUnassignTemplate,
   adminUpdateTemplate,
+  type MenuTemplate,
   type TemplateCategory,
 } from '@/lib/api/admin';
 import { Card, PageHeader, StatusPill } from '@/components/admin/primitives';
@@ -254,6 +262,18 @@ function MenusInner() {
             <Plus className="size-4" /> New template
           </Button>
         }
+      />
+
+      <FileTemplatesPanel
+        locale={locale}
+        onImported={(tpl, gotoAssign) => {
+          invalidate();
+          qc.invalidateQueries({ queryKey: ['admin-file-templates'] });
+          if (tpl) {
+            setSelectedId(tpl.id);
+            setTab(gotoAssign ? 'assign' : 'design');
+          }
+        }}
       />
 
       <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
@@ -885,6 +905,168 @@ function AssignTab({
         )}
       </Card>
     </div>
+  );
+}
+
+// ---------------- File templates (drop-in folder) ----------------
+
+function FileTemplatesPanel({
+  locale,
+  onImported,
+}: {
+  locale: string;
+  onImported: (tpl: MenuTemplate | null, gotoAssign: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const {
+    data: files,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['admin-file-templates', locale],
+    queryFn: () => adminListFileTemplates(locale),
+  });
+
+  const importOne = useMutation({
+    mutationFn: ({ key }: { key: string; gotoAssign: boolean }) =>
+      adminImportFileTemplate(key),
+    onSuccess: (tpl, vars) => {
+      qc.invalidateQueries({ queryKey: ['admin-file-templates'] });
+      onImported(tpl, vars.gotoAssign);
+    },
+  });
+  const importAll = useMutation({
+    mutationFn: () => adminImportAllFileTemplates(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-file-templates'] });
+      onImported(null, false);
+    },
+  });
+
+  const pendingKey = importOne.isPending ? importOne.variables?.key : null;
+  const list = files ?? [];
+  const importable = list.filter((f) => f.valid).length;
+
+  return (
+    <Card className="mb-6 p-0">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+          <FileJson className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold">From project files</h3>
+          <p className="truncate text-xs text-muted-foreground">
+            Drop a <code className="font-mono">.json</code> file in{' '}
+            <code className="font-mono">beancircle-api/menu-templates/</code>,
+            then import it here to make it available or assign it to cafes.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw
+              className={cn('size-4', isFetching && 'animate-spin')}
+            />
+            Refresh
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => importAll.mutate()}
+            disabled={importAll.isPending || importable === 0}
+          >
+            <Download className="size-4" />
+            {importAll.isPending ? 'Importing…' : `Import all (${importable})`}
+          </Button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">Scanning folder…</p>
+      ) : list.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          No template files found. Add a{' '}
+          <code className="font-mono">.json</code> file to{' '}
+          <code className="font-mono">beancircle-api/menu-templates/</code> and
+          click Refresh.
+        </p>
+      ) : (
+        <div className="divide-y divide-border">
+          {list.map((f) => {
+            const busy = pendingKey === f.key;
+            const tone = !f.valid
+              ? 'red'
+              : !f.imported
+                ? 'muted'
+                : f.stale
+                  ? 'amber'
+                  : 'green';
+            const status = !f.valid
+              ? 'Invalid'
+              : !f.imported
+                ? 'New'
+                : f.stale
+                  ? 'Update available'
+                  : 'Imported';
+            return (
+              <div key={f.key} className="flex items-center gap-3 px-4 py-3">
+                <span
+                  className="grid size-8 shrink-0 place-items-center rounded-md border border-border"
+                  style={{ backgroundColor: f.accentColor ?? 'var(--muted)' }}
+                >
+                  {f.valid ? null : (
+                    <AlertTriangle className="size-4 text-red-100" />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {f.name ?? f.file}
+                    </span>
+                    <StatusPill tone={tone}>{status}</StatusPill>
+                  </div>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {f.valid
+                      ? `${f.file} · ${(f.theme ?? '').toLowerCase()} · ${f.categoryCount} categories · ${f.itemCount} items`
+                      : `${f.file} · ${f.error ?? 'parse error'}`}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!f.valid || busy}
+                    onClick={() =>
+                      importOne.mutate({ key: f.key, gotoAssign: false })
+                    }
+                  >
+                    {busy
+                      ? 'Importing…'
+                      : f.imported
+                        ? 'Re-import'
+                        : 'Import'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={!f.valid || busy}
+                    onClick={() =>
+                      importOne.mutate({ key: f.key, gotoAssign: true })
+                    }
+                  >
+                    <Store className="size-3.5" />
+                    Assign
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
   );
 }
 
