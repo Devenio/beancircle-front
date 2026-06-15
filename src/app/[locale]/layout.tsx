@@ -3,6 +3,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { QueryProvider } from '@/providers/query-provider';
+import { FeatureFlagsProvider } from '@/providers/feature-flags-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PushBootstrap } from '@/components/push/push-bootstrap';
@@ -29,12 +30,14 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages}>
       <ThemeProvider>
         <QueryProvider>
-          <TooltipProvider>
-            <PushBootstrap />
-            <PwaProvider />
-            <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
-            <BugReportLauncher />
-          </TooltipProvider>
+          <FeatureFlagsProvider>
+            <TooltipProvider>
+              <PushBootstrap />
+              <PwaProvider />
+              <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
+              <BugReportLauncher />
+            </TooltipProvider>
+          </FeatureFlagsProvider>
         </QueryProvider>
       </ThemeProvider>
     </NextIntlClientProvider>

@@ -41,11 +41,13 @@ function SettingsHubContent() {
       <SettingsAccountRow locale={locale} />
       <SettingsHubMenu />
 
-      {(user?.role === 'ADMIN' || user?.role === 'OWNER') && (
+      {(user?.role === 'ADMIN' ||
+        user?.role === 'SUPER_ADMIN' ||
+        user?.role === 'OWNER') && (
         <>
           <SettingsSectionLabel>{t('quickLinks')}</SettingsSectionLabel>
           <SettingsList>
-            {user?.role === 'ADMIN' ? (
+            {user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? (
               <SettingsRow
                 label={t('adminPanel')}
                 description={t('adminPanelDesc')}
