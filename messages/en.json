@@ -1528,8 +1528,12 @@
       "addOption": "Add option",
       "locationPlaceholder": "Where are you?",
       "reply": "Reply",
-      "share": "Share Bean"
-    }
+      "share": "Share Bean",
+      "removeCafe": "Remove café tag",
+      "mentionHint": "Type @ to mention someone or tag a café"
+    },
+    "report": "Report Bean",
+    "cantRebeanOwn": "You cannot ReBean your own Bean"
   },
   "eventsPage": {
     "title": "Events",

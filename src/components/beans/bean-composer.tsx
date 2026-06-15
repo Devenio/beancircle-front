@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
+  Coffee,
   ImagePlus,
   Loader2,
   MapPin,
@@ -12,7 +13,6 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
   createBean,
@@ -21,6 +21,7 @@ import {
 } from '@/lib/api/beans';
 import { presignAndUpload } from '@/lib/api/uploads';
 import { BeanBody } from './bean-body';
+import { MentionTextarea, type CafeMention } from './mention-textarea';
 
 const PROMPT_KEYS = [
   'brewing',
@@ -68,6 +69,9 @@ export function BeanComposer({
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [showLocation, setShowLocation] = useState(false);
   const [locationLabel, setLocationLabel] = useState('');
+  const [taggedCafe, setTaggedCafe] = useState<CafeMention | null>(null);
+
+  const effectiveCafeId = taggedCafe?.id ?? context?.cafeId;
 
   const promptKey = useMemo(
     () =>
@@ -86,7 +90,7 @@ export function BeanComposer({
         body: body.trim() || undefined,
         parentId,
         quotedBeanId: quotedBean?.id,
-        cafeId: context?.cafeId,
+        cafeId: effectiveCafeId,
         squadId: context?.squadId,
         eventId: context?.eventId,
         locationLabel:
@@ -108,6 +112,7 @@ export function BeanComposer({
       setPollOptions(['', '']);
       setShowLocation(false);
       setLocationLabel('');
+      setTaggedCafe(null);
       qc.invalidateQueries({ queryKey: ['beans'] });
       if (parentId) qc.invalidateQueries({ queryKey: ['bean', parentId] });
       onPosted?.();
@@ -162,16 +167,36 @@ export function BeanComposer({
         </span>
       ) : null}
 
-      <Textarea
+      {taggedCafe ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+          <Coffee className="size-3" />
+          {taggedCafe.name}
+          <button
+            type="button"
+            onClick={() => setTaggedCafe(null)}
+            className="ms-0.5 rounded-full hover:opacity-70"
+            aria-label={t('composer.removeCafe')}
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ) : null}
+
+      <MentionTextarea
+        locale={locale}
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={setBody}
+        onCafeMention={(cafe) => setTaggedCafe(cafe)}
         placeholder={
           parentId
             ? t('composer.replyPlaceholder')
             : t(`composer.prompts.${promptKey ?? 'brewing'}`)
         }
         maxLength={2000}
-        className={cn('resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0', compact ? 'min-h-16' : 'min-h-28')}
+        className={cn(
+          'resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0',
+          compact ? 'min-h-16' : 'min-h-28',
+        )}
       />
 
       {media.length ? (

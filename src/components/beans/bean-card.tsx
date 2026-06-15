@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   Coffee,
+  Flag,
   MapPin,
   MessageCircle,
   MoreHorizontal,
@@ -30,6 +31,7 @@ import {
   type Bean,
   type BeanType,
 } from '@/lib/api/beans';
+import { ReportDialog } from '@/components/report/report-dialog';
 import { BeanBody } from './bean-body';
 import { BeanPollView } from './bean-poll';
 import { BeanReactionsBar } from './bean-reactions';
@@ -201,6 +203,7 @@ export function BeanCard({
   const isRebean = !!bean.rebeanOf;
   const content = bean.rebeanOf ?? bean;
   const mine = me?.id === bean.author.id;
+  const contentMine = me?.id === content.author.id;
 
   const rebeanMutation = useMutation({
     mutationFn: (): Promise<unknown> =>
@@ -284,15 +287,15 @@ export function BeanCard({
             <span className="ms-auto shrink-0 text-sm" title={content.type}>
               {TYPE_EMOJI[content.type] ?? '☕'}
             </span>
-            {mine ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  onClick={(e) => e.stopPropagation()}
-                  className="rounded-full p-1 text-muted-foreground hover:bg-muted"
-                >
-                  <MoreHorizontal className="size-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-full p-1 text-muted-foreground hover:bg-muted"
+              >
+                <MoreHorizontal className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                {mine ? (
                   <DropdownMenuItem
                     variant="destructive"
                     onClick={(e) => {
@@ -303,9 +306,24 @@ export function BeanCard({
                     <Trash2 className="size-4" />
                     {t('delete')}
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
+                ) : (
+                  <ReportDialog
+                    targetType="POST"
+                    targetId={content.id}
+                    locale={locale}
+                    trigger={
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="size-4" />
+                        {t('report')}
+                      </DropdownMenuItem>
+                    }
+                  />
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           {content.author.username ? (
             <p className="text-xs text-muted-foreground">
@@ -352,26 +370,30 @@ export function BeanCard({
               className={cn(
                 'flex items-center gap-1 text-sm hover:text-foreground',
                 content.rebeaned && 'font-medium text-emerald-600',
+                contentMine && 'cursor-not-allowed opacity-40',
               )}
+              disabled={contentMine}
             >
               <Repeat2 className="size-4.5" />
               {counts.rebeans > 0 ? counts.rebeans : null}
             </DropdownMenuTrigger>
-            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem
-                onClick={() => rebeanMutation.mutate()}
-                disabled={rebeanMutation.isPending}
-              >
-                <Repeat2 className="size-4" />
-                {content.rebeaned ? t('undoRebean') : t('rebean')}
-              </DropdownMenuItem>
-              {onQuote ? (
-                <DropdownMenuItem onClick={() => onQuote(content)}>
-                  <PenLine className="size-4" />
-                  {t('quote')}
+            {!contentMine ? (
+              <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem
+                  onClick={() => rebeanMutation.mutate()}
+                  disabled={rebeanMutation.isPending}
+                >
+                  <Repeat2 className="size-4" />
+                  {content.rebeaned ? t('undoRebean') : t('rebean')}
                 </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuContent>
+                {onQuote ? (
+                  <DropdownMenuItem onClick={() => onQuote(content)}>
+                    <PenLine className="size-4" />
+                    {t('quote')}
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            ) : null}
           </DropdownMenu>
         </div>
 
