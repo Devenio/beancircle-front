@@ -1530,7 +1530,10 @@
       "reply": "Reply",
       "share": "Share Bean",
       "removeCafe": "Remove café tag",
-      "mentionHint": "Type @ to mention someone or tag a café"
+      "mentionHint": "Type @ to mention someone or tag a café",
+      "searching": "Searching…",
+      "mentionUser": "Person",
+      "mentionCafe": "Café"
     },
     "report": "Report Bean",
     "cantRebeanOwn": "You cannot ReBean your own Bean"

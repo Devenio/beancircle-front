@@ -14,6 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { UserAvatar } from '@/components/chat/user-avatar';
 import {
   DropdownMenu,
@@ -204,6 +205,7 @@ export function BeanCard({
   const content = bean.rebeanOf ?? bean;
   const mine = me?.id === bean.author.id;
   const contentMine = me?.id === content.author.id;
+  const [reportOpen, setReportOpen] = useState(false);
 
   const rebeanMutation = useMutation({
     mutationFn: (): Promise<unknown> =>
@@ -307,20 +309,15 @@ export function BeanCard({
                     {t('delete')}
                   </DropdownMenuItem>
                 ) : (
-                  <ReportDialog
-                    targetType="POST"
-                    targetId={content.id}
-                    locale={locale}
-                    trigger={
-                      <DropdownMenuItem
-                        onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer"
-                      >
-                        <Flag className="size-4" />
-                        {t('report')}
-                      </DropdownMenuItem>
-                    }
-                  />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReportOpen(true);
+                    }}
+                  >
+                    <Flag className="size-4" />
+                    {t('report')}
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -367,10 +364,11 @@ export function BeanCard({
           <DropdownMenu>
             <DropdownMenuTrigger
               onClick={(e) => e.stopPropagation()}
+              title={contentMine ? t('cantRebeanOwn') : undefined}
               className={cn(
                 'flex items-center gap-1 text-sm hover:text-foreground',
                 content.rebeaned && 'font-medium text-emerald-600',
-                contentMine && 'cursor-not-allowed opacity-40',
+                contentMine && 'cursor-not-allowed opacity-40 hover:text-muted-foreground',
               )}
               disabled={contentMine}
             >
@@ -405,6 +403,16 @@ export function BeanCard({
           breakdown={detail ? content.reactionBreakdown : undefined}
         />
       </div>
+
+      {!mine ? (
+        <ReportDialog
+          targetType="POST"
+          targetId={content.id}
+          locale={locale}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+        />
+      ) : null}
     </article>
   );
 }

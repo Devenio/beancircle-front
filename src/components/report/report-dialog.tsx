@@ -19,7 +19,11 @@ type ReportDialogProps = {
   targetType: ReportTargetType;
   targetId: string;
   locale?: string;
-  trigger: ReactNode;
+  /** Provide for uncontrolled (self-managed) open state. Omit when controlling via `open`/`onOpenChange`. */
+  trigger?: ReactNode;
+  /** Controlled open state. When provided, the dialog can be rendered outside a closing menu. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function ReportDialog({
@@ -27,9 +31,17 @@ export function ReportDialog({
   targetId,
   locale,
   trigger,
+  open: controlledOpen,
+  onOpenChange,
 }: ReportDialogProps) {
   const t = useTranslations('report');
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
   const [reason, setReason] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
 
@@ -55,7 +67,7 @@ export function ReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>{trigger}</DialogTrigger>
+      {trigger ? <DialogTrigger>{trigger}</DialogTrigger> : null}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>

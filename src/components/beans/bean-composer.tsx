@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -73,12 +73,11 @@ export function BeanComposer({
 
   const effectiveCafeId = taggedCafe?.id ?? context?.cafeId;
 
-  const promptKey = useMemo(
-    () =>
-      parentId
-        ? null
-        : PROMPT_KEYS[Math.floor(Math.random() * PROMPT_KEYS.length)],
-    [parentId],
+  // Pick a random prompt once per composer instance (lazy init keeps render pure).
+  const [promptKey] = useState(() =>
+    parentId
+      ? null
+      : PROMPT_KEYS[Math.floor(Math.random() * PROMPT_KEYS.length)],
   );
 
   const mutation = useMutation({
