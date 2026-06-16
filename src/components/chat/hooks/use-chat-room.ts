@@ -23,6 +23,7 @@ import {
 } from '@/components/chat/utils';
 import { haptic } from '@/lib/mobile/haptics';
 import { useChatArchiveStore } from '@/stores/chat-archive-store';
+import { useSettingsApi } from '@/hooks/use-settings-api';
 
 const LIVE_CHAT_STORAGE_KEY = 'messages.live.enabled';
 const draftStorageKey = (conversationId: string) => `chat.draft.${conversationId}`;
@@ -33,6 +34,8 @@ export function useChatRoom(conversationId: string, locale: string) {
   const qc = useQueryClient();
   const t = useTranslations('messages');
   const setTypingStore = useChatStore((s) => s.setTyping);
+  const { settings } = useSettingsApi();
+  const saveDrafts = settings?.saveDrafts ?? true;
 
   const messagesKey = useMemo(
     () => ['messages', conversationId, locale] as const,
@@ -224,12 +227,18 @@ export function useChatRoom(conversationId: string, locale: string) {
   }, [liveEnabled]);
 
   useEffect(() => {
+    // Honor Settings → Chat → "Save drafts": when disabled, never persist and
+    // proactively drop any draft already stored for this conversation.
+    if (!saveDrafts) {
+      localStorage.removeItem(draftStorageKey(conversationId));
+      return;
+    }
     const timer = setTimeout(() => {
       if (draft) localStorage.setItem(draftStorageKey(conversationId), draft);
       else localStorage.removeItem(draftStorageKey(conversationId));
     }, 300);
     return () => clearTimeout(timer);
-  }, [draft, conversationId]);
+  }, [draft, conversationId, saveDrafts]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const node = listRef.current;

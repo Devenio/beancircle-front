@@ -36,11 +36,27 @@ export type SettingsApiData = {
   updatedAt: string;
 };
 
-function applyAppearance(accent: string, fontSize: SettingsApiData['fontSize']) {
+type AppearanceFields = Pick<
+  SettingsApiData,
+  'accentColor' | 'fontSize' | 'messageDensity' | 'chatWallpaper'
+>;
+
+function applyAppearance(s: AppearanceFields) {
   if (typeof document === 'undefined') return;
-  document.documentElement.style.setProperty('--settings-accent', accent);
-  document.documentElement.dataset.fontSize = fontSize;
+  const el = document.documentElement;
+  el.style.setProperty('--settings-accent', s.accentColor);
+  // Drive the live theme color so the accent picker actually recolors the app.
+  el.style.setProperty('--primary', s.accentColor);
+  el.dataset.fontSize = s.fontSize;
+  el.dataset.messageDensity = s.messageDensity;
+  el.dataset.chatWallpaper = s.chatWallpaper;
 }
+
+const appearanceChanged = (body: Partial<SettingsApiData>) =>
+  body.accentColor !== undefined ||
+  body.fontSize !== undefined ||
+  body.messageDensity !== undefined ||
+  body.chatWallpaper !== undefined;
 
 export function useSettingsApi() {
   const { locale } = useParams<{ locale: string }>();
@@ -50,7 +66,7 @@ export function useSettingsApi() {
     queryKey: ['settings', locale],
     queryFn: async () => {
       const data = await api<SettingsApiData>('/settings', { locale });
-      applyAppearance(data.accentColor, data.fontSize);
+      applyAppearance(data);
       return data;
     },
   });
@@ -68,8 +84,8 @@ export function useSettingsApi() {
       if (prev) {
         const next = { ...prev, ...body };
         qc.setQueryData(['settings', locale], next);
-        if (body.accentColor || body.fontSize) {
-          applyAppearance(next.accentColor, next.fontSize);
+        if (appearanceChanged(body)) {
+          applyAppearance(next);
         }
       }
       return { prev };
@@ -79,7 +95,7 @@ export function useSettingsApi() {
     },
     onSuccess: (data) => {
       qc.setQueryData(['settings', locale], data);
-      applyAppearance(data.accentColor, data.fontSize);
+      applyAppearance(data);
     },
   });
 

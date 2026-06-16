@@ -189,7 +189,7 @@ function MessageBubbleInner({
           : undefined
       }
       className={cn(
-        'group w-full px-3 py-2 text-left transition-shadow duration-200',
+        'chat-bubble group w-full px-3 py-2 text-left transition-shadow duration-200',
         isMedia && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         bubbleRadius(isMine, position),
         isMine ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-foreground',

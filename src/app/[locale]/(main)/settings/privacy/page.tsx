@@ -35,6 +35,16 @@ export default function SettingsPrivacyPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['settings-blocked'] }),
   });
 
+  const unmute = useMutation({
+    mutationFn: (conversationId: string) =>
+      api(`/conversations/${conversationId}/mute`, {
+        method: 'POST',
+        body: JSON.stringify({ muted: false }),
+        locale,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings-muted'] }),
+  });
+
   if (isLoading || !settings) {
     return (
       <SettingsScreen title={t('sections.privacy')}>
@@ -194,12 +204,21 @@ export default function SettingsPrivacyPage() {
           <Skeleton className="m-4 h-12 rounded-lg" />
         ) : muted.data?.length ? (
           muted.data.map((u) => (
-            <SettingsRow
-              key={u.id}
-              href={`/messages/${u.conversationId}`}
-              label={u.name ?? u.username ?? ''}
-              description={u.username ? `@${u.username}` : undefined}
-            />
+            <div key={u.id} className="flex min-h-[52px] items-center gap-3 px-4 py-2">
+              <ProfileAvatar src={u.avatarUrl} name={u.name ?? u.username} className="size-10" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px]">{u.name ?? u.username}</p>
+                {u.username ? <p className="text-xs text-muted-foreground">@{u.username}</p> : null}
+              </div>
+              <button
+                type="button"
+                className="shrink-0 text-sm font-medium text-primary disabled:opacity-50"
+                onClick={() => unmute.mutate(u.conversationId)}
+                disabled={unmute.isPending}
+              >
+                {t('unmute')}
+              </button>
+            </div>
           ))
         ) : (
           <SettingsRow label={t('empty.mutedTitle')} description={t('empty.mutedBody')} showChevron={false} />

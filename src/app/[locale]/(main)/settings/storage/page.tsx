@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { HardDrive, Trash2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Database, HardDrive, ImageIcon, Trash2 } from 'lucide-react';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import {
   SettingsFieldHeader,
@@ -13,46 +14,95 @@ import {
   SettingsSectionLabel,
 } from '@/components/settings/settings-row';
 import { useSettingsApi } from '@/hooks/use-settings-api';
-import { estimateStorageUsage } from '@/stores/settings-store';
+import {
+  clearAppCache,
+  formatBytes,
+  getStorageEstimate,
+  removeDownloads,
+  type StorageEstimate,
+} from '@/lib/storage-usage';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function StorageBar({ label, hint, value, total }: { label: string; hint: string; value: number; total: number }) {
+function StorageBar({
+  icon,
+  label,
+  hint,
+  value,
+  total,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+  value: number;
+  total: number;
+}) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div className="px-4 py-3">
       <div className="flex justify-between gap-2 text-sm">
-        <div className="min-w-0">
-          <span className="block">{label}</span>
-          <span className="text-xs text-muted-foreground">{hint}</span>
+        <div className="flex min-w-0 items-start gap-2">
+          <span className="mt-0.5 text-muted-foreground">{icon}</span>
+          <div className="min-w-0">
+            <span className="block">{label}</span>
+            <span className="text-xs text-muted-foreground">{hint}</span>
+          </div>
         </div>
         <span className="shrink-0 text-muted-foreground">
-          {formatBytes(value)} · {pct}%
+          {formatBytes(value)}
+          {total > 0 ? ` · ${pct}%` : ''}
         </span>
       </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-      </div>
+      {total > 0 ? (
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      ) : null}
     </div>
   );
 }
 
+type PendingAction = 'cache' | 'downloads' | null;
+
 export default function SettingsStoragePage() {
   const t = useTranslations('settings');
+  const qc = useQueryClient();
   const { settings, isLoading, update } = useSettingsApi();
-  const usage = useMemo(() => estimateStorageUsage(), []);
+  const [usage, setUsage] = useState<StorageEstimate | null>(null);
+  const [pending, setPending] = useState<PendingAction>(null);
+  const [working, setWorking] = useState(false);
 
-  function clearLocalCache() {
-    if (typeof window === 'undefined') return;
-    const keysToKeep = ['accessToken', 'refreshToken', 'beancircle-auth'];
-    Object.keys(localStorage).forEach((key) => {
-      if (!keysToKeep.some((k) => key.startsWith(k))) localStorage.removeItem(key);
-    });
+  const refreshUsage = useCallback(() => {
+    void getStorageEstimate().then(setUsage);
+  }, []);
+
+  useEffect(() => {
+    refreshUsage();
+  }, [refreshUsage]);
+
+  async function runPending() {
+    if (!pending) return;
+    setWorking(true);
+    try {
+      if (pending === 'cache') {
+        clearAppCache();
+        qc.clear();
+      } else {
+        await removeDownloads();
+      }
+    } finally {
+      setWorking(false);
+      setPending(null);
+      refreshUsage();
+    }
   }
 
   if (isLoading || !settings) {
@@ -72,11 +122,48 @@ export default function SettingsStoragePage() {
           description={t('totalStorageDesc')}
           className="pb-2"
         />
-        <p className="px-4 pb-4 text-2xl font-semibold">{formatBytes(usage.total)}</p>
-        <StorageBar label={t('storageImages')} hint={t('storageImagesDesc')} value={usage.images} total={usage.total} />
-        <StorageBar label={t('storageVideos')} hint={t('storageVideosDesc')} value={usage.videos} total={usage.total} />
-        <StorageBar label={t('storageFiles')} hint={t('storageFilesDesc')} value={usage.files} total={usage.total} />
-        <StorageBar label={t('storageCache')} hint={t('storageCacheDesc')} value={usage.cache} total={usage.total} />
+        {usage === null ? (
+          <Skeleton className="mx-4 mb-4 h-8 w-32" />
+        ) : !usage.supported ? (
+          <p className="px-4 pb-4 text-sm text-muted-foreground">{t('storageUnavailable')}</p>
+        ) : (
+          <>
+            <p className="px-4 text-2xl font-semibold">{formatBytes(usage.usage)}</p>
+            {usage.quota > 0 ? (
+              <p className="px-4 pb-4 text-xs text-muted-foreground">
+                {t('storageOfQuota', {
+                  used: formatBytes(usage.usage),
+                  quota: formatBytes(usage.quota),
+                })}
+              </p>
+            ) : (
+              <div className="pb-2" />
+            )}
+            <StorageBar
+              icon={<Database className="size-4" />}
+              label={t('storageAppData')}
+              hint={t('storageAppDataDesc')}
+              value={usage.appData}
+              total={usage.usage}
+            />
+            <StorageBar
+              icon={<ImageIcon className="size-4" />}
+              label={t('storageCachedMedia')}
+              hint={t('storageCachedMediaDesc')}
+              value={usage.cachedMedia}
+              total={usage.usage}
+            />
+            {usage.quota > 0 ? (
+              <StorageBar
+                icon={<HardDrive className="size-4" />}
+                label={t('storageAvailable')}
+                hint={t('storageAvailableDesc')}
+                value={usage.available}
+                total={usage.quota}
+              />
+            ) : null}
+          </>
+        )}
       </div>
 
       <SettingsSectionLabel>{t('actions')}</SettingsSectionLabel>
@@ -85,15 +172,15 @@ export default function SettingsStoragePage() {
           icon={<Trash2 className="size-5" />}
           label={t('clearCache')}
           description={t('clearCacheDesc')}
-          onClick={clearLocalCache}
+          onClick={() => setPending('cache')}
         />
         <SettingsRow
+          icon={<ImageIcon className="size-5" />}
           label={t('removeDownloads')}
           description={t('removeDownloadsDesc')}
-          onClick={clearLocalCache}
+          onClick={() => setPending('downloads')}
         />
       </SettingsList>
-      <p className="px-4 pt-1 text-xs text-muted-foreground">{t('hints.clearCacheConfirm')}</p>
 
       <SettingsSectionLabel>{t('autoCleanup')}</SettingsSectionLabel>
       <SettingsFieldHeader
@@ -115,6 +202,27 @@ export default function SettingsStoragePage() {
           />
         ))}
       </SettingsList>
+
+      <Dialog open={pending !== null} onOpenChange={(open) => (!open ? setPending(null) : null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pending === 'downloads' ? t('removeDownloadsTitle') : t('clearCacheTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {pending === 'downloads' ? t('removeDownloadsBody') : t('clearCacheBody')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setPending(null)} disabled={working}>
+              {t('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={() => void runPending()} disabled={working}>
+              {t('confirmClear')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SettingsScreen>
   );
 }

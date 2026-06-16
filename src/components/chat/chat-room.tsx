@@ -25,6 +25,8 @@ import {
 } from '@/components/chat/virtual-message-list';
 import type { VirtualMessageListHandlers } from '@/components/chat/virtual-message-row';
 import { useChatRoom } from '@/components/chat/hooks/use-chat-room';
+import { ChatPrefsProvider } from '@/components/chat/chat-prefs-context';
+import { useSettingsApi } from '@/hooks/use-settings-api';
 import { useChatStore } from '@/stores/chat-store';
 import type { ChatMessage, Conversation, PendingMessage } from '@/components/chat/types';
 import { groupMessagesBySenderAndDate, isMineMessage, messagePreview } from '@/components/chat/utils';
@@ -55,6 +57,7 @@ type ForwardState = Record<string, 'idle' | 'sending' | 'ok' | 'failed'>;
 export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   const t = useTranslations('messages');
   const onlineUserIds = useChatStore((s) => s.onlineUserIds);
+  const { settings } = useSettingsApi();
 
   const room = useChatRoom(conversationId, locale);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -485,6 +488,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
   };
 
   return (
+    <ChatPrefsProvider value={{ linkPreviews: settings?.linkPreviews ?? true }}>
     <div className="flex h-dvh flex-col bg-background">
       {selectionMode ? (
         <MessageSelectionHeader
@@ -558,14 +562,12 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
             'relative h-full overflow-y-auto overscroll-contain px-3 py-3 chat-scrollbar',
           )}
         >
-        {/* Self-contained wallpaper (never 404s): layered gradients + dot grid. */}
+        {/* Self-contained wallpaper (never 404s): driven by the chat wallpaper
+            setting via html[data-chat-wallpaper] — see globals.css. */}
+        <div aria-hidden className="chat-wallpaper pointer-events-none absolute inset-0" />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background dark:from-primary/10"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.4] dark:opacity-[0.18]"
+          className="chat-wallpaper-dots pointer-events-none absolute inset-0 opacity-[0.4] dark:opacity-[0.18]"
           style={{
             backgroundImage:
               'radial-gradient(currentColor 1px, transparent 1px)',
@@ -878,5 +880,6 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
       </Dialog>
       )}
     </div>
+    </ChatPrefsProvider>
   );
 }

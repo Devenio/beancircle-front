@@ -22,7 +22,7 @@ export default function SettingsSupportPage() {
           icon={<Flag className="size-5" />}
           label={t('items.reportIssue')}
           description={t('items.reportIssueDesc')}
-          href="/settings/support"
+          href="mailto:support@beancircle.app?subject=Issue%20report"
         />
         <SettingsRow
           icon={<Mail className="size-5" />}

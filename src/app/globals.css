@@ -215,6 +215,61 @@ html[data-font-size='large'] {
   font-size: 18px;
 }
 
+/*
+ * Message density — drives the vertical padding of chat bubbles. The chat list
+ * is virtualized with dynamic measurement, so these changes reflow safely.
+ * Default (comfortable) keeps the bubble's own Tailwind padding.
+ */
+html[data-message-density='compact'] .chat-bubble {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+html[data-message-density='spacious'] .chat-bubble {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+/*
+ * Chat wallpaper — the tint layer behind the message list, selected in
+ * Settings → Appearance and applied via html[data-chat-wallpaper].
+ * "default" follows the accent/primary color; the rest are fixed tints.
+ */
+.chat-wallpaper {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--primary) 5%, transparent),
+    var(--background) 55%,
+    var(--background)
+  );
+}
+.dark .chat-wallpaper {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--primary) 10%, transparent),
+    var(--background) 55%,
+    var(--background)
+  );
+}
+html[data-chat-wallpaper='warm'] .chat-wallpaper {
+  background-image: linear-gradient(to bottom, oklch(0.95 0.045 70), var(--background) 60%);
+}
+html[data-chat-wallpaper='warm'].dark .chat-wallpaper {
+  background-image: linear-gradient(to bottom, oklch(0.28 0.04 60), var(--background) 60%);
+}
+html[data-chat-wallpaper='cool'] .chat-wallpaper {
+  background-image: linear-gradient(to bottom, oklch(0.95 0.04 230), var(--background) 60%);
+}
+html[data-chat-wallpaper='cool'].dark .chat-wallpaper {
+  background-image: linear-gradient(to bottom, oklch(0.28 0.04 250), var(--background) 60%);
+}
+html[data-chat-wallpaper='minimal'] .chat-wallpaper {
+  background-image: none;
+}
+html[data-chat-wallpaper='minimal'] .chat-wallpaper-dots {
+  display: none;
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

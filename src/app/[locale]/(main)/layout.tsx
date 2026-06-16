@@ -1,6 +1,7 @@
 'use client';
 
 import { IdentitySwitcher } from '@/components/cafe-os/identity-switcher';
+import { AppearanceBootstrap } from '@/components/settings/appearance-bootstrap';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { PageTransition } from '@/components/layout/page-transition';
 import { useSocket } from '@/hooks/use-socket';
@@ -27,6 +28,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <>
+      <AppearanceBootstrap />
       <main
         className={
           isChatRoom

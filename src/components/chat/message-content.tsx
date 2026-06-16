@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Eye, ExternalLink, FileText, MapPin, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractUrls, formatDuration, formatFileSize, renderMentionParts } from '@/components/chat/utils';
+import { useChatPrefs } from '@/components/chat/chat-prefs-context';
 
 function SpoilerMedia({ children }: { children: React.ReactNode }) {
   const [revealed, setRevealed] = useState(false);
@@ -316,6 +317,8 @@ export function MessageBodyContent({
   isMine?: boolean;
   spoiler?: boolean;
 }) {
+  const { linkPreviews } = useChatPrefs();
+
   if (type === 'sticker') {
     return <p className="text-4xl leading-none">{sticker ?? '😀'}</p>;
   }
@@ -358,7 +361,7 @@ export function MessageBodyContent({
   return (
     <>
       {body ? <MentionText body={body} isMine={isMine} /> : null}
-      {type === 'text' && body
+      {linkPreviews && type === 'text' && body
         ? extractUrls(body).map((url) => <LinkPreviewCard key={url} url={url} isMine={isMine} />)
         : null}
     </>
