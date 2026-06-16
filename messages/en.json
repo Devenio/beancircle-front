@@ -22,7 +22,7 @@
     "google": "Continue with Google",
     "onboarding": "Complete your profile",
     "username": "Username",
-    "usernameHint": "Lowercase letters, numbers, and underscores only (e.g. nima_coffee)",
+    "usernameHint": "Lowercase letters, numbers, and underscores only.",
     "usernameInvalid": "Username must be 3–30 characters: a–z, 0–9, and _",
     "name": "Name",
     "city": "City",
@@ -49,7 +49,9 @@
     "and": "and",
     "privacy": "Privacy Policy",
     "selectCountry": "Select country",
-    "mockCode": "Dev code"
+    "mockCode": "Dev code",
+    "usernameAvailable": "Username is available",
+    "usernameTaken": "Username is already taken"
   },
   "feed": {
     "empty": "Follow people and cafes to see posts",
@@ -1445,7 +1447,9 @@
       "mutedBody": "Mute conversations from the chat menu.",
       "sessionsTitle": "No other sessions",
       "sessionsBody": "You are only signed in on this device."
-    }
+    },
+    "usernameAvailable": "Username is available",
+    "usernameTaken": "Username is already taken"
   },
   "admin": {
     "title": "Admin",
@@ -2241,8 +2245,7 @@
       },
       "rights": "All rights reserved."
     }
-  }
-,
+  },
   "onboarding": {
     "skip": "Skip",
     "skipForNow": "Skip for now",

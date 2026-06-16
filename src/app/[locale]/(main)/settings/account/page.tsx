@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   AtSign,
   Camera,
+  CheckCircle2,
   Globe,
   Loader2,
   Mail,
@@ -14,9 +15,11 @@ import {
   Phone,
   Plug,
   Smartphone,
+  XCircle,
 } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { presignAndUpload } from '@/lib/api/uploads';
+import { useUsernameCheck } from '@/hooks/use-username-check';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
 import { Button } from '@/components/ui/button';
@@ -104,6 +107,9 @@ export default function SettingsAccountPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+
+  const usernameStatus = useUsernameCheck(username, locale, me?.username ?? undefined);
+  const usernameSaveOk = usernameStatus === 'available' || usernameStatus === 'idle';
 
   useEffect(() => {
     if (!me) return;
@@ -242,8 +248,30 @@ export default function SettingsAccountPage() {
           <FieldLabel label={t('items.username')} hint={t('items.usernameDesc')} />
           <div className="relative">
             <AtSign className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} className="min-h-11 ps-9" />
+            <Input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="min-h-11 ps-9 pe-10"
+              dir="ltr"
+            />
+            <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2">
+              {usernameStatus === 'checking' && (
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              )}
+              {usernameStatus === 'available' && (
+                <CheckCircle2 className="size-4 text-emerald-500" />
+              )}
+              {usernameStatus === 'taken' && (
+                <XCircle className="size-4 text-destructive" />
+              )}
+            </span>
           </div>
+          {usernameStatus === 'available' && (
+            <p className="mt-1 text-xs text-emerald-500">{t('usernameAvailable')}</p>
+          )}
+          {usernameStatus === 'taken' && (
+            <p className="mt-1 text-xs text-destructive">{t('usernameTaken')}</p>
+          )}
         </div>
         <div>
           <FieldLabel label={t('bio')} hint={t('items.profileDesc')} />
@@ -270,7 +298,11 @@ export default function SettingsAccountPage() {
             <p className="mt-1 text-xs text-destructive">{t('cityError')}</p>
           ) : null}
         </div>
-        <Button className="min-h-11 w-full" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+        <Button
+          className="min-h-11 w-full"
+          disabled={saveMutation.isPending || !usernameSaveOk || usernameStatus === 'checking'}
+          onClick={() => saveMutation.mutate()}
+        >
           {saveMutation.isPending ? t('saving') : t('saveChanges')}
         </Button>
       </div>

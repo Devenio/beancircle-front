@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { isValidUsername, normalizeUsername } from '@/lib/username';
 import { useAuthStore } from '@/stores/auth-store';
+import { useUsernameCheck } from '@/hooks/use-username-check';
 import { AuthPrimaryButton } from '@/components/auth/auth-primary-button';
 import { StepFrame } from '../step-frame';
 import type { StepProps } from '../types';
@@ -25,13 +27,20 @@ export function IdentityStep({ locale, onIdentityDone, onBack }: StepProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const usernameStatus = useUsernameCheck(username, locale, user?.username ?? undefined);
+
   const normalized = normalizeUsername(username);
-  const usernameOk = isValidUsername(normalized);
+  const usernameOk = isValidUsername(normalized) && usernameStatus !== 'taken';
+  const canSubmit = usernameOk && usernameStatus !== 'checking';
 
   async function submit() {
     const finalUsername = normalizeUsername(username);
     if (!isValidUsername(finalUsername)) {
       setError(t('usernameInvalid'));
+      return;
+    }
+    if (usernameStatus === 'taken') {
+      setError(t('usernameTaken'));
       return;
     }
     setLoading(true);
@@ -65,20 +74,39 @@ export function IdentityStep({ locale, onIdentityDone, onBack }: StepProps) {
     <StepFrame title={t('onboarding')}>
       <div className="space-y-4">
         <div>
-          <input
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setError('');
-            }}
-            onBlur={() => setUsername(normalizeUsername(username))}
-            placeholder={t('username')}
-            autoComplete="username"
-            dir="ltr"
-            className={inputCls}
-          />
+          <div className="relative">
+            <input
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError('');
+              }}
+              onBlur={() => setUsername(normalizeUsername(username))}
+              placeholder={t('username')}
+              autoComplete="username"
+              dir="ltr"
+              className={`${inputCls} pe-11`}
+            />
+            <span className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2">
+              {usernameStatus === 'checking' && (
+                <Loader2 className="h-4 w-4 animate-spin text-white/40" />
+              )}
+              {usernameStatus === 'available' && (
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              )}
+              {usernameStatus === 'taken' && (
+                <XCircle className="h-4 w-4 text-red-400" />
+              )}
+            </span>
+          </div>
           <p className="mt-1.5 px-1 text-xs text-white/50">{t('usernameHint')}</p>
-          {username && !usernameOk && (
+          {usernameStatus === 'available' && (
+            <p className="mt-1 px-1 text-xs text-emerald-400">{t('usernameAvailable')}</p>
+          )}
+          {usernameStatus === 'taken' && (
+            <p className="mt-1 px-1 text-xs text-red-400">{t('usernameTaken')}</p>
+          )}
+          {usernameStatus === 'invalid' && username && (
             <p className="mt-1 px-1 text-xs text-red-400">{t('usernameInvalid')}</p>
           )}
         </div>
@@ -105,7 +133,7 @@ export function IdentityStep({ locale, onIdentityDone, onBack }: StepProps) {
             {to('back')}
           </button>
           <div className="flex-1">
-            <AuthPrimaryButton onClick={submit} disabled={loading || !usernameOk} loading={loading}>
+            <AuthPrimaryButton onClick={submit} disabled={loading || !canSubmit} loading={loading}>
               {t('save')}
             </AuthPrimaryButton>
           </div>
