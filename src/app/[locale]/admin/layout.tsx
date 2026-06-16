@@ -16,6 +16,7 @@ import {
   ToggleRight,
   Users,
 } from 'lucide-react';
+import { Toaster } from 'sonner';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
@@ -213,6 +214,7 @@ export default function AdminLayout({
           </div>
         </main>
       </div>
+      <Toaster position="bottom-right" richColors />
     </div>
   );
 }

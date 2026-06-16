@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { Check, ExternalLink, MapPin, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,14 @@ export default function SuggestionsPage() {
   const update = useMutation({
     mutationFn: ({ id, status }: { id: string; status: SuggestionStatus }) =>
       adminUpdateSuggestion(id, { status }),
-    onSuccess: invalidate,
+    onSuccess: (_, { status }) => {
+      invalidate();
+      if (status === 'APPROVED') toast.success('Cafe approved and created.');
+      else toast.success('Suggestion rejected.');
+    },
+    onError: (_, { status }) => {
+      toast.error(`Failed to ${status === 'APPROVED' ? 'approve' : 'reject'} suggestion.`);
+    },
   });
 
   const suggestions = data?.data ?? [];
