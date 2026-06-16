@@ -10,6 +10,7 @@ export type AuthUser = {
   avatarUrl?: string | null;
   role?: string;
   needsOnboarding?: boolean;
+  isCafeOwner?: boolean;
 };
 
 type AuthState = {

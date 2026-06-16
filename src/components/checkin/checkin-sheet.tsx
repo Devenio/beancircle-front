@@ -24,6 +24,19 @@ const MOODS: { emoji: string; key: string }[] = [
   { emoji: '📖', key: 'reading' },
 ];
 
+function getPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('unavailable'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      timeout: 10000,
+      maximumAge: 30000,
+    });
+  });
+}
+
 export function CheckinSheet({
   cafeId,
   locale,
@@ -40,15 +53,19 @@ export function CheckinSheet({
   const [open, setOpen] = useState(false);
   const [mood, setMood] = useState<string | null>(null);
   const [status, setStatus] = useState('');
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const checkin = useMutation({
-    mutationFn: () =>
+    mutationFn: (coords: { lat: number; lng: number }) =>
       api<{ newStamp: boolean; collectible?: unknown }>('/passport/checkin', {
         method: 'POST',
         body: JSON.stringify({
           cafeId,
           mood: mood ?? undefined,
           status: status.trim() || undefined,
+          lat: coords.lat,
+          lng: coords.lng,
         }),
         locale,
       }),
@@ -59,9 +76,36 @@ export function CheckinSheet({
       setOpen(false);
       setMood(null);
       setStatus('');
+      setLocationError(null);
       onDone?.();
     },
+    onError: (err: Error) => {
+      const msg = err.message ?? '';
+      if (msg.toLowerCase().includes('near') || msg.toLowerCase().includes('far')) {
+        setLocationError(t('tooFar'));
+      }
+    },
   });
+
+  async function handleSubmit() {
+    setLocationError(null);
+    setGettingLocation(true);
+    try {
+      const pos = await getPosition();
+      setGettingLocation(false);
+      checkin.mutate({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    } catch (err) {
+      setGettingLocation(false);
+      const code = (err as GeolocationPositionError)?.code;
+      if (code === GeolocationPositionError.PERMISSION_DENIED) {
+        setLocationError(t('locationDenied'));
+      } else {
+        setLocationError(t('locationError'));
+      }
+    }
+  }
+
+  const busy = gettingLocation || checkin.isPending;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -98,13 +142,16 @@ export function CheckinSheet({
             placeholder={t('statusPlaceholder')}
             className="mt-1.5 w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none focus:border-primary"
           />
+          {locationError && (
+            <p className="mt-3 text-sm text-destructive">{locationError}</p>
+          )}
           <Button
             className="mt-5 w-full"
             size="lg"
-            disabled={checkin.isPending}
-            onClick={() => checkin.mutate()}
+            disabled={busy}
+            onClick={handleSubmit}
           >
-            {t('submit')}
+            {gettingLocation ? t('gettingLocation') : t('submit')}
           </Button>
         </div>
       </SheetContent>

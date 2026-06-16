@@ -1653,6 +1653,10 @@
     "withFriends": "With friends",
     "submit": "Check in",
     "success": "Checked in!",
+    "gettingLocation": "Getting your location…",
+    "locationDenied": "Location access is required to check in",
+    "locationError": "Couldn't get your location. Please try again.",
+    "tooFar": "You're too far from this cafe to check in",
     "moods": {
       "studying": "Studying",
       "gaming": "Gaming",

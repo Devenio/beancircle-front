@@ -393,3 +393,68 @@ export const adminAuditLog = (cursor?: string, locale?: string) =>
     `/super-admin/audit${cursor ? `?cursor=${cursor}` : ''}`,
     opts(locale),
   );
+
+// ---------- Cafe suggestions ----------
+
+export type SuggestionStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type CafeSuggestion = {
+  id: string;
+  name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  notes: string | null;
+  status: SuggestionStatus;
+  createdAt: string;
+  user: { id: string; username: string | null; name: string | null; avatarUrl: string | null };
+};
+
+export const adminListSuggestions = (params: {
+  status?: SuggestionStatus;
+  cursor?: string;
+  locale?: string;
+}) => {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set('status', params.status);
+  if (params.cursor) sp.set('cursor', params.cursor);
+  const qs = sp.toString();
+  return api<Page<CafeSuggestion>>(
+    `/super-admin/cafe-suggestions${qs ? `?${qs}` : ''}`,
+    opts(params.locale),
+  );
+};
+
+export const adminUpdateSuggestion = (
+  id: string,
+  payload: { status: SuggestionStatus; adminNote?: string },
+) =>
+  api<CafeSuggestion>(`/super-admin/cafe-suggestions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+// ---------- Cafe staff / ownership ----------
+
+export type CafeRole = 'OWNER' | 'MANAGER' | 'STAFF' | 'MODERATOR';
+
+export type CafeStaffMember = {
+  id: string;
+  role: CafeRole;
+  createdAt: string;
+  user: { id: string; username: string | null; name: string | null; avatarUrl: string | null };
+};
+
+export const adminGetCafeStaff = (cafeId: string, locale?: string) =>
+  api<CafeStaffMember[]>(`/super-admin/cafes/${cafeId}/staff`, opts(locale));
+
+export const adminSetCafeOwner = (cafeId: string, userId: string) =>
+  api<CafeStaffMember>(`/super-admin/cafes/${cafeId}/owner`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  });
+
+export const adminRemoveCafeStaff = (cafeId: string, userId: string) =>
+  api<{ removed: boolean }>(`/super-admin/cafes/${cafeId}/staff/${userId}`, {
+    method: 'DELETE',
+  });

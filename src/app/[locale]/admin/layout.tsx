@@ -7,6 +7,7 @@ import {
   Coffee,
   FileClock,
   LayoutGrid,
+  Lightbulb,
   PanelLeftClose,
   PanelLeftOpen,
   Route,
@@ -30,6 +31,7 @@ const NAV: NavItem[] = [
   { href: '/admin', label: 'Overview', icon: BarChart3, superOnly: true },
   { href: '/admin/users', label: 'Users', icon: Users, superOnly: true },
   { href: '/admin/cafes', label: 'Cafes', icon: Coffee, superOnly: true },
+  { href: '/admin/suggestions', label: 'Suggestions', icon: Lightbulb, superOnly: true },
   {
     href: '/admin/feature-flags',
     label: 'Feature Flags',

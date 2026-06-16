@@ -29,11 +29,13 @@ function CallbackHandler() {
           id: string;
           username?: string;
           role?: string;
+          isCafeOwner?: boolean;
         }>('/users/me');
         setUser({
           id: user.id,
           username: user.username,
           role: user.role,
+          isCafeOwner: user.isCafeOwner,
           needsOnboarding: !user.username,
         });
         const needsOnboarding =

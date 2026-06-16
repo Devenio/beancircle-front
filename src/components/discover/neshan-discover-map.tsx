@@ -2,9 +2,9 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { Bell, Coffee, ExternalLink, MapPin, Navigation, RefreshCw, Route, Users, X } from 'lucide-react';
+import { Bell, Check, Coffee, ExternalLink, Loader2, MapPin, Maximize2, Navigation, Plus, RefreshCw, Route, Store, Users, X } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Marker } from '@neshan-maps-platform/mapbox-gl';
 import { MapComponent, MapTypes } from '@neshan-maps-platform/mapbox-gl-react';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { ProfileAvatar } from '@/components/chat/user-avatar';
 import { FriendActionButton } from '@/components/discover/people/friend-action-button';
 import { FriendRequestsSheet } from '@/components/discover/people/friend-requests-sheet';
+import { useAuthStore } from '@/stores/auth-store';
 import type { DiscoverPerson } from '@/components/discover/people/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,25 +39,66 @@ const FARDIS: [number, number] = [50.9833, 35.7333];
 const NESHAN_KEY = process.env.NEXT_PUBLIC_NESHAN_API_KEY ?? '';
 const IS_PLACEHOLDER = !NESHAN_KEY || NESHAN_KEY.includes('your-key');
 
+// ─── Location picker helpers ──────────────────────────────────────────────────
+
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fa`,
+      { headers: { 'User-Agent': 'beancircle-app/1.0' } },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data.address ?? {};
+    const road = a.road ?? a.pedestrian ?? a.path ?? '';
+    const neighbourhood = a.neighbourhood ?? a.suburb ?? '';
+    const parts = [road, neighbourhood].filter(Boolean);
+    return parts.join('، ') || (data.display_name ?? null);
+  } catch {
+    return null;
+  }
+}
+
+function dropPickerPin(map: MapInstance, lng: number, lat: number) {
+  if (map._pickerMarker) map._pickerMarker.remove();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  map._pickerMarker = new (Marker as any)({ color: '#7c3aed' }).setLngLat([lng, lat]).addTo(map);
+}
+
 // ─── Custom marker element builders ──────────────────────────────────────────
 
-function createCafeMarkerEl(): HTMLElement {
+function createCafeMarkerEl(name?: string | null): HTMLElement {
   const el = document.createElement('div');
   el.style.cssText =
-    'cursor:pointer;width:48px;height:56px;display:flex;flex-direction:column;align-items:center;';
-  el.innerHTML = `
-    <div style="
-      width:44px;height:44px;
-      background:linear-gradient(135deg,#7c3aed,#a855f7);
-      border-radius:50% 50% 50% 0;
-      transform:rotate(-45deg);
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 4px 16px rgba(124,58,237,.5);
-      border:2.5px solid #fff;
-    ">
-      <span style="transform:rotate(45deg);font-size:20px;line-height:1;display:block">☕</span>
-    </div>
-  `;
+    'cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;';
+
+  // Pin shape with coffee cup SVG
+  const pin = document.createElement('div');
+  pin.style.cssText =
+    'width:40px;height:40px;background:linear-gradient(135deg,#7c3aed,#a855f7);' +
+    'border-radius:50% 50% 50% 0;transform:rotate(-45deg);' +
+    'display:flex;align-items:center;justify-content:center;' +
+    'box-shadow:0 4px 16px rgba(124,58,237,.5);border:2.5px solid #fff;flex-shrink:0;';
+
+  const iconWrap = document.createElement('div');
+  iconWrap.style.cssText = 'transform:rotate(45deg);display:flex;align-items:center;justify-content:center;';
+  iconWrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>`;
+  pin.appendChild(iconWrap);
+  el.appendChild(pin);
+
+  // Name label below pin
+  if (name) {
+    const label = document.createElement('div');
+    // textContent is XSS-safe — no innerHTML
+    label.textContent = name.length > 16 ? name.slice(0, 15) + '…' : name;
+    label.style.cssText =
+      'max-width:96px;padding:2px 6px;background:rgba(255,255,255,0.92);' +
+      'backdrop-filter:blur(4px);border-radius:6px;font-size:10px;font-weight:600;' +
+      'color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
+      'box-shadow:0 1px 4px rgba(0,0,0,.15);';
+    el.appendChild(label);
+  }
+
   return el;
 }
 
@@ -181,6 +223,7 @@ const StableMap = memo(function StableMap({ opts, onReady }: StableMapProps) {
 export function NeshanDiscoverMap() {
   const locale = useLocale();
   const params = useParams<{ locale: string }>();
+  const user = useAuthStore((s) => s.user);
 
   const mapRef = useRef<MapInstance | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -196,6 +239,7 @@ export function NeshanDiscoverMap() {
   // Mapbox GL coordinate order: [lng, lat]
   const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
   const [sharingLocation, setSharingLocation] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [showCafes, setShowCafes] = useState(true);
   const [showPeople, setShowPeople] = useState(true);
   const [selected, setSelected] = useState<SelectedPin | null>(null);
@@ -310,7 +354,7 @@ export function NeshanDiscoverMap() {
 
     if (showCafes) {
       for (const cafe of cafes) {
-        const el = createCafeMarkerEl();
+        const el = createCafeMarkerEl(cafe.name);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const marker = new (Marker as any)({ element: el, anchor: 'bottom' })
           .setLngLat([cafe.lng!, cafe.lat!])
@@ -486,13 +530,26 @@ export function NeshanDiscoverMap() {
           </button>
         </div>
 
-        {/* Sharing badge */}
-        {sharingLocation && (
-          <div className="absolute bottom-4 left-3 z-10 flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-600 shadow backdrop-blur-md ring-1 ring-green-500/20">
-            <span className="size-1.5 animate-pulse rounded-full bg-green-500" />
-            Sharing location
-          </div>
-        )}
+        {/* Suggest cafe button */}
+        <div className="absolute bottom-4 left-3 z-10 flex flex-col gap-2">
+          {!sharingLocation && (
+            <button
+              type="button"
+              onClick={() => setSuggestOpen(true)}
+              title="Suggest a cafe"
+              className="flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-md transition-all active:scale-95 hover:opacity-90"
+            >
+              <Plus className="size-3.5" />
+              Suggest a cafe
+            </button>
+          )}
+          {sharingLocation && (
+            <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-600 shadow backdrop-blur-md ring-1 ring-green-500/20">
+              <span className="size-1.5 animate-pulse rounded-full bg-green-500" />
+              Sharing location
+            </div>
+          )}
+        </div>
 
         {/* Popup card */}
         {selected && (
@@ -526,6 +583,12 @@ export function NeshanDiscoverMap() {
       </div>
 
       <FriendRequestsSheet open={requestsOpen} onClose={() => setRequestsOpen(false)} />
+      <SuggestCafeSheet
+        open={suggestOpen}
+        onClose={() => setSuggestOpen(false)}
+        isCafeOwner={!!user?.isCafeOwner}
+        locale={params.locale}
+      />
     </>
   );
 }
@@ -669,3 +732,325 @@ function PersonCard({
     </div>
   );
 }
+
+// ─── Suggest cafe sheet ────────────────────────────────────────────────────────
+
+const PICKER_MAP_OPTS = {
+  mapKey: NESHAN_KEY,
+  mapType: MapTypes.neshanVector,
+  center: FARDIS,
+  zoom: 13,
+  mapTypeControllerOptions: { show: false },
+  attributionControl: false,
+} as const;
+
+const PickerMap = memo(function PickerMap({ onReady }: { onReady: (m: MapInstance) => void }) {
+  return (
+    <MapComponent
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      options={PICKER_MAP_OPTS as any}
+      mapSetter={onReady}
+      style={{ width: '100%', height: '100%' }}
+    />
+  );
+});
+
+function SuggestCafeSheet({
+  open,
+  onClose,
+  isCafeOwner,
+  locale,
+}: {
+  open: boolean;
+  onClose: () => void;
+  isCafeOwner: boolean;
+  locale: string;
+}) {
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [notes, setNotes] = useState('');
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [fullscreenMap, setFullscreenMap] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const inlineMapRef = useRef<MapInstance>(null);
+  const fullscreenMapRef = useRef<MapInstance>(null);
+  const latRef = useRef<number | null>(null);
+  const lngRef = useRef<number | null>(null);
+  latRef.current = lat;
+  lngRef.current = lng;
+
+  const onPickRef = useRef<((clickLat: number, clickLng: number, src: MapInstance) => void) | undefined>(undefined);
+  onPickRef.current = async (clickLat: number, clickLng: number, src: MapInstance) => {
+    setLat(clickLat);
+    setLng(clickLng);
+    latRef.current = clickLat;
+    lngRef.current = clickLng;
+    setGeocoding(true);
+    dropPickerPin(src, clickLng, clickLat);
+    const other = src === inlineMapRef.current ? fullscreenMapRef.current : inlineMapRef.current;
+    if (other) {
+      dropPickerPin(other, clickLng, clickLat);
+      other.flyTo({ center: [clickLng, clickLat], zoom: 16 });
+    }
+    const result = await reverseGeocode(clickLat, clickLng);
+    setGeocoding(false);
+    if (result) setAddress(result);
+  };
+
+  const makeMapReady = useCallback(
+    (mapRef: typeof inlineMapRef) => (map: MapInstance) => {
+      mapRef.current = map;
+      const clat = latRef.current;
+      const clng = lngRef.current;
+      if (clat !== null && clng !== null) {
+        dropPickerPin(map, clng, clat);
+        map.flyTo({ center: [clng, clat], zoom: 16 });
+      }
+      map.on('click', (e: { lngLat: { lat: number; lng: number } }) => {
+        onPickRef.current?.(e.lngLat.lat, e.lngLat.lng, map);
+      });
+    },
+    [],
+  );
+
+  const onInlineReady = useCallback((m: MapInstance) => makeMapReady(inlineMapRef)(m), [makeMapReady]);
+  const onFullscreenReady = useCallback((m: MapInstance) => makeMapReady(fullscreenMapRef)(m), [makeMapReady]);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api('/cafes/suggest', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          address: address.trim(),
+          lat: lat ?? undefined,
+          lng: lng ?? undefined,
+          notes: notes.trim() || undefined,
+        }),
+        locale,
+      }),
+    onSuccess: () => setSubmitted(true),
+  });
+
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => {
+      setName('');
+      setAddress('');
+      setNotes('');
+      setLat(null);
+      setLng(null);
+      setGeocoding(false);
+      setFullscreenMap(false);
+      setSubmitted(false);
+      mutation.reset();
+    }, 300);
+  };
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Fullscreen map picker */}
+      {fullscreenMap && (
+        <div className="absolute inset-0 z-50 bg-black">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent px-4 pb-8 pt-4">
+            <button
+              type="button"
+              onClick={() => setFullscreenMap(false)}
+              className="pointer-events-auto flex size-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-black/60 text-white backdrop-blur-xl transition active:scale-95"
+            >
+              <X className="size-4" />
+            </button>
+            <div className="pointer-events-auto flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-4 py-2.5 backdrop-blur-xl">
+              {geocoding ? (
+                <>
+                  <Loader2 className="size-4 shrink-0 animate-spin text-white/60" />
+                  <span className="truncate text-sm text-white/60">Locating…</span>
+                </>
+              ) : address ? (
+                <span className="truncate text-sm text-white">{address}</span>
+              ) : (
+                <span className="truncate text-sm text-white/40">Tap the map to pin location</span>
+              )}
+            </div>
+          </div>
+
+          <PickerMap onReady={onFullscreenReady} />
+
+          {lat !== null && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex bg-gradient-to-t from-black/80 to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-14">
+              <button
+                type="button"
+                onClick={() => setFullscreenMap(false)}
+                className="pointer-events-auto flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+              >
+                <Check className="size-4" />
+                Confirm location
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Backdrop */}
+      <div className="absolute inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
+
+      {/* Sheet */}
+      <div className="absolute inset-x-0 bottom-0 z-40 max-h-[90%] overflow-y-auto rounded-t-3xl bg-background shadow-2xl">
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pb-2 pt-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+              <Coffee className="size-4 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold">Suggest a Cafe</p>
+              <p className="text-xs text-muted-foreground">Help the community discover new spots</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="px-5 pb-8">
+          {submitted ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="flex size-14 items-center justify-center rounded-full bg-green-500/10">
+                <Coffee className="size-6 text-green-600" />
+              </div>
+              <p className="font-semibold text-green-700 dark:text-green-400">
+                Thanks for the suggestion!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Our team will review it and add it to the map soon.
+              </p>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="mt-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground"
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {isCafeOwner && (
+                <div className="flex items-start gap-3 rounded-xl bg-primary/[0.08] p-3">
+                  <Store className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <p className="text-xs text-primary">
+                    You&apos;re a cafe owner — manage your own cafe from{' '}
+                    <Link href="/cafe-os" className="font-semibold underline" onClick={handleClose}>
+                      Cafe OS
+                    </Link>
+                    . Use this form only to suggest cafes you don&apos;t own.
+                  </p>
+                </div>
+              )}
+
+              {/* Cafe name */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Cafe name <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. The Cozy Bean"
+                  className="w-full rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-sm outline-none placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Location picker */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Location <span className="text-muted-foreground/50">(tap map to pin)</span>
+                </label>
+                {/* Inline map */}
+                <div className="relative overflow-hidden rounded-xl" style={{ height: 180 }}>
+                  <PickerMap onReady={onInlineReady} />
+                  <button
+                    type="button"
+                    onClick={() => setFullscreenMap(true)}
+                    className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-lg border border-white/20 bg-black/50 text-white backdrop-blur-md transition active:scale-95"
+                    title="Expand map"
+                  >
+                    <Maximize2 className="size-3.5" />
+                  </button>
+                  {geocoding && (
+                    <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs text-white/70 backdrop-blur-md">
+                      <Loader2 className="size-3 animate-spin" />
+                      Locating…
+                    </div>
+                  )}
+                  {lat !== null && !geocoding && (
+                    <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs text-primary backdrop-blur-md">
+                      <MapPin className="size-3" />
+                      Location pinned
+                    </div>
+                  )}
+                </div>
+
+                {/* Address — auto-filled, editable */}
+                <div className="relative mt-2">
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Address (auto-filled from map or type manually)"
+                    className={cn(
+                      'w-full rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-sm outline-none placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary',
+                      geocoding && 'pr-10',
+                    )}
+                  />
+                  {geocoding && (
+                    <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Why do you love it? Any tips?"
+                  rows={2}
+                  className="w-full resize-none rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-sm outline-none placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {mutation.isError && (
+                <p className="text-xs text-destructive">Something went wrong. Please try again.</p>
+              )}
+
+              <button
+                type="button"
+                disabled={!name.trim() || !address.trim() || mutation.isPending}
+                onClick={() => mutation.mutate()}
+                className="mt-1 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition disabled:opacity-50 active:scale-[0.98]"
+              >
+                {mutation.isPending ? 'Submitting…' : 'Submit Suggestion'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
