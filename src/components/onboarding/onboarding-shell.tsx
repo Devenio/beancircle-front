@@ -15,7 +15,12 @@ import { AuthBackground } from '@/components/auth/auth-background';
 import { useRouter } from '@/i18n/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useOnboardingStore, ACTIVATION_STEPS, type StepKey } from '@/stores/onboarding-store';
-import { completeOnboarding, getOnboarding, patchOnboarding } from '@/lib/api/onboarding';
+import {
+  completeOnboarding,
+  getOnboarding,
+  getOnboardingFlow,
+  patchOnboarding,
+} from '@/lib/api/onboarding';
 import { mirrorStepEvent, trackOnboarding } from '@/lib/onboarding/analytics';
 import { OnboardingProgressBar } from './onboarding-progress-bar';
 import type { StepProps } from './types';
@@ -31,19 +36,39 @@ import { AchievementStep } from './steps/achievement-step';
 import { ProfileStep } from './steps/profile-step';
 import { InviteStep } from './steps/invite-step';
 
-/** Full step sequence: welcome → identity gate → 9 activation steps. */
-const SEQUENCE: { key: string; Component: (p: StepProps) => React.ReactNode }[] = [
-  { key: 'welcome', Component: WelcomeStep },
-  { key: 'identity', Component: IdentityStep },
-  { key: 'interests', Component: InterestsStep },
-  { key: 'avatar', Component: AvatarStep },
-  { key: 'circle', Component: CircleStep },
-  { key: 'firstPost', Component: FirstPostStep },
-  { key: 'cafe', Component: CafeStep },
-  { key: 'achievement', Component: AchievementStep },
-  { key: 'profile', Component: ProfileStep },
-  { key: 'invite', Component: InviteStep },
-];
+type StepDef = { key: string; Component: (p: StepProps) => React.ReactNode };
+
+/** Activation steps by key. The mandatory `identity` username gate is inserted
+ *  separately (right after welcome) and is never admin-toggleable. */
+const STEP_COMPONENTS: Record<string, (p: StepProps) => React.ReactNode> = {
+  welcome: WelcomeStep,
+  interests: InterestsStep,
+  avatar: AvatarStep,
+  circle: CircleStep,
+  firstPost: FirstPostStep,
+  cafe: CafeStep,
+  achievement: AchievementStep,
+  profile: ProfileStep,
+  invite: InviteStep,
+};
+
+/** Build the full screen sequence from the admin-managed activation flow:
+ *  welcome (if enabled) → identity gate → remaining enabled steps, in order. */
+function buildSequence(flow: string[]): StepDef[] {
+  const known = flow.filter((k) => k in STEP_COMPONENTS);
+  const seq: StepDef[] = [];
+  if (known.includes('welcome')) {
+    seq.push({ key: 'welcome', Component: STEP_COMPONENTS.welcome });
+  }
+  seq.push({ key: 'identity', Component: IdentityStep });
+  for (const key of known) {
+    if (key !== 'welcome') seq.push({ key, Component: STEP_COMPONENTS[key] });
+  }
+  return seq;
+}
+
+/** Default flow used until the server config loads (and as a failure fallback). */
+const FALLBACK_FLOW = [...ACTIVATION_STEPS];
 
 export function OnboardingShell() {
   const t = useTranslations('onboarding');
@@ -55,35 +80,69 @@ export function OnboardingShell() {
   const user = useAuthStore((s) => s.user);
   const { identityDone, setIdentityDone, setLastStep } = useOnboardingStore();
 
+  // Admin-managed activation flow. Defaults to the static fallback until the
+  // server config loads (and stays on the fallback if that request fails).
+  const [flow, setFlow] = useState<string[]>(FALLBACK_FLOW);
+  const SEQUENCE = useMemo(() => buildSequence(flow), [flow]);
+
   // Start at the right step synchronously so we never mount welcome and then
   // auto-advance (which fights AnimatePresence mode="wait" and wedges it).
   const [index, setIndex] = useState(() => {
+    const seq = buildSequence(FALLBACK_FLOW);
     const stepParam = searchParams.get('step');
     if (stepParam) {
-      const i = SEQUENCE.findIndex((s) => s.key === stepParam);
+      const i = seq.findIndex((s) => s.key === stepParam);
       if (i >= 0) return i;
     }
-    if (user?.username) return SEQUENCE.findIndex((s) => s.key === 'interests');
+    // Username already set → identity gate is cleared; start just after it.
+    if (user?.username) {
+      const gate = seq.findIndex((s) => s.key === 'identity');
+      return Math.min(gate + 1, seq.length - 1);
+    }
     return 0;
   });
   const [direction, setDirection] = useState(1);
   const stepStart = useRef<number>(0);
   const liveRef = useRef<HTMLDivElement>(null);
 
-  const step = SEQUENCE[index];
-  const isLastActivation = index === SEQUENCE.length - 1;
+  const step = SEQUENCE[index] ?? SEQUENCE[SEQUENCE.length - 1];
+  const isLastActivation = index >= SEQUENCE.length - 1;
 
-  // One-time: announce start, sync identity flag, and (optionally) resume from
-  // the server's saved step. The resume jump fires after a network round-trip,
-  // long after AnimatePresence has settled, so it animates as a single hop.
+  // Latest step key, so an async flow swap can keep the user in place by key.
+  // Updated in the per-step effect below (refs must not be set during render).
+  const currentKeyRef = useRef<string | undefined>(undefined);
+
+  // Adopt a new flow and remap the cursor: stay on the same step by key, or
+  // clamp into range if that step was disabled. Called from async callbacks.
+  const applyFlow = useCallback((f: string[]) => {
+    setFlow(f);
+    setIndex((cur) => {
+      const seq = buildSequence(f);
+      const key = currentKeyRef.current;
+      const i = key ? seq.findIndex((s) => s.key === key) : -1;
+      return i >= 0 ? i : Math.min(cur, seq.length - 1);
+    });
+  }, []);
+
+  // One-time: announce start, sync identity flag, load the active flow config,
+  // and (optionally) resume from the server's saved step. The resume jump fires
+  // after a network round-trip, long after AnimatePresence has settled.
   useEffect(() => {
     trackOnboarding('onboarding_started');
     if (user?.username) setIdentityDone(true);
+    getOnboardingFlow(locale)
+      .then((f) => {
+        if (Array.isArray(f) && f.length) applyFlow(f);
+      })
+      .catch(() => {});
     if (searchParams.get('resume') === '1') {
       getOnboarding(locale)
         .then((s) => {
+          if (s.flow?.length) applyFlow(s.flow);
           if (!s.progress.completedAt && s.progress.currentStep) {
-            const i = SEQUENCE.findIndex((st) => st.key === s.progress.currentStep);
+            const i = buildSequence(s.flow ?? flow).findIndex(
+              (st) => st.key === s.progress.currentStep,
+            );
             if (i >= 0) setIndex(i);
           }
         })
@@ -95,6 +154,7 @@ export function OnboardingShell() {
   // Per-step lifecycle: announce, track viewed, reset timer, persist currentStep.
   useEffect(() => {
     stepStart.current = Date.now();
+    currentKeyRef.current = step.key;
     setLastStep(step.key as StepKey);
     trackOnboarding('onboarding_step_viewed', { step: step.key, index });
     mirrorStepEvent(step.key, 'viewed', locale);
@@ -130,7 +190,7 @@ export function OnboardingShell() {
       setDirection(1);
       setIndex((i) => Math.min(i + 1, SEQUENCE.length - 1));
     },
-    [elapsed, step.key, index, locale, isLastActivation, finish],
+    [elapsed, step.key, index, locale, isLastActivation, finish, SEQUENCE.length],
   );
 
   const onBack = useCallback(() => {
@@ -160,7 +220,7 @@ export function OnboardingShell() {
       isFirst: index <= 1,
       isLast: isLastActivation,
     }),
-    [advance, onBack, onEnter, setIdentityDone, locale, identityDone, index, isLastActivation],
+    [advance, onBack, onEnter, setIdentityDone, locale, identityDone, index, isLastActivation, SEQUENCE.length],
   );
 
   const variants = reduce
@@ -171,8 +231,8 @@ export function OnboardingShell() {
         exit: (d: number) => ({ opacity: 0, x: d > 0 ? -40 : 40 }),
       };
 
-  // Progress reflects activation steps (exclude welcome+identity from the count).
-  const progressTotal = ACTIVATION_STEPS.length;
+  // Progress reflects the active activation steps (exclude the identity gate).
+  const progressTotal = flow.length;
   const progressCurrent = Math.max(0, index - 1);
 
   return (

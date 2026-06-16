@@ -179,6 +179,33 @@ export const adminSetCafeFlag = (
     body: JSON.stringify({ enabled }),
   });
 
+// ---------- Onboarding flow ----------
+
+export type AdminFlowStep = {
+  key: string;
+  label: string;
+  description: string | null;
+  enabled: boolean;
+  order: number;
+  updatedAt: string;
+  createdAt: string;
+};
+
+export const adminListFlowSteps = (locale?: string) =>
+  api<AdminFlowStep[]>('/super-admin/onboarding-flow', opts(locale));
+
+export const adminSetFlowStep = (key: string, enabled: boolean) =>
+  api<AdminFlowStep>(`/super-admin/onboarding-flow/${key}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
+  });
+
+export const adminReorderFlowSteps = (ids: string[]) =>
+  api<AdminFlowStep[]>('/super-admin/onboarding-flow/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ ids }),
+  });
+
 // ---------- Users ----------
 
 export const adminListUsers = (params: {

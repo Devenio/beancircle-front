@@ -22,11 +22,18 @@ export type OnboardingState = {
   progress: OnboardingProgress;
   avatar: (AvatarConfig & { isDefault: boolean }) | null;
   interests: string[];
+  /** Active, ordered activation-step keys (admin-managed). */
+  flow: string[];
   completion: OnboardingCompletion;
 };
 
 export function getOnboarding(locale: string): Promise<OnboardingState> {
   return api<OnboardingState>('/onboarding/me', { locale });
+}
+
+/** Public: active, ordered activation-step keys. */
+export function getOnboardingFlow(locale: string): Promise<string[]> {
+  return api<string[]>('/onboarding/flow', { locale });
 }
 
 /** Autosave: advance the current step and/or mark one complete/skipped. */
