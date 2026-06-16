@@ -47,6 +47,7 @@ export type CafeProfile = {
   followerCount: number;
   avgRating: number;
   reviewCount: number;
+  isVerified: boolean;
   photos: { id: string; url: string; kind?: string }[];
   city?: { id: string; name: string } | null;
   menu?: { id: string; slug: string; isPublished: boolean; theme: MenuTheme } | null;

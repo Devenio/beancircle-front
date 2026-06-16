@@ -88,7 +88,12 @@
     "rsvps": "{count} going",
     "noUpdates": "No updates from this cafe yet.",
     "noCommunity": "No community groups yet. Follow the cafe to stay in the loop.",
-    "members": "{count} members"
+    "members": "{count} members",
+    "verified": "Verified",
+    "ownerPrompt": "Own this cafe?",
+    "imOwner": "I'm the owner",
+    "ownershipPending": "Your ownership request is under review.",
+    "ownerClaimSubmitted": "Got it — we'll review and call you to verify."
   },
   "discover": {
     "title": "Discover",
@@ -432,7 +437,19 @@
     "saveName": "Save name",
     "recentCheckins": "Recent check-ins",
     "manageMenu": "Digital menu",
-    "manageMenuHint": "Welcome page, custom link & QR code for your cafe"
+    "manageMenuHint": "Welcome page, custom link & QR code for your cafe",
+    "addCafe": "Add cafe",
+    "addCafeHint": "Find your cafe to claim it, or create a new one.",
+    "notVerified": "Not verified",
+    "back": "Back",
+    "searchPlaceholder": "Search cafes by name",
+    "noUnclaimed": "No matching cafes without an owner.",
+    "thisIsMine": "This is mine",
+    "notInList": "Not in the list?",
+    "createOwn": "Create your cafe",
+    "claimSubmittedTitle": "Request received",
+    "weWillCall": "We'll review your request and call you to verify.",
+    "backToCafes": "Back to my cafes"
   },
   "cafeMenu": {
     "editorTitle": "Menu builder",
@@ -801,6 +818,10 @@
       "views": "Views",
       "eventAttendance": "Event attendance",
       "attendees": "{count} attendees"
+    },
+    "unverified": {
+      "title": "Verification pending",
+      "body": "You can preview everything, but actions are disabled until our team verifies you. We'll call you."
     }
   },
   "beanscore": {

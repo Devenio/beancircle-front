@@ -32,6 +32,7 @@ const NAV: NavItem[] = [
   { href: '/admin/users', label: 'Users', icon: Users, superOnly: true },
   { href: '/admin/cafes', label: 'Cafes', icon: Coffee, superOnly: true },
   { href: '/admin/suggestions', label: 'Suggestions', icon: Lightbulb, superOnly: true },
+  { href: '/admin/claims', label: 'Ownership Claims', icon: ShieldCheck, superOnly: true },
   {
     href: '/admin/feature-flags',
     label: 'Feature Flags',

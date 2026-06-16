@@ -3,9 +3,12 @@
 import { IdentityPill } from '@/components/cafe-os/identity-switcher';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getSocket } from '@/lib/realtime/socket';
+import { cafeOsApi } from '@/lib/api/cafe-os';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import {
   ChartNoAxesColumn,
+  Clock,
   LayoutDashboard,
   Megaphone,
   MenuSquare,
@@ -24,6 +27,13 @@ export default function CafeOsShell({
   const { cafeId } = useParams<{ cafeId: string }>();
   const pathname = usePathname();
   const base = `/cafe-os/${cafeId}`;
+
+  const { data: cafe } = useQuery({
+    queryKey: ['cafe-os-cafe', cafeId],
+    queryFn: () => cafeOsApi.getCafe(cafeId),
+    enabled: !!cafeId,
+  });
+  const unverified = cafe ? !cafe.isVerified : false;
 
   // Join the cafe's realtime room for live dashboard updates.
   useEffect(() => {
@@ -58,6 +68,16 @@ export default function CafeOsShell({
         </span>
         <IdentityPill />
       </header>
+
+      {unverified ? (
+        <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-700 dark:text-amber-400">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{t('unverified.title')}</p>
+            <p className="text-xs opacity-90">{t('unverified.body')}</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex-1 pb-[calc(5.25rem+env(safe-area-inset-bottom))]">
         {children}

@@ -5,7 +5,9 @@ import { useParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { api } from '@/lib/api/client';
 import { cafeConsumerApi } from '@/lib/api/cafe-os';
+import { claimCafe } from '@/lib/api/owner';
 import { getBeansForCafe } from '@/lib/api/beans';
+import { VerifiedBadge } from '@/components/cafe/verified-badge';
 import { BeanComposer } from '@/components/beans/bean-composer';
 import { BeanFeed } from '@/components/beans/bean-feed';
 import { Button } from '@/components/ui/button';
@@ -36,6 +38,9 @@ type CafeDetail = {
   avgRating: number;
   followerCount?: number;
   isFollowing?: boolean;
+  isVerified?: boolean;
+  hasOwner?: boolean;
+  myClaimStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   checkinCode?: string | null;
   photos?: { url: string }[];
   reviews?: { body?: string; rating: number; author?: { username?: string } }[];
@@ -133,6 +138,11 @@ export default function CafePage() {
     },
   });
 
+  const claimMutation = useMutation({
+    mutationFn: () => claimCafe(id, {}, locale),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cafe', id, locale] }),
+  });
+
   if (!cafe) return null;
 
   const cover = cafe.coverUrl || cafe.photos?.[0]?.url;
@@ -158,7 +168,10 @@ export default function CafePage() {
       </div>
 
       <div className={`p-4 ${cafe.logoUrl ? 'pt-9' : ''}`}>
-        <h1 className="text-xl font-bold">{cafe.name}</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-bold">
+          {cafe.name}
+          {cafe.isVerified ? <VerifiedBadge label={t('verified')} /> : null}
+        </h1>
         <p className="text-sm text-muted-foreground">{cafe.address}</p>
         <p className="mt-1 flex items-center gap-3 text-sm">
           <span>★ {cafe.avgRating.toFixed(1)}</span>
@@ -169,6 +182,34 @@ export default function CafePage() {
           ) : null}
         </p>
         {cafe.description ? <p className="mt-2 text-sm">{cafe.description}</p> : null}
+
+        {!cafe.hasOwner ? (
+          <div className="mt-3 rounded-xl border border-dashed p-3">
+            {cafe.myClaimStatus === 'PENDING' ? (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                {t('ownershipPending')}
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-muted-foreground">{t('ownerPrompt')}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => claimMutation.mutate()}
+                  disabled={claimMutation.isPending}
+                >
+                  {t('imOwner')}
+                </Button>
+              </div>
+            )}
+            {claimMutation.isSuccess && cafe.myClaimStatus !== 'PENDING' ? (
+              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+                {t('ownerClaimSubmitted')}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Button

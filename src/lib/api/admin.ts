@@ -434,6 +434,47 @@ export const adminUpdateSuggestion = (
     body: JSON.stringify(payload),
   });
 
+// ---------- Cafe ownership claims ----------
+
+export type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ClaimKind = 'CLAIM_EXISTING' | 'NEW_CAFE';
+
+export type CafeClaim = {
+  id: string;
+  kind: ClaimKind;
+  status: ClaimStatus;
+  message: string | null;
+  phone: string | null;
+  adminNote: string | null;
+  createdAt: string;
+  user: { id: string; username: string | null; name: string | null; avatarUrl: string | null };
+  cafe: { id: string; name: string; address: string; isVerified: boolean };
+};
+
+export const adminListClaims = (params: {
+  status?: ClaimStatus;
+  cursor?: string;
+  locale?: string;
+}) => {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set('status', params.status);
+  if (params.cursor) sp.set('cursor', params.cursor);
+  const qs = sp.toString();
+  return api<Page<CafeClaim>>(
+    `/super-admin/cafe-claims${qs ? `?${qs}` : ''}`,
+    opts(params.locale),
+  );
+};
+
+export const adminUpdateClaim = (
+  id: string,
+  payload: { status: ClaimStatus; adminNote?: string },
+) =>
+  api<CafeClaim>(`/super-admin/cafe-claims/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
 // ---------- Cafe staff / ownership ----------
 
 export type CafeRole = 'OWNER' | 'MANAGER' | 'STAFF' | 'MODERATOR';
