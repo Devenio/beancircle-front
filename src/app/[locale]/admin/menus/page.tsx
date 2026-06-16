@@ -43,6 +43,13 @@ import {
 } from '@/lib/api/admin';
 import { Card, PageHeader, StatusPill } from '@/components/admin/primitives';
 import { TemplatePreview } from '@/components/admin/template-preview';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 type Draft = {
@@ -519,43 +526,46 @@ function DesignTab({
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm">
+              <div className="text-sm">
                 <span className="mb-1 block text-xs text-muted-foreground">
                   Heading font
                 </span>
-                <select
+                <Select
                   value={draft.custom.headingFont ?? 'sans'}
-                  onChange={(e) =>
-                    setCustom({
-                      headingFont: e.target
-                        .value as MenuThemeConfig['headingFont'],
-                    })
+                  onValueChange={(v) =>
+                    setCustom({ headingFont: v as MenuThemeConfig['headingFont'] })
                   }
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2 text-sm"
                 >
-                  <option value="sans">Sans</option>
-                  <option value="serif">Serif</option>
-                  <option value="mono">Mono</option>
-                </select>
-              </label>
-              <label className="text-sm">
+                  <SelectTrigger className="h-8 w-full text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sans">Sans</SelectItem>
+                    <SelectItem value="serif">Serif</SelectItem>
+                    <SelectItem value="mono">Mono</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm">
                 <span className="mb-1 block text-xs text-muted-foreground">
                   Card style
                 </span>
-                <select
+                <Select
                   value={draft.custom.cardStyle ?? 'elevated'}
-                  onChange={(e) =>
-                    setCustom({
-                      cardStyle: e.target.value as MenuThemeConfig['cardStyle'],
-                    })
+                  onValueChange={(v) =>
+                    setCustom({ cardStyle: v as MenuThemeConfig['cardStyle'] })
                   }
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2 text-sm"
                 >
-                  <option value="elevated">Elevated</option>
-                  <option value="outline">Outline</option>
-                  <option value="flat">Flat</option>
-                </select>
-              </label>
+                  <SelectTrigger className="h-8 w-full text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="elevated">Elevated</SelectItem>
+                    <SelectItem value="outline">Outline</SelectItem>
+                    <SelectItem value="flat">Flat</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </Card>
         ) : null}

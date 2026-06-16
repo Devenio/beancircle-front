@@ -5,6 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cafeOsApi, type CafeRole } from '@/lib/api/cafe-os';
 import { useAuthStore } from '@/stores/auth-store';
 import { useIdentityStore } from '@/stores/identity-store';
@@ -95,17 +102,21 @@ export default function StaffPage() {
             dir="ltr"
           />
           <div className="flex gap-2">
-            <select
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            <Select
               value={role}
-              onChange={(e) => setRole(e.target.value as CafeRole)}
+              onValueChange={(v) => setRole(v as CafeRole)}
             >
-              {ROLES.filter((r) => isOwner || r !== 'OWNER').map((r) => (
-                <option key={r} value={r}>
-                  {t(`role.${r}`)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="flex-1 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.filter((r) => isOwner || r !== 'OWNER').map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {t(`role.${r}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               disabled={!username.trim() || invite.isPending}
               onClick={() => invite.mutate()}
@@ -147,22 +158,23 @@ export default function StaffPage() {
             </div>
             {isOwner && member.user.id !== me?.id ? (
               <>
-                <select
-                  className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
+                <Select
                   value={member.role}
-                  onChange={(e) =>
-                    changeRole.mutate({
-                      staffId: member.id,
-                      role: e.target.value as CafeRole,
-                    })
+                  onValueChange={(v) =>
+                    changeRole.mutate({ staffId: member.id, role: v as CafeRole })
                   }
                 >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {t(`role.${r}`)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {t(`role.${r}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <button
                   type="button"
                   onClick={() => remove.mutate(member.id)}

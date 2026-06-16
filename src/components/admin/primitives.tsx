@@ -1,6 +1,13 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import {
+  Select as SelectRoot,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /** Surface card matching the app's monochrome design tokens. */
 export function Card({
@@ -157,18 +164,28 @@ export function Td({
   return <td className={cn('px-4 py-3 align-middle', className)}>{children}</td>;
 }
 
-/** Native select styled to match Input. */
+/** Select dropdown styled to match Input. */
 export function Select({
+  value,
+  onValueChange,
+  disabled,
+  children,
   className,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+}: {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <select
-      className={cn(
-        'h-8 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30',
-        className,
-      )}
-      {...props}
-    />
+    <SelectRoot value={value} onValueChange={onValueChange ? (v) => onValueChange(v ?? '') : undefined} disabled={disabled}>
+      <SelectTrigger className={cn('h-8 text-sm dark:bg-input/30', className)}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>{children}</SelectContent>
+    </SelectRoot>
   );
 }
+
+export { SelectItem as SelectOption };

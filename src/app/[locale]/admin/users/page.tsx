@@ -11,6 +11,7 @@ import {
   EmptyState,
   PageHeader,
   Select,
+  SelectOption,
   StatusPill,
   Table,
   Td,
@@ -144,14 +145,14 @@ export default function UsersPage() {
               <Td>
                 <Select
                   value={u.role}
-                  onChange={(e) =>
-                    setRole.mutate({ id: u.id, role: e.target.value as UserRole })
+                  onValueChange={(v) =>
+                    setRole.mutate({ id: u.id, role: v as UserRole })
                   }
                 >
                   {ROLES.map((r) => (
-                    <option key={r} value={r}>
+                    <SelectOption key={r} value={r}>
                       {r}
-                    </option>
+                    </SelectOption>
                   ))}
                 </Select>
               </Td>
@@ -160,15 +161,13 @@ export default function UsersPage() {
                   <StatusPill tone={statusTone[u.status]}>{u.status}</StatusPill>
                   <Select
                     value={u.status}
-                    onChange={(e) =>
-                      handleStatus(u, e.target.value as UserStatus)
-                    }
+                    onValueChange={(v) => handleStatus(u, v as UserStatus)}
                     className="h-7 text-xs"
                   >
                     {STATUSES.map((s) => (
-                      <option key={s} value={s}>
+                      <SelectOption key={s} value={s}>
                         {s}
-                      </option>
+                      </SelectOption>
                     ))}
                   </Select>
                 </div>

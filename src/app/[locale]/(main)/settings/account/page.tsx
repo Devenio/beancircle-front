@@ -25,6 +25,13 @@ import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/se
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { usePathname } from '@/i18n/navigation';
 import {
   Empty,
@@ -279,21 +286,22 @@ export default function SettingsAccountPage() {
         </div>
         <div>
           <FieldLabel label={t('cityLabel')} hint={t('cityDesc')} />
-          <select
-            value={cityId}
-            onChange={(e) => handleCityChange(e.target.value)}
+          <Select
+            value={cityId || undefined}
+            onValueChange={(v) => v && handleCityChange(v)}
             disabled={cityMutation.isPending}
-            className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm disabled:opacity-60"
           >
-            <option value="" disabled>
-              {t('selectCity')}
-            </option>
-            {cities?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="min-h-11 w-full">
+              <SelectValue placeholder={t('selectCity')} />
+            </SelectTrigger>
+            <SelectContent>
+              {cities?.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {cityMutation.isError ? (
             <p className="mt-1 text-xs text-destructive">{t('cityError')}</p>
           ) : null}

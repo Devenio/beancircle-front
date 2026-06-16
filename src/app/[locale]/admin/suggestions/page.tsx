@@ -10,6 +10,7 @@ import {
   EmptyState,
   PageHeader,
   Select,
+  SelectOption,
   StatusPill,
   Table,
   Td,
@@ -57,13 +58,13 @@ export default function SuggestionsPage() {
         actions={
           <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as SuggestionStatus)}
+            onValueChange={(v) => setStatusFilter(v as SuggestionStatus)}
             className="w-36"
           >
             {STATUS_OPTS.map((s) => (
-              <option key={s} value={s}>
+              <SelectOption key={s} value={s}>
                 {s}
-              </option>
+              </SelectOption>
             ))}
           </Select>
         }

@@ -9,6 +9,13 @@ import { useAuthStore } from '@/stores/auth-store';
 import { StepFrame } from '../step-frame';
 import { OnboardingNav } from '../onboarding-nav';
 import type { StepProps } from '../types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type City = { id: string; name: string };
 
@@ -111,20 +118,18 @@ export function ProfileStep({ onComplete, onSkip, onBack, locale }: StepProps) {
             className={inputCls}
           />
           {cities.length > 0 && (
-            <select
-              value={cityId}
-              onChange={(e) => setCityId(e.target.value)}
-              className={inputCls}
-            >
-              <option value="" className="bg-[#1a0f0a]">
-                {t('profileLocation')}
-              </option>
-              {cities.map((c) => (
-                <option key={c.id} value={c.id} className="bg-[#1a0f0a]">
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <Select value={cityId || undefined} onValueChange={(v) => v && setCityId(v)}>
+              <SelectTrigger className="h-12 w-full rounded-xl border border-white/12 bg-white/5 px-3.5 text-sm text-white focus-visible:border-amber-400/70 focus-visible:ring-2 focus-visible:ring-amber-400/10 data-popup-open:border-amber-400/70 data-popup-open:ring-2 data-popup-open:ring-amber-400/10">
+                <SelectValue placeholder={t('profileLocation')} />
+              </SelectTrigger>
+              <SelectContent>
+                {cities.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           <input
             value={website}
