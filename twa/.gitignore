@@ -1,0 +1,28 @@
+# Bubblewrap / TWA build artifacts and SECRETS — never commit these.
+# The keystore + passwords sign your Play release; losing/leaking them is fatal.
+*.keystore
+*.jks
+android.keystore
+*.keystore.txt
+twa-manifest.json.bak
+
+# Bubblewrap-generated Android project (regenerated from twa-manifest.json)
+/app/
+/gradle/
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
+local.properties
+.gradle/
+build/
+
+# Output bundles / apks
+*.aab
+*.apk
+*.idsig
+
+# JDK / Android SDK that Bubblewrap downloads locally
+/jdk/
+/android_sdk/

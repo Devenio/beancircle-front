@@ -1,0 +1,63 @@
+{
+  "packageId": "com.beancircle.app",
+  "host": "beancircle.app",
+  "name": "Bean Circle — Coffee Social",
+  "launcherName": "Bean Circle",
+  "display": "standalone",
+  "themeColor": "#1A0F0A",
+  "themeColorDark": "#0A0A0A",
+  "navigationColor": "#1A0F0A",
+  "navigationColorDark": "#0A0A0A",
+  "navigationDividerColor": "#1A0F0A",
+  "navigationDividerColorDark": "#0A0A0A",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": true,
+  "startUrl": "/?source=twa",
+  "iconUrl": "http://localhost:3000/icons/icon-512.png",
+  "maskableIconUrl": "http://localhost:3000/icons/maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "beancircle"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 2,
+  "shortcuts": [
+    {
+      "name": "Passport",
+      "shortName": "Passport",
+      "url": "http://localhost:3000/en/passport?source=twa-shortcut",
+      "chosenIconUrl": "http://localhost:3000/icons/shortcut-passport.png"
+    },
+    {
+      "name": "Messages",
+      "shortName": "Messages",
+      "url": "http://localhost:3000/en/messages?source=twa-shortcut",
+      "chosenIconUrl": "http://localhost:3000/icons/shortcut-messages.png"
+    },
+    {
+      "name": "Discover",
+      "shortName": "Discover",
+      "url": "http://localhost:3000/en/discover?source=twa-shortcut",
+      "chosenIconUrl": "http://localhost:3000/icons/icon-96.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "http://localhost:3000/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "http://localhost:3000/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}
