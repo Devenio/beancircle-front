@@ -1299,6 +1299,10 @@
       "discoveryVisibilityDesc": "چه کسی شما را در افراد نزدیک ببیند",
       "showOnlineStatus": "نمایش وضعیت آنلاین",
       "showOnlineStatusDesc": "به دوستان نشان بده وقتی فعال هستی",
+      "socialLinks": "لینک‌های اجتماعی",
+      "socialLinksDesc": "پروفایل‌های شبکه‌های اجتماعی خود را اضافه کنید",
+      "socialLinksDefault": "نمایش پیش‌فرض لینک‌های اجتماعی",
+      "socialLinksDefaultDesc": "نمایش پیش‌فرض لینک‌های اجتماعی در پروفایل",
       "blocked": "کاربران مسدود",
       "blockedDesc": "افرادی که مسدود کرده‌اید",
       "muted": "کاربران بی‌صدا",
@@ -1382,6 +1386,11 @@
         "everyone": "همه پروفایل کامل شما را می‌بینند",
         "contacts": "فقط مخاطبین بیو، آمار و فعالیت را می‌بینند",
         "nobody": "پروفایل از جستجو و غیرمخاطبین پنهان است"
+      },
+      "socialLinksDefault": {
+        "everyone": "هر کسی پروفایل شما را ببیند لینک‌ها را می‌بیند",
+        "contacts": "فقط مخاطبین لینک‌هایی که اضافه کرده‌اید را می‌بینند",
+        "nobody": "لینک‌های اجتماعی از همه پنهان است"
       }
     },
     "location": {
@@ -1679,7 +1688,41 @@
     "myPassport": "پاسپورت من",
     "mySquads": "اسکوادهای من",
     "settings": "تنظیمات",
-    "editProfile": "ویرایش پروفایل"
+    "editProfile": "ویرایش پروفایل",
+    "socials": "لینک‌های شبکه‌های اجتماعی",
+    "socialsHint": "حساب‌های شبکه‌های اجتماعی خود را اضافه کنید تا دوستانتان شما را پیدا کنند",
+    "addLink": "افزودن لینک",
+    "customLink": "لینک سفارشی",
+    "customLabel": "برچسب",
+    "customLabelPlaceholder": "مثلاً وبلاگ من",
+    "invalidUrl": "لطفاً یک URL معتبر وارد کنید (https://…)",
+    "emptyLinks": "هنوز لینک اجتماعی اضافه نشده",
+    "emptyLinksHint": "روی دکمه زیر بزنید تا اولین لینک را اضافه کنید",
+    "saveLinks": "ذخیره لینک‌ها",
+    "savingLinks": "در حال ذخیره…",
+    "linkSaved": "لینک‌های اجتماعی به‌روز شد",
+    "perLinkVisibility": "چه کسی این لینک را ببیند",
+    "reorderHint": "برای تغییر ترتیب بکشید",
+    "platforms": {
+      "instagram": "اینستاگرام",
+      "x": "ایکس",
+      "telegram": "تلگرام",
+      "tiktok": "تیک‌تاک",
+      "youtube": "یوتیوب",
+      "github": "گیت‌هاب",
+      "linkedin": "لینکد‌این",
+      "facebook": "فیس‌بوک",
+      "whatsapp": "واتساپ",
+      "threads": "تردز",
+      "discord": "دیسکورد",
+      "website": "وب‌سایت",
+      "custom": "سفارشی"
+    },
+    "placeholders": {
+      "phHandle": "نام_کاربری",
+      "phUrl": "https://…",
+      "phNumber": "+98 912 345 6789"
+    }
   },
   "checkin": {
     "title": "چک‌این",
