@@ -9,6 +9,7 @@ import {
   Pin,
   Trash2,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -54,16 +55,26 @@ export function MessageContextMenu({
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         <div className="flex items-center justify-between gap-1 px-1 py-2">
-          {REACTIONS.map((emoji) => (
-            <button
+          {REACTIONS.map((emoji, index) => (
+            <motion.button
               key={emoji}
               type="button"
-              className="flex size-10 items-center justify-center rounded-md text-lg transition-colors hover:bg-accent active:scale-95"
+              className="flex size-10 items-center justify-center rounded-md text-lg transition-colors hover:bg-accent"
               onClick={() => onReact(emoji)}
               aria-label={`React with ${emoji}`}
+              initial={{ opacity: 0, scale: 0.4, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{
+                delay: index * 0.03,
+                type: 'spring',
+                stiffness: 600,
+                damping: 24,
+              }}
+              whileHover={{ scale: 1.2, y: -3 }}
+              whileTap={{ scale: 0.85 }}
             >
               {emoji}
-            </button>
+            </motion.button>
           ))}
         </div>
         <ContextMenuSeparator />
