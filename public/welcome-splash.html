@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>BeanCircle — Welcome</title>
+<!-- Preload the Next.js app entry so the handoff feels instant -->
+<link rel="preload" href="/_next/static/chunks/webpack.js" as="script" />
+<link rel="preload" href="/_next/static/chunks/main.js"   as="script" />
 <style>
   :root {
     /* Swap these two for white-mode vs dark-mode splash */
@@ -27,6 +30,8 @@
     place-items: center;
     min-height: 100dvh;
     background: var(--bg);
+    /* subtle radial glow behind the logo for depth */
+    background-image: radial-gradient(circle, #1a1a1e 0%, var(--bg) 70%);
     /* gentle fade of the whole screen on load */
     animation: screen-in 0.6s ease both;
   }
@@ -102,12 +107,47 @@
     animation-delay: calc(var(--draw-duration) + 0.45s);
   }
 
+  /* ---- Thin progress bar that slides across while loading ---- */
+  .progress {
+    width: clamp(100px, 22vw, 180px);
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    opacity: 0;
+    animation: progress-in 0.5s var(--ease) forwards;
+    animation-delay: calc(var(--draw-duration) + 0.45s);
+  }
+  .progress::after {
+    content: '';
+    display: block;
+    width: 40%;
+    height: 100%;
+    border-radius: 1px;
+    background: rgba(255, 255, 255, 0.35);
+    animation: progress-slide 1.6s var(--ease-draw) infinite;
+  }
+  /* ---- Tagline / version stamp ---- */
+  .tagline {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    font-size: clamp(10px, 2.2vw, 12px);
+    color: rgba(255, 255, 255, 0.25);
+    opacity: 0;
+    animation: tagline-in 0.8s var(--ease) forwards;
+    animation-delay: calc(var(--draw-duration) + 0.9s);
+  }
+
   @keyframes screen-in    { from { opacity: 0; } to { opacity: 1; } }
   @keyframes draw         { to   { stroke-dashoffset: 0; } }
   @keyframes fill-in      { to   { opacity: 1; } }
   @keyframes outline-out  { to   { opacity: 0; } }
   @keyframes logo-settle  { to   { transform: scale(1); } }
   @keyframes welcome-in   { to   { opacity: 1; transform: translateY(0); } }
+  @keyframes progress-in  { to   { opacity: 1; } }
+  @keyframes progress-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+  @keyframes tagline-in   { to   { opacity: 1; } }
 
   /* Respect users who prefer no motion: show final state instantly */
   @media (prefers-reduced-motion: reduce) {
@@ -115,6 +155,9 @@
     .logo .outline { animation: none; stroke-dashoffset: 0; opacity: 0; }
     .logo .fills > * { animation: none; opacity: 1; }
     .welcome { animation: none; opacity: 1; transform: none; }
+    .progress { animation: none; opacity: 1; }
+    .progress::after { animation: none; }
+    .tagline { animation: none; opacity: 1; }
   }
 </style>
 </head>
@@ -136,6 +179,8 @@
     </svg>
 
     <p class="welcome">Welcome to BeanCircle</p>
+    <div class="progress" role="progressbar" aria-label="Loading"></div>
+    <p class="tagline">v0.1.0 &middot; Your workspace, simplified</p>
   </main>
 
   <script>
