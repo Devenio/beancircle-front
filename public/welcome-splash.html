@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>BeanCircle — Welcome</title>
+<style>
+  :root {
+    /* Swap these two for white-mode vs dark-mode splash */
+    --bg: #0e0e0f;          /* minimal dark neutral */
+    --logo: #ffffff;        /* final logo color */
+    --draw-duration: 2.2s;  /* stroke reveal length (1.5s–3s range) */
+    --fill-duration: 1.1s;  /* fill dissolve length */
+    --fill-stagger: 0.09s;  /* delay between each shape filling in */
+    /* a single soft ease-in-out used everywhere for a unified feel */
+    --ease: cubic-bezier(0.45, 0.05, 0.2, 1);
+    /* gentle symmetric (sine-like) ease — smoothest for the line travelling */
+    --ease-draw: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    background: var(--bg);
+    /* gentle fade of the whole screen on load */
+    animation: screen-in 0.6s ease both;
+  }
+
+  .splash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  /* Logo scales with viewport but stays crisp (vector).
+     A slow scale-settle gives the whole mark a calm "breathe-in" finish. */
+  .logo {
+    width: clamp(140px, 34vw, 260px);
+    height: auto;
+    color: var(--logo);
+    transform-origin: center;
+    transform: scale(0.965);
+    animation: logo-settle 2.6s var(--ease) forwards;
+    will-change: transform;
+  }
+
+  /* ---- The stroke outline that "draws" itself ---- */
+  .logo .outline {
+    fill: none;
+    stroke: var(--logo);
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* Total path length is set in JS for accuracy; this is a safe fallback. */
+    stroke-dasharray: 1400;
+    stroke-dashoffset: 1400;
+    /* Two animations at once on different properties:
+       - draw  holds the fully-drawn state (forwards) and is NEVER replaced
+       - fade  gently melts the line into the fills once they're in
+       This prevents the dashoffset "snap" that made the stroke pop away. */
+    animation:
+      draw var(--draw-duration) var(--ease-draw) forwards,
+      outline-out 1.2s var(--ease) forwards;
+    animation-delay: 0s, calc(var(--draw-duration) + 0.15s);
+    will-change: stroke-dashoffset, opacity;
+  }
+
+  /* ---- The solid fills dissolve in, one after another, for a fluid build ---- */
+  .logo .fills > * {
+    fill: var(--logo);
+    opacity: 0;
+    animation: fill-in var(--fill-duration) var(--ease) forwards;
+    will-change: opacity;
+  }
+  /* staggered handoff: begins well before the stroke finishes, then ripples */
+  .logo .fills > *:nth-child(1) { animation-delay: calc(var(--draw-duration) - 0.7s + 0 * var(--fill-stagger)); }
+  .logo .fills > *:nth-child(2) { animation-delay: calc(var(--draw-duration) - 0.7s + 1 * var(--fill-stagger)); }
+  .logo .fills > *:nth-child(3) { animation-delay: calc(var(--draw-duration) - 0.7s + 2 * var(--fill-stagger)); }
+  .logo .fills > *:nth-child(4) { animation-delay: calc(var(--draw-duration) - 0.7s + 3 * var(--fill-stagger)); }
+  .logo .fills > *:nth-child(5) { animation-delay: calc(var(--draw-duration) - 0.7s + 4 * var(--fill-stagger)); }
+  .logo .fills > *:nth-child(6) { animation-delay: calc(var(--draw-duration) - 0.7s + 5 * var(--fill-stagger)); }
+  .logo .fills > *:nth-child(7) { animation-delay: calc(var(--draw-duration) - 0.7s + 6 * var(--fill-stagger)); }
+
+
+  /* ---- Welcome text appears after the logo settles ---- */
+  .welcome {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: clamp(13px, 3.4vw, 17px);
+    color: var(--logo);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: welcome-in 1.1s var(--ease) forwards;
+    animation-delay: calc(var(--draw-duration) + 0.45s);
+  }
+
+  @keyframes screen-in    { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes draw         { to   { stroke-dashoffset: 0; } }
+  @keyframes fill-in      { to   { opacity: 1; } }
+  @keyframes outline-out  { to   { opacity: 0; } }
+  @keyframes logo-settle  { to   { transform: scale(1); } }
+  @keyframes welcome-in   { to   { opacity: 1; transform: translateY(0); } }
+
+  /* Respect users who prefer no motion: show final state instantly */
+  @media (prefers-reduced-motion: reduce) {
+    .logo { animation: none; transform: none; }
+    .logo .outline { animation: none; stroke-dashoffset: 0; opacity: 0; }
+    .logo .fills > * { animation: none; opacity: 1; }
+    .welcome { animation: none; opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+  <main class="splash">
+    <svg class="logo" viewBox="0 0 88 73" xmlns="http://www.w3.org/2000/svg" aria-label="BeanCircle">
+      <!-- Solid shapes (revealed by the fade) -->
+      <g class="fills">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M0.5 49.5V22.5H87.5V49.5H0.5ZM4.5 26V46H18.5V26H4.5Z"/>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M23.5 54H68.5V63V72H23.5V61.5H65.5V58.5L23.5 58.3503V54ZM45 64.5V68.5H65.5V64.5H45Z"/>
+        <path d="M0.5 72H8.5V65H10.5L16.5 70V72H21V54H16.5V60.5L8.5 54H0.5V72Z"/>
+        <path d="M71.5 72V54H87.5V72H83.5V58.5H78.5V72H71.5Z"/>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M23.5 0.5H68.5V9.5V18.5H23.5V8H65.5V5L23.5 4.85026V0.5ZM60.5 11V15H65.5V11H60.5Z"/>
+        <path d="M71.5 18.5V0.5H87.5V18.5H83.5V5H78.5V18.5H71.5Z"/>
+        <path d="M0.5 18.5H8.5V11.5H10.5L16.5 16.5V18.5H21V0.5H16.5V7L8.5 0.5H0.5V18.5Z"/>
+      </g>
+      <!-- Single continuous outline that draws itself -->
+      <path class="outline" d="M23.5 4V4.85026M23.5 4.85026V0.5H68.5V9.5V18.5H23.5V8H65.5V5L23.5 4.85026ZM23.5 56.1751V58.3503M23.5 58.3503V54H68.5V63V72H23.5V61.5H65.5V58.5L23.5 58.3503ZM0.5 18.5H8.5V11.5H10.5L16.5 16.5V18.5H21V0.5H16.5V7L8.5 0.5H0.5V18.5ZM60.5 15V11H65.5V15H60.5ZM71.5 18.5V0.5H87.5V18.5H83.5V5H78.5V18.5H71.5ZM0.5 49.5V22.5H87.5V49.5H0.5ZM4.5 46V26H18.5V46H4.5ZM0.5 72H8.5V65H10.5L16.5 70V72H21V54H16.5V60.5L8.5 54H0.5V72ZM45 68.5V64.5H65.5V68.5H45ZM71.5 72V54H87.5V72H83.5V58.5H78.5V72H71.5Z"/>
+    </svg>
+
+    <p class="welcome">Welcome to BeanCircle</p>
+  </main>
+
+  <script>
+    // Measure the real path length so stroke-dasharray is exact across renderers.
+    const outline = document.querySelector('.logo .outline');
+    const logo = document.querySelector('.logo');
+    const len = Math.ceil(outline.getTotalLength());
+    outline.style.strokeDasharray = len;
+    outline.style.strokeDashoffset = len;
+    // restart animation now that dash values are accurate
+    outline.style.animation = 'none';
+    outline.getBoundingClientRect();           // force reflow
+    outline.style.animation = '';
+
+    // After the stroke + fill handoff completes, tidy the outline away.
+    const drawMs = parseFloat(getComputedStyle(document.documentElement)
+                    .getPropertyValue('--draw-duration')) * 1000;
+    setTimeout(() => logo.classList.add('done'), drawMs + 400);
+  </script>
+</body>
+</html>

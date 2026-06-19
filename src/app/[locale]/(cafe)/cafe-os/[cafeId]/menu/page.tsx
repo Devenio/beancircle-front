@@ -2,6 +2,7 @@
 
 import { MenuBuilder } from '@/components/cafe-os/menu/menu-builder';
 import { MenuDesigner } from '@/components/cafe-os/menu/menu-designer';
+import { MenuQrCard } from '@/components/cafe-os/menu/menu-qr-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import type { CafeMenuData } from '@/components/cafe-menu/types';
@@ -93,7 +94,15 @@ export default function MenuBuilderPage() {
       </div>
 
       {tab === 'builder' ? (
-        <MenuBuilder menu={menu} cafeId={cafeId} locale={locale} />
+        <>
+          <MenuBuilder menu={menu} cafeId={cafeId} locale={locale} />
+          <MenuQrCard
+            slug={menu.slug}
+            isPublished={menu.isPublished}
+            cafeName={menu.cafe?.name}
+            locale={locale}
+          />
+        </>
       ) : (
         <MenuDesigner menu={menu} cafeId={cafeId} />
       )}

@@ -325,11 +325,30 @@ export function NeshanDiscoverMap() {
   // ── Map ready callback ────────────────────────────────────────────────────
   const onMapReady = useCallback((map: MapInstance) => {
     mapRef.current = map;
+    // On client-side navigation the canvas can initialize before the container
+    // has its final size, leaving the map blank (only a hard reload fixes it).
+    // Force a resize once layout settles so the canvas matches the container.
+    const resize = () => map.resize();
+    requestAnimationFrame(resize);
+    setTimeout(resize, 250);
     if (map.isStyleLoaded()) {
       setMapLoaded(true);
     } else {
-      map.once('load', () => setMapLoaded(true));
+      map.once('load', () => {
+        map.resize();
+        setMapLoaded(true);
+      });
     }
+  }, []);
+
+  // ── Keep canvas sized to its container ──────────────────────────────────────
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => mapRef.current?.resize());
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   // ── Fly to user + self dot ────────────────────────────────────────────────
@@ -439,7 +458,7 @@ export function NeshanDiscoverMap() {
 
   return (
     <>
-      <div className="relative h-full w-full">
+      <div ref={containerRef} className="relative h-full w-full">
         {/* Map — StableMap is memo'd so pin/UI state never causes remount */}
         <StableMap opts={mapOpts} onReady={onMapReady} />
 

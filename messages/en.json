@@ -657,7 +657,21 @@
       "welcomeMessage": "Welcome message",
       "welcomeImage": "Hero image",
       "livePreview": "Live preview",
-      "saveDesign": "Save design"
+      "saveDesign": "Save design",
+      "qr": {
+        "title": "Menu QR code",
+        "hint": "Print or download this code so customers can scan to view your menu.",
+        "caption": "Scan for menu",
+        "unpublishedHint": "Publish your menu to generate a scannable QR code.",
+        "copyLink": "Copy link",
+        "copied": "Copied!",
+        "download": "Download",
+        "print": "Print",
+        "tagline": "Scan to view our menu",
+        "step1": "Open your camera",
+        "step2": "Point at the code",
+        "step3": "Tap the link"
+      }
     },
     "qr": {
       "title": "QR codes",
