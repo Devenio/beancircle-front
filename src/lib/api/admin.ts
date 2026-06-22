@@ -499,3 +499,67 @@ export const adminRemoveCafeStaff = (cafeId: string, userId: string) =>
   api<{ removed: boolean }>(`/super-admin/cafes/${cafeId}/staff/${userId}`, {
     method: 'DELETE',
   });
+
+// ---------- Moderation ----------
+
+export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
+export type ReportTargetType = 'USER' | 'POST' | 'REVIEW' | 'CAFE' | 'MESSAGE';
+
+export type ReportTargetPreview =
+  | { id: string; username: string | null; name: string | null; avatarUrl: string | null; status: UserStatus; warningCount: number; createdAt: string; postsCount: number; reports: { _count: number } }
+  | { id: string; caption: string | null; type: string; createdAt: string; author: { id: string; username: string | null; name: string | null } }
+  | { id: string; body: string | null; rating: number; createdAt: string; author: { id: string; username: string | null; name: string | null }; cafe: { id: string; name: string } }
+  | { id: string; body: string | null; type: string; createdAt: string; sender: { id: string; username: string | null; name: string | null } }
+  | { id: string; name: string; address: string; createdAt: string }
+  | null;
+
+export type AdminReport = {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  reason: string;
+  status: ReportStatus;
+  adminNote: string | null;
+  createdAt: string;
+  reporter: { id: string; username: string | null; name: string | null; avatarUrl?: string | null };
+  targetPreview: ReportTargetPreview;
+};
+
+export const adminListReports = (params: {
+  status?: ReportStatus;
+  cursor?: string;
+  locale?: string;
+} = {}) => {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set('status', params.status);
+  if (params.cursor) sp.set('cursor', params.cursor);
+  const qs = sp.toString();
+  return api<Page<AdminReport>>(
+    `/admin/reports${qs ? `?${qs}` : ''}`,
+    opts(params.locale),
+  );
+};
+
+export const adminGetReport = (id: string, locale?: string) =>
+  api<AdminReport>(`/admin/reports/${id}`, opts(locale));
+
+export const adminResolveReport = (id: string, adminNote?: string) =>
+  api<unknown>(`/admin/reports/${id}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ adminNote }),
+  });
+
+export const adminDismissReport = (id: string, adminNote?: string) =>
+  api<unknown>(`/admin/reports/${id}/dismiss`, {
+    method: 'POST',
+    body: JSON.stringify({ adminNote }),
+  });
+
+export const adminRemoveReportedContent = (id: string) =>
+  api<unknown>(`/admin/reports/${id}/content`, { method: 'DELETE' });
+
+export const adminWarnUser = (userId: string, reason?: string) =>
+  api<{ id: string; warningCount: number; status: UserStatus }>(
+    `/admin/users/${userId}/warn`,
+    { method: 'POST', body: JSON.stringify({ reason }) },
+  );
