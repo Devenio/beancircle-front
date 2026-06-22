@@ -2,10 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Eye, ExternalLink, FileText, MapPin, Pause, Play } from 'lucide-react';
+import { Eye, ExternalLink, FileText, MapPin, Pause, Play, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractUrls, formatDuration, formatFileSize, renderMentionParts } from '@/components/chat/utils';
 import { useChatPrefs } from '@/components/chat/chat-prefs-context';
+
+function formatTimeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = Math.max(0, now - then);
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const d = Math.floor(hr / 24);
+  return `${d}d ago`;
+}
 
 function SpoilerMedia({ children }: { children: React.ReactNode }) {
   const [revealed, setRevealed] = useState(false);
@@ -243,14 +257,20 @@ export function LocationCard({
   lng,
   label,
   isMine,
+  liveLocation,
+  createdAt,
 }: {
   lat: number;
   lng: number;
   label?: string;
   isMine?: boolean;
+  liveLocation?: boolean;
+  createdAt?: string;
 }) {
   const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
   const previewUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=14&size=400x180&markers=${lat},${lng},red-pushpin`;
+
+  const timeAgo = createdAt ? formatTimeAgo(createdAt) : null;
 
   return (
     <a
@@ -265,13 +285,36 @@ export function LocationCard({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={previewUrl} alt="" className="h-28 w-full object-cover" loading="lazy" />
       <div className="flex items-center gap-3 p-3">
-        <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', isMine ? 'bg-primary-foreground/15' : 'bg-muted')}>
-          <MapPin className="size-5" />
+        <div className={cn(
+          'flex size-10 shrink-0 items-center justify-center rounded-lg',
+          liveLocation
+            ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+            : isMine ? 'bg-primary-foreground/15' : 'bg-muted',
+        )}>
+          {liveLocation ? (
+            <Radio className="size-5 animate-pulse" />
+          ) : (
+            <MapPin className="size-5" />
+          )}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{label ?? 'Shared location'}</p>
+          <p className="truncate text-sm font-medium">
+            {label ?? (liveLocation ? 'Live location' : 'Shared location')}
+          </p>
           <p className="text-xs opacity-70">
-            {lat.toFixed(4)}, {lng.toFixed(4)} · Open in Google Maps
+            {liveLocation ? (
+              <>
+                <span className="inline-flex items-center gap-1">
+                  <span className="size-1.5 animate-pulse rounded-full bg-green-500" />
+                  Live
+                </span>
+                {timeAgo ? <> · Updated {timeAgo}</> : null}
+              </>
+            ) : (
+              <>
+                {lat.toFixed(4)}, {lng.toFixed(4)} · Open in Maps
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -304,18 +347,22 @@ export function MessageBodyContent({
   sticker,
   attachment,
   location,
+  liveLocation,
   imageUrl,
   isMine,
   spoiler,
+  createdAt,
 }: {
   type: string;
   body?: string;
   sticker?: string;
   attachment?: { url: string; name?: string; size?: number; durationSec?: number };
   location?: { lat: number; lng: number; label?: string };
+  liveLocation?: boolean;
   imageUrl?: string;
   isMine?: boolean;
   spoiler?: boolean;
+  createdAt?: string;
 }) {
   const { linkPreviews } = useChatPrefs();
 
@@ -355,7 +402,7 @@ export function MessageBodyContent({
   }
 
   if (type === 'location' && location) {
-    return <LocationCard {...location} isMine={isMine} />;
+    return <LocationCard {...location} isMine={isMine} liveLocation={liveLocation} createdAt={createdAt} />;
   }
 
   return (

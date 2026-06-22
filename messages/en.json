@@ -1021,6 +1021,7 @@
     "searchPlace": "Search address or place",
     "currentLocation": "Current location",
     "liveLocation": "Live location",
+    "liveLocationActive": "Live tracking active",
     "shareLiveLocation": "Share live location",
     "shareStaticLocation": "Share location",
     "droppedPin": "Dropped pin",
@@ -1679,7 +1680,19 @@
     "myPassport": "My passport",
     "mySquads": "My squads",
     "settings": "Settings",
-    "editProfile": "Edit profile"
+    "editProfile": "Edit profile",
+    "checklistTitle": "Finish setting up",
+    "checklistSubtitle": "Complete your profile to unlock the full experience",
+    "checklistPhoto": "Upload a profile photo",
+    "checklistName": "Add your name",
+    "checklistBio": "Write a short bio",
+    "checklistInterests": "Pick your interests",
+    "checklistFirstBean": "Post your first Bean",
+    "checklistFollow": "Follow someone",
+    "checklistNotifications": "Enable notifications",
+    "checklistExplore": "Explore the feed",
+    "checklistComplete": "All done! You're all set",
+    "checklistCompleteDesc": "Your profile is looking great. Enjoy BeanCircle!"
   },
   "checkin": {
     "title": "Check in",

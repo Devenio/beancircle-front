@@ -1019,6 +1019,7 @@
     "searchPlace": "جستجوی آدرس یا مکان",
     "currentLocation": "موقعیت فعلی",
     "liveLocation": "موقعیت زنده",
+    "liveLocationActive": " ردیابی زنده فعال است",
     "shareLiveLocation": "اشتراک موقعیت زنده",
     "shareStaticLocation": "اشتراک موقعیت",
     "droppedPin": "سنجاق روی نقشه",
@@ -1679,7 +1680,19 @@
     "myPassport": "پاسپورت من",
     "mySquads": "اسکوادهای من",
     "settings": "تنظیمات",
-    "editProfile": "ویرایش پروفایل"
+    "editProfile": "ویرایش پروفایل",
+    "checklistTitle": "تکمیل تنظیمات",
+    "checklistSubtitle": "پروفایلت رو کامل کن تا همه چیز رو باز کنی",
+    "checklistPhoto": "عکس پروفایل بذار",
+    "checklistName": "اسمت رو اضافه کن",
+    "checklistBio": "یه بیو کوتاه بنویس",
+    "checklistInterests": "علایقت رو انتخاب کن",
+    "checklistFirstBean": "اولین بینت رو پست کن",
+    "checklistFollow": "یکی رو دنبال کن",
+    "checklistNotifications": "اعلام‌ها رو فعال کن",
+    "checklistExplore": "فید رو بگرد",
+    "checklistComplete": "تموم شد! همه چیز آماده‌ست",
+    "checklistCompleteDesc": "پروفایلت عالی به نظر می‌رسه. از بین‌سیرکل لذت ببر!"
   },
   "checkin": {
     "title": "چک‌این",

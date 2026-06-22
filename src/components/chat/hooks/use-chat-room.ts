@@ -973,6 +973,7 @@ export function useChatRoom(conversationId: string, locale: string) {
       sendPayload({
         type: 'location',
         body: live ? 'Live location' : undefined,
+        liveLocation: live || undefined,
         location: {
           lat: location.lat,
           lng: location.lng,

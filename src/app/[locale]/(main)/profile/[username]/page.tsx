@@ -29,6 +29,7 @@ import { ReportDialog } from '@/components/report/report-dialog';
 import { CollectiblesBadges } from '@/components/profile/collectibles-badges';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShareProfileSheet } from '@/components/profile/share-profile-sheet';
+import { OnboardingChecklist } from '@/components/profile/onboarding-checklist';
 
 export default function ProfilePage() {
   const { username, locale } = useParams<{ username: string; locale: string }>();
@@ -93,8 +94,12 @@ export default function ProfilePage() {
         }
       : null;
 
+  const isProfileIncomplete =
+    profile.isSelf && (!profile.avatarUrl || !profile.name || !profile.bio);
+
   return (
     <div className="min-h-dvh pb-4">
+      {/* ── Header ── */}
       <div className="flex items-center justify-between px-4 pt-4">
         <h1 className="text-lg font-bold">@{profile.username}</h1>
         {profile.isSelf ? (
@@ -118,36 +123,40 @@ export default function ProfilePage() {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-4 px-4 pt-3">
-        <Avatar src={profile.avatarUrl} name={profile.name} className="h-24 w-24" />
-        <div className="flex flex-1 justify-around text-center">
+      {/* ── Hero ── */}
+      <div className="flex flex-col items-center px-4 pt-2 text-center">
+        <Avatar src={profile.avatarUrl} name={profile.name} className="h-20 w-20" />
+        <h2 className="mt-3 text-lg font-bold">{profile.name || `@${profile.username}`}</h2>
+        {profile.bio ? (
+          <p className="mt-1 max-w-[280px] text-sm text-muted-foreground">{profile.bio}</p>
+        ) : null}
+
+        {/* Stats */}
+        <div className="mt-4 flex w-full max-w-xs items-center justify-around">
           <Stat value={profile.postsCount} label={tp('posts')} />
+          <div className="h-8 w-px bg-border" />
           <Stat
             value={profile.followersCount}
             label={tp('friends')}
             tooltip="People who mutually follow each other"
           />
+          <div className="h-8 w-px bg-border" />
           <Stat
             value={profile.followingCount}
             label={tp('connections')}
             tooltip="People you follow"
           />
         </div>
-      </div>
-      <div className="px-4">
-        <h2 className="mt-3 font-bold">{profile.name}</h2>
-        {profile.bio ? (
-          <p className="mt-2 text-sm text-muted-foreground">{profile.bio}</p>
-        ) : null}
 
+        {/* Actions */}
         {profile.isSelf ? (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex w-full max-w-xs gap-2">
             <Button
               variant="outline"
               className="flex-1"
               render={<Link href="/settings/account" />}
             >
-              Edit Profile
+              {tp('editProfile')}
             </Button>
             <Button
               variant="outline"
@@ -160,7 +169,7 @@ export default function ProfilePage() {
         ) : null}
 
         {profile.isSelf && isSuperAdmin ? (
-          <Button className="mt-2 w-full" render={<Link href="/admin" />}>
+          <Button className="mt-2 w-full max-w-xs" render={<Link href="/admin" />}>
             <ShieldCheck className="size-4" />
             Admin Panel
           </Button>
@@ -176,14 +185,14 @@ export default function ProfilePage() {
         />
       ) : null}
 
-      <div className="mt-4">
-        <CollectiblesBadges
-          userId={profile.id}
-          isSelf={!!profile.isSelf}
-          locale={locale}
-        />
-      </div>
+      {/* ── Onboarding checklist (self only, when profile incomplete) ── */}
+      {isProfileIncomplete ? (
+        <div className="mt-5">
+          <OnboardingChecklist profileData={profile} locale={locale} />
+        </div>
+      ) : null}
 
+      {/* ── Other user actions ── */}
       {person ? (
         <div className="mt-4 flex items-center gap-2 px-4">
           <div className="flex-1">
@@ -205,8 +214,18 @@ export default function ProfilePage() {
         </div>
       ) : null}
 
+      {/* ── Badges ── */}
+      <div className="mt-4">
+        <CollectiblesBadges
+          userId={profile.id}
+          isSelf={!!profile.isSelf}
+          locale={locale}
+        />
+      </div>
+
+      {/* ── Self sections ── */}
       {profile.isSelf ? (
-        <div className="mt-4 space-y-4 px-4">
+        <div className="mt-4 space-y-3 px-4">
           <StreakCard locale={locale} />
           <CollectionCard locale={locale} />
           <BeanScorePanel locale={locale} cityId={me?.cityId} />
@@ -219,6 +238,7 @@ export default function ProfilePage() {
         </div>
       ) : null}
 
+      {/* ── Bean feed ── */}
       {profile.username ? (
         <div className="mt-6">
           <h2 className="border-b border-border px-4 pb-2 text-sm font-semibold text-muted-foreground">
@@ -243,10 +263,11 @@ function ProfileSkeleton() {
       <div className="flex items-center justify-between px-4 pt-4">
         <Skeleton className="h-6 w-32" />
       </div>
-
-      <div className="flex items-center gap-4 px-4 pt-3">
-        <Skeleton className="h-24 w-24 rounded-full" />
-        <div className="flex flex-1 justify-around">
+      <div className="flex flex-col items-center px-4 pt-2">
+        <Skeleton className="h-20 w-20 rounded-full" />
+        <Skeleton className="mt-3 h-5 w-40" />
+        <Skeleton className="mt-2 h-4 w-56" />
+        <div className="mt-4 flex w-full max-w-xs justify-around">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-1.5">
               <Skeleton className="h-5 w-8" />
@@ -254,14 +275,12 @@ function ProfileSkeleton() {
             </div>
           ))}
         </div>
+        <div className="mt-4 flex w-full max-w-xs gap-2">
+          <Skeleton className="h-10 flex-1 rounded-xl" />
+          <Skeleton className="h-10 flex-1 rounded-xl" />
+        </div>
       </div>
-
-      <div className="px-4">
-        <Skeleton className="mt-3 h-5 w-40" />
-        <Skeleton className="mt-2 h-4 w-3/4" />
-      </div>
-
-      <div className="mt-6 space-y-4 px-4">
+      <div className="mt-6 space-y-3 px-4">
         <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-24 w-full rounded-2xl" />
       </div>

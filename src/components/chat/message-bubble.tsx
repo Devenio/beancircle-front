@@ -229,9 +229,11 @@ function MessageBubbleInner({
         sticker={message.sticker}
         attachment={message.attachment}
         location={message.location}
+        liveLocation={message.liveLocation}
         imageUrl={message.imageUrl}
         isMine={isMine}
         spoiler={message.spoiler}
+        createdAt={message.createdAt}
       />
 
       {reactions.length > 0 ? (

@@ -38,6 +38,7 @@ export type ChatMessage = {
   };
   imageUrl?: string;
   location?: { lat: number; lng: number; label?: string };
+  liveLocation?: boolean;
   sticker?: string;
   replyToId?: string;
   replyToSnippet?: string;
@@ -66,6 +67,7 @@ export type MessagePayload = {
   attachment?: ChatMessage['attachment'];
   imageUrl?: string;
   location?: ChatMessage['location'];
+  liveLocation?: boolean;
   sticker?: string;
   replyToId?: string;
   replyToSnippet?: string;
