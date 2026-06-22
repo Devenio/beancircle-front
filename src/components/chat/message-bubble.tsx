@@ -243,9 +243,15 @@ function MessageBubbleInner({
               ? reaction.userIds.includes(currentUserId)
               : false;
             return (
-              <button
+              <motion.button
                 key={reaction.emoji}
                 type="button"
+                layout
+                initial={{ opacity: 0, scale: 0.3 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.3 }}
+                transition={{ type: 'spring', stiffness: 600, damping: 22 }}
+                whileTap={{ scale: 0.85 }}
                 onClick={(event) => {
                   event.stopPropagation();
                   haptic('selection');
@@ -265,7 +271,7 @@ function MessageBubbleInner({
                     {reaction.count}
                   </span>
                 ) : null}
-              </button>
+              </motion.button>
             );
           })}
         </div>

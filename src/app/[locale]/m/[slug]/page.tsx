@@ -1,6 +1,6 @@
 'use client';
 
-import { PublicMenuView } from '@/components/cafe-menu/public-menu-view';
+import { PublicDesignedView } from '@/components/designs/public-designed-view';
 import type { CafeMenuData } from '@/components/cafe-menu/types';
 import { api } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
@@ -52,7 +52,7 @@ export default function PublicMenuPage() {
   }
 
   return (
-    <PublicMenuView
+    <PublicDesignedView
       menu={data}
       locale={locale}
       labels={{

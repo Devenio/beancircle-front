@@ -20,8 +20,10 @@ import {
 import { api } from '@/lib/api/client';
 import { presignAndUpload } from '@/lib/api/uploads';
 import { useUsernameCheck } from '@/hooks/use-username-check';
+import { useSettingsApi } from '@/hooks/use-settings-api';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
+import { SocialLinksEditor } from '@/components/profile/social-links-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +44,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { SocialLink } from '@/lib/social-platforms';
 
 type Me = {
   username?: string | null;
@@ -52,6 +55,7 @@ type Me = {
   avatarUrl?: string | null;
   cityId?: string | null;
   city?: { id: string; name: string } | null;
+  socialLinks?: SocialLink[] | null;
 };
 
 type City = { id: string; name: string };
@@ -89,6 +93,7 @@ export default function SettingsAccountPage() {
   const { locale } = useParams<{ locale: string }>();
   const pathname = usePathname();
   const qc = useQueryClient();
+  const { settings } = useSettingsApi();
 
   const { data: me, isLoading } = useQuery({
     queryKey: ['me', locale, 'account'],
@@ -110,6 +115,7 @@ export default function SettingsAccountPage() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [cityId, setCityId] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -124,13 +130,21 @@ export default function SettingsAccountPage() {
     setUsername(me.username ?? '');
     setBio(me.bio ?? '');
     setCityId(me.cityId ?? '');
+    setSocialLinks(me.socialLinks ?? []);
   }, [me]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
       api('/users/me', {
         method: 'PATCH',
-        body: JSON.stringify({ name, username, bio }),
+        body: JSON.stringify({
+          name,
+          username,
+          bio,
+          socialLinks: socialLinks
+            .filter((l) => l.url && /^https?:\/\/.+/.test(l.url))
+            .map(({ _tempId: _, ...link }) => link),
+        }),
         locale,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
@@ -313,6 +327,18 @@ export default function SettingsAccountPage() {
         >
           {saveMutation.isPending ? t('saving') : t('saveChanges')}
         </Button>
+      </div>
+
+      <SettingsSectionLabel>{t('items.socialLinks')}</SettingsSectionLabel>
+      <p className="px-4 pb-2 text-xs text-muted-foreground">{t('items.socialLinksDesc')}</p>
+      <div className="border-y border-border/80 bg-card px-4 py-4">
+        <SocialLinksEditor
+          value={socialLinks}
+          onChange={setSocialLinks}
+          defaultVisibility={settings?.socialLinksDefaultVisibility}
+          saving={saveMutation.isPending}
+          onSave={() => saveMutation.mutate()}
+        />
       </div>
 
       <SettingsSectionLabel>{t('contactInfo')}</SettingsSectionLabel>

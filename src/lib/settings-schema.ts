@@ -4,6 +4,7 @@ export const SETTINGS_API_KEYS = [
   'onlineStatusVisibility',
   'readReceipts',
   'profileVisibility',
+  'socialLinksDefaultVisibility',
   'showLastSeen',
   'pushNotifications',
   'messageNotifications',

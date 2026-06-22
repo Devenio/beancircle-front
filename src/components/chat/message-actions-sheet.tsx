@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ChatBottomSheet } from '@/components/chat/chat-bottom-sheet';
@@ -105,11 +106,21 @@ export function MessageActionsSheet({
       description={messagePreview(message)}
     >
       <div className="flex items-center justify-between gap-1.5 px-4 pb-2">
-        {REACTIONS.map((emoji) => (
-          <button
+        {REACTIONS.map((emoji, index) => (
+          <motion.button
             key={emoji}
             type="button"
-            className="flex size-11 items-center justify-center rounded-full bg-muted text-xl transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex size-11 items-center justify-center rounded-full bg-muted text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            initial={{ opacity: 0, scale: 0.4, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{
+              delay: index * 0.035,
+              type: 'spring',
+              stiffness: 600,
+              damping: 22,
+            }}
+            whileHover={{ scale: 1.15, y: -4 }}
+            whileTap={{ scale: 0.85 }}
             onClick={() => {
               haptic('selection');
               onReact(emoji);
@@ -118,7 +129,7 @@ export function MessageActionsSheet({
             aria-label={t('reactWith', { emoji })}
           >
             {emoji}
-          </button>
+          </motion.button>
         ))}
         <button
           type="button"

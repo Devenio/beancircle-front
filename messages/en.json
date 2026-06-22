@@ -657,7 +657,21 @@
       "welcomeMessage": "Welcome message",
       "welcomeImage": "Hero image",
       "livePreview": "Live preview",
-      "saveDesign": "Save design"
+      "saveDesign": "Save design",
+      "qr": {
+        "title": "Menu QR code",
+        "hint": "Print or download this code so customers can scan to view your menu.",
+        "caption": "Scan for menu",
+        "unpublishedHint": "Publish your menu to generate a scannable QR code.",
+        "copyLink": "Copy link",
+        "copied": "Copied!",
+        "download": "Download",
+        "print": "Print",
+        "tagline": "Scan to view our menu",
+        "step1": "Open your camera",
+        "step2": "Point at the code",
+        "step3": "Tap the link"
+      }
     },
     "qr": {
       "title": "QR codes",
@@ -1300,6 +1314,10 @@
       "discoveryVisibilityDesc": "Who can find you in People nearby",
       "showOnlineStatus": "Show online status",
       "showOnlineStatusDesc": "Let friends see when you're active",
+      "socialLinks": "Social links",
+      "socialLinksDesc": "Add social profiles so people can find you elsewhere",
+      "socialLinksDefault": "Social links default visibility",
+      "socialLinksDefaultDesc": "Default visibility for social links on your profile",
       "blocked": "Blocked users",
       "blockedDesc": "People you have blocked",
       "muted": "Muted users",
@@ -1383,6 +1401,11 @@
         "everyone": "Anyone can open your full profile",
         "contacts": "Only contacts can view your bio, stats, and activity",
         "nobody": "Your profile is hidden from search and non-contacts"
+      },
+      "socialLinksDefault": {
+        "everyone": "Anyone visiting your profile sees your social links",
+        "contacts": "Only contacts see the links you've added",
+        "nobody": "Your social links are hidden from everyone"
       }
     },
     "location": {
@@ -1692,7 +1715,41 @@
     "checklistNotifications": "Enable notifications",
     "checklistExplore": "Explore the feed",
     "checklistComplete": "All done! You're all set",
-    "checklistCompleteDesc": "Your profile is looking great. Enjoy BeanCircle!"
+    "checklistCompleteDesc": "Your profile is looking great. Enjoy BeanCircle!",
+    "socials": "Social links",
+    "socialsHint": "Add your social media profiles so friends can find you elsewhere",
+    "addLink": "Add link",
+    "customLink": "Custom link",
+    "customLabel": "Label",
+    "customLabelPlaceholder": "e.g. My blog",
+    "invalidUrl": "Please enter a valid URL (https://…)",
+    "emptyLinks": "No social links added yet",
+    "emptyLinksHint": "Tap the button below to add your first link",
+    "saveLinks": "Save links",
+    "savingLinks": "Saving links…",
+    "linkSaved": "Social links updated",
+    "perLinkVisibility": "Who can see this link",
+    "reorderHint": "Drag to reorder",
+    "platforms": {
+      "instagram": "Instagram",
+      "x": "X",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "youtube": "YouTube",
+      "github": "GitHub",
+      "linkedin": "LinkedIn",
+      "facebook": "Facebook",
+      "whatsapp": "WhatsApp",
+      "threads": "Threads",
+      "discord": "Discord",
+      "website": "Website",
+      "custom": "Custom"
+    },
+    "placeholders": {
+      "phHandle": "username",
+      "phUrl": "https://…",
+      "phNumber": "+1 234 567 890"
+    }
   },
   "checkin": {
     "title": "Check in",

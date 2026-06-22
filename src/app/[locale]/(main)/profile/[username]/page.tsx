@@ -7,11 +7,14 @@ import { useTranslations } from 'next-intl';
 import {
   CalendarDays,
   ChevronRight,
+  ExternalLink,
   Settings,
   ShieldCheck,
   Stamp,
   Users,
 } from 'lucide-react';
+import type { SocialLink } from '@/lib/social-platforms';
+import { getPlatform } from '@/lib/social-platforms';
 import { api } from '@/lib/api/client';
 import { useAuthStore } from '@/stores/auth-store';
 import { IdentityPill } from '@/components/cafe-os/identity-switcher';
@@ -52,6 +55,7 @@ export default function ProfilePage() {
         followingCount: number;
         postsCount: number;
         isSelf?: boolean;
+        socialLinks?: SocialLink[];
       }>(`/users/${username}`, { locale }),
   });
 
@@ -149,6 +153,36 @@ export default function ProfilePage() {
         </div>
 
         {/* Actions */}
+        {profile.socialLinks && profile.socialLinks.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {profile.socialLinks.map((link, i) => {
+              const meta = getPlatform(link.platform);
+              const displayLabel = link.label ?? link.platform;
+              return (
+                <TooltipProvider key={i}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex size-9 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                        aria-label={displayLabel}
+                      >
+                        <meta.Glyph className="size-4" />
+                      </a>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="flex items-center gap-1">
+                      {displayLabel}
+                      <ExternalLink className="size-3 opacity-60" />
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+          </div>
+        ) : null}
+
         {profile.isSelf ? (
           <div className="mt-4 flex w-full max-w-xs gap-2">
             <Button

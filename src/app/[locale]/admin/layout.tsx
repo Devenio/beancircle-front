@@ -8,6 +8,7 @@ import {
   FileClock,
   LayoutGrid,
   Lightbulb,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Route,
@@ -40,6 +41,7 @@ const NAV: NavItem[] = [
     superOnly: true,
   },
   { href: '/admin/menus', label: 'Menu Builder', icon: LayoutGrid, superOnly: true },
+  { href: '/admin/designs', label: 'Designs', icon: Palette, superOnly: true },
   {
     href: '/admin/onboarding-flow',
     label: 'User Flow',

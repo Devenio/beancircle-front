@@ -165,8 +165,7 @@ export function BugReportLauncher() {
                 initial={false}
                 animate={{ x: revealed ? 0 : '115%', opacity: revealed ? 1 : 0 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                style={{ pointerEvents: revealed ? 'auto' : 'none' }}
-                className="absolute right-0 top-[37%] flex items-center gap-2 rounded-l-2xl border border-r-0 border-border/60 bg-background/90 py-2.5 pl-4 pr-3 shadow-lg backdrop-blur-md rtl:left-0 rtl:right-auto rtl:rounded-l-none rtl:rounded-r-2xl rtl:border-l-0 rtl:border-r rtl:pl-3 rtl:pr-4"
+                className={`absolute right-0 top-[37%] flex items-center gap-2 rounded-l-2xl border border-r-0 border-border/60 bg-background/90 py-2.5 pl-4 pr-3 shadow-lg backdrop-blur-md rtl:left-0 rtl:right-auto rtl:rounded-l-none rtl:rounded-r-2xl rtl:border-l-0 rtl:border-r rtl:pl-3 rtl:pr-4 ${revealed ? 'pointer-events-auto' : 'pointer-events-none'}`}
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-foreground/10">
                   <Bug className="h-4 w-4 text-foreground/70" />

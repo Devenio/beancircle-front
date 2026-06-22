@@ -43,6 +43,9 @@ export type CafeMenuData = {
   theme?: MenuTheme;
   themeConfig?: Record<string, unknown> | null;
   isPublished: boolean;
+  /** Coded design keys resolved by the API (already access-checked + fallback). */
+  menuDesignKey?: string | null;
+  welcomeDesignKey?: string | null;
   categories: MenuCategory[];
   cafe: {
     id: string;

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
-import { Clock, Eye, ShieldBan, UserCircle } from 'lucide-react';
+import { Clock, Eye, Link2, ShieldBan, UserCircle } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import {
@@ -54,7 +54,7 @@ export default function SettingsPrivacyPage() {
   }
 
   const setVisibility = (
-    key: 'lastSeenVisibility' | 'onlineStatusVisibility' | 'profileVisibility',
+    key: 'lastSeenVisibility' | 'onlineStatusVisibility' | 'profileVisibility' | 'socialLinksDefaultVisibility',
     v: VisibilityOption,
   ) => update({ [key]: v });
 
@@ -98,6 +98,17 @@ export default function SettingsPrivacyPage() {
           <SettingsVisibilityPicker
             value={settings.profileVisibility}
             onChange={(v) => setVisibility('profileVisibility', v)}
+          />
+        </div>
+        <div>
+          <SettingsFieldHeader
+            icon={<Link2 className="size-5" />}
+            label={t('items.socialLinksDefault')}
+            description={t('items.socialLinksDefaultDesc')}
+          />
+          <SettingsVisibilityPicker
+            value={settings.socialLinksDefaultVisibility}
+            onChange={(v) => setVisibility('socialLinksDefaultVisibility', v)}
           />
         </div>
       </SettingsList>

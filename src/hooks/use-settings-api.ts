@@ -11,6 +11,7 @@ export type SettingsApiData = {
   onlineStatusVisibility: VisibilityOption;
   readReceipts: boolean;
   profileVisibility: VisibilityOption;
+  socialLinksDefaultVisibility: VisibilityOption;
   showLastSeen: boolean;
   pushNotifications: boolean;
   messageNotifications: boolean;
