@@ -1,12 +1,14 @@
 /**
  * Onboarding analytics. Mirrors `src/lib/pwa/analytics.ts`: every event is
  *   1. pushed to `window.dataLayer` (GTM / GA4 if present),
- *   2. dispatched as a `pwa:analytics` CustomEvent (in-app listeners / tests), and
- *   3. for step lifecycle events, mirrored to the backend funnel table via
+ *   2. dispatched as a `pwa:analytics` CustomEvent (in-app listeners / tests),
+ *   3. sent to Mixpanel via `mixpanelTrack` (no-op if not initialised), and
+ *   4. for step lifecycle events, mirrored to the backend funnel table via
  *      `POST /onboarding/events` (fire-and-forget).
  * Safe no-op on the server.
  */
 import { trackOnboardingServerEvent } from '@/lib/api/onboarding';
+import { mixpanelTrack } from '@/lib/analytics/mixpanel';
 
 export type OnboardingEvent =
   | 'onboarding_started'
@@ -30,6 +32,7 @@ export function trackOnboarding(event: OnboardingEvent, props: EventProps = {}):
   w.dataLayer = w.dataLayer || [];
   w.dataLayer.push(detail);
   window.dispatchEvent(new CustomEvent('pwa:analytics', { detail }));
+  mixpanelTrack(event, detail);
 
   if (process.env.NODE_ENV !== 'production') {
     console.debug('[onboarding:analytics]', detail);

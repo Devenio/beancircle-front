@@ -1,12 +1,12 @@
 /**
- * PWA analytics hooks. Vendor-agnostic on purpose: every event is
- *   1. pushed to `window.dataLayer` (picked up by GTM / GA4 if present), and
+ * PWA analytics hooks. Every event is
+ *   1. pushed to `window.dataLayer` (picked up by GTM / GA4 if present),
  *   2. dispatched as a `pwa:analytics` CustomEvent (so any in-app listener,
- *      product analytics SDK, or test harness can subscribe).
- * No network calls and no hard dependency on an analytics provider, so it is a
- * safe no-op until one is wired up.
+ *      product analytics SDK, or test harness can subscribe), and
+ *   3. sent to Mixpanel via `mixpanelTrack` (no-op if not initialised).
  */
 import { getDisplayMode, getPlatformInfo } from './platform';
+import { mixpanelTrack } from '@/lib/analytics/mixpanel';
 
 export type PwaEvent =
   | 'install_page_view'
@@ -53,6 +53,7 @@ export function trackPwaEvent(event: PwaEvent, props: PwaEventProps = {}): void 
   w.dataLayer.push(detail);
 
   window.dispatchEvent(new CustomEvent('pwa:analytics', { detail }));
+  mixpanelTrack(detail.event, detail);
 
   if (process.env.NODE_ENV !== 'production') {
     console.debug('[pwa:analytics]', detail);
