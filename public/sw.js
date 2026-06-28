@@ -200,8 +200,15 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url =
+  const rawUrl =
     (event.notification.data && event.notification.data.url) || '/';
+  let url;
+  try {
+    url = new URL(rawUrl, self.location.origin);
+    if (url.origin !== self.location.origin) return;
+  } catch {
+    return;
+  }
 
   event.waitUntil(
     (async () => {
@@ -212,7 +219,7 @@ self.addEventListener('notificationclick', (event) => {
       for (const client of clients) {
         if ('focus' in client) {
           try {
-            await client.navigate(url);
+            await client.navigate(url.pathname);
           } catch (_e) {
             /* navigate can reject cross-origin; fall back to focus */
           }
@@ -220,7 +227,7 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       if (self.clients.openWindow) {
-        return self.clients.openWindow(url);
+        return self.clients.openWindow(url.pathname);
       }
     })(),
   );

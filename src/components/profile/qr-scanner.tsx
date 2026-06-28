@@ -43,12 +43,16 @@ export function QrScanner({ onClose }: QrScannerProps) {
               const codes: any[] = await detector.detect(videoRef.current);
               if (codes.length > 0) {
                 const value: string = codes[0].rawValue;
-                // Navigate to scanned URL if it looks like a profile URL
                 try {
-                  const url = new URL(value);
-                  window.location.href = url.pathname;
+                  const url = new URL(value, window.location.origin);
+                  if (url.origin !== window.location.origin) return;
+                  if (/^\/(en|fa)\//.test(url.pathname)) {
+                    window.location.href = url.pathname;
+                  }
                 } catch {
-                  window.location.href = value;
+                  if (/^bc:\/\//.test(value) || /^\/(en|fa)\//.test(value)) {
+                    window.location.href = value;
+                  }
                 }
                 return;
               }

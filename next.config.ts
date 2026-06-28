@@ -8,28 +8,35 @@ const nextConfig: NextConfig = {
     root: import.meta.dirname,
   },
   images: {
-    // Chat media is uploaded to object storage (S3/R2/MinIO) and referenced by
-    // URL. The public bucket host is environment-configured, so allow any
-    // https/http host. Tighten to your bucket hostname in production if desired.
     remotePatterns: [
-      { protocol: 'https', hostname: '**' },
-      { protocol: 'http', hostname: '**' },
+      { protocol: 'https', hostname: 'flagcdn.com' },
+      { protocol: 'https', hostname: '*.tile.openstreetmap.org' },
     ],
   },
   async headers() {
     return [
       {
-        // Baseline security headers for every route.
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' https://www.neshan.org",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' https://flagcdn.com https://*.tile.openstreetmap.org data: blob:",
+              "connect-src 'self' ws: wss: https://api.mapbox.com https://www.neshan.org",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
         ],
       },
       {
-        // The service worker must never be cached by the browser/CDN so updates
-        // ship instantly, and it needs root scope to control the whole app.
         source: '/sw.js',
         headers: [
           { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
