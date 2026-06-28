@@ -35,7 +35,7 @@ export default function AdminOverviewPage() {
   const { locale } = useParams<{ locale: string }>();
   const [metric, setMetric] = useState('users');
 
-  const { data: overview } = useQuery({
+  const { data: overview, isLoading: overviewLoading } = useQuery({
     queryKey: ['admin-overview', locale],
     queryFn: () => adminAnalyticsOverview(30, locale),
   });
@@ -63,36 +63,58 @@ export default function AdminOverviewPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Users" value={dash(overview?.totals.users)} icon={Users} />
-        <StatCard label="Cafes" value={dash(overview?.totals.cafes)} icon={Coffee} />
-        <StatCard label="Posts" value={dash(overview?.totals.posts)} icon={FileText} />
-        <StatCard label="Reviews" value={dash(overview?.totals.reviews)} icon={Star} />
-        <StatCard label="Check-ins" value={dash(overview?.totals.checkins)} icon={MapPin} />
-        <StatCard label="Gifts" value={dash(overview?.totals.gifts)} icon={Gift} />
+        {overviewLoading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="p-4 animate-pulse">
+              <div className="h-3 w-16 rounded bg-muted mb-2" />
+              <div className="h-7 w-12 rounded bg-muted" />
+            </Card>
+          ))
+        ) : (
+          <>
+            <StatCard label="Users" value={dash(overview?.totals.users)} icon={Users} />
+            <StatCard label="Cafes" value={dash(overview?.totals.cafes)} icon={Coffee} />
+            <StatCard label="Posts" value={dash(overview?.totals.posts)} icon={FileText} />
+            <StatCard label="Reviews" value={dash(overview?.totals.reviews)} icon={Star} />
+            <StatCard label="Check-ins" value={dash(overview?.totals.checkins)} icon={MapPin} />
+            <StatCard label="Gifts" value={dash(overview?.totals.gifts)} icon={Gift} />
+          </>
+        )}
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard
-          label="New users"
-          value={dash(overview?.period.newUsers)}
-          hint="last 30 days"
-        />
-        <StatCard
-          label="New cafes"
-          value={dash(overview?.period.newCafes)}
-          hint="last 30 days"
-        />
-        <StatCard
-          label="Active today"
-          value={dash(overview?.activity.dau)}
-          icon={MessageSquare}
-          hint="seen in 24h"
-        />
-        <StatCard
-          label="Moderated"
-          value={dash(overview?.activity.moderatedUsers)}
-          hint="suspended / banned"
-        />
+        {overviewLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-4 animate-pulse">
+              <div className="h-3 w-20 rounded bg-muted mb-2" />
+              <div className="h-7 w-10 rounded bg-muted" />
+            </Card>
+          ))
+        ) : (
+          <>
+            <StatCard
+              label="New users"
+              value={dash(overview?.period.newUsers)}
+              hint="last 30 days"
+            />
+            <StatCard
+              label="New cafes"
+              value={dash(overview?.period.newCafes)}
+              hint="last 30 days"
+            />
+            <StatCard
+              label="Active today"
+              value={dash(overview?.activity.dau)}
+              icon={MessageSquare}
+              hint="seen in 24h"
+            />
+            <StatCard
+              label="Moderated"
+              value={dash(overview?.activity.moderatedUsers)}
+              hint="suspended / banned"
+            />
+          </>
+        )}
       </div>
 
       {/* Chart */}

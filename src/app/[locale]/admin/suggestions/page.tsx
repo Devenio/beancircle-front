@@ -35,7 +35,7 @@ export default function SuggestionsPage() {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<SuggestionStatus>('PENDING');
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['admin-suggestions', statusFilter, locale],
     queryFn: () => adminListSuggestions({ status: statusFilter, locale }),
   });
@@ -76,6 +76,47 @@ export default function SuggestionsPage() {
         }
       />
 
+      {isLoading ? (
+        <Table>
+          <thead className="bg-muted/40">
+            <tr>
+              <Th>Cafe</Th>
+              <Th>Suggested by</Th>
+              <Th>Location</Th>
+              <Th>Notes</Th>
+              <Th>Status</Th>
+              <Th className="text-right">Submitted</Th>
+              <Th className="text-right">Actions</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <tr key={i} className="animate-pulse">
+                <Td>
+                  <div className="space-y-1">
+                    <div className="h-3 w-28 rounded bg-muted" />
+                    <div className="h-2.5 w-36 rounded bg-muted" />
+                  </div>
+                </Td>
+                <Td>
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-full bg-muted" />
+                    <div className="space-y-1">
+                      <div className="h-3 w-20 rounded bg-muted" />
+                      <div className="h-2.5 w-14 rounded bg-muted" />
+                    </div>
+                  </div>
+                </Td>
+                <Td><div className="h-3 w-20 rounded bg-muted" /></Td>
+                <Td><div className="h-3 w-24 rounded bg-muted" /></Td>
+                <Td><div className="h-5 w-16 rounded-full bg-muted" /></Td>
+                <Td><div className="h-3 w-16 rounded bg-muted ml-auto" /></Td>
+                <Td />
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      ) : (
       <Table>
         <thead className="bg-muted/40">
           <tr>
@@ -166,6 +207,8 @@ export default function SuggestionsPage() {
           ))}
         </tbody>
       </Table>
+      )}
+
       {data && suggestions.length === 0 ? (
         <EmptyState>No {statusFilter.toLowerCase()} suggestions.</EmptyState>
       ) : null}

@@ -45,7 +45,7 @@ export default function ClaimsPage() {
   const [search, setSearch] = useState('');
   const [selectedClaims, setSelectedClaims] = useState<Set<string>>(new Set());
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['admin-claims', statusFilter, locale],
     queryFn: () => adminListClaims({ status: statusFilter, locale }),
   });
@@ -163,6 +163,49 @@ export default function ClaimsPage() {
         )}
       </div>
 
+      {isLoading ? (
+        <Table>
+          <thead className="bg-muted/40">
+            <tr>
+              <Th className="w-10" />
+              <Th>Cafe</Th>
+              <Th>Claimant</Th>
+              <Th>Type</Th>
+              <Th>Contact</Th>
+              <Th>Status</Th>
+              <Th className="text-right">Submitted</Th>
+              <Th className="text-right">Actions</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <tr key={i} className="animate-pulse">
+                <Td><div className="h-4 w-4 rounded bg-muted" /></Td>
+                <Td>
+                  <div className="space-y-1">
+                    <div className="h-3 w-24 rounded bg-muted" />
+                    <div className="h-2.5 w-32 rounded bg-muted" />
+                  </div>
+                </Td>
+                <Td>
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-full bg-muted" />
+                    <div className="space-y-1">
+                      <div className="h-3 w-20 rounded bg-muted" />
+                      <div className="h-2.5 w-14 rounded bg-muted" />
+                    </div>
+                  </div>
+                </Td>
+                <Td><div className="h-3 w-20 rounded bg-muted" /></Td>
+                <Td><div className="h-3 w-24 rounded bg-muted" /></Td>
+                <Td><div className="h-5 w-16 rounded-full bg-muted" /></Td>
+                <Td><div className="h-3 w-16 rounded bg-muted ml-auto" /></Td>
+                <Td />
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      ) : (
       <Table>
         <thead className="bg-muted/40">
           <tr>
@@ -321,6 +364,8 @@ export default function ClaimsPage() {
           ))}
         </tbody>
       </Table>
+      )}
+
       {data && filteredClaims.length === 0 ? (
         <EmptyState>
           {search

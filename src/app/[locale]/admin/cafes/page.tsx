@@ -3,15 +3,18 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { Search, Star, Trash2, UserCog, X } from 'lucide-react';
+import { Ban, ChevronLeft, ChevronRight, Search, Star, Trash2, UserCog, X } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
+  Card,
   EmptyState,
   PageHeader,
+  Select,
+  SelectOption,
   Table,
   Td,
   Th,
@@ -169,11 +172,14 @@ export default function CafesPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
+  const [partnerFilter, setPartnerFilter] = useState<string>('');
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [staffCafe, setStaffCafe] = useState<AdminCafe | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const { data } = useQuery({
-    queryKey: ['admin-cafes', search, locale],
-    queryFn: () => adminListCafes({ q: search, locale }),
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-cafes', search, cursor, locale],
+    queryFn: () => adminListCafes({ q: search || undefined, cursor, locale }),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-cafes'] });
@@ -187,102 +193,314 @@ export default function CafesPage() {
     onSuccess: invalidate,
   });
 
-  const cafes = data?.data ?? [];
+  const bulkPartner = useMutation({
+    mutationFn: async ({ ids, isPartner }: { ids: string[]; isPartner: boolean }) => {
+      for (const id of ids) {
+        await adminUpdateCafe(id, { isPartner });
+      }
+    },
+    onSuccess: () => {
+      invalidate();
+      setSelected(new Set());
+    },
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        await adminDeleteCafe(id);
+      }
+    },
+    onSuccess: () => {
+      invalidate();
+      setSelected(new Set());
+    },
+  });
+
+  const allCafes = data?.data ?? [];
+  const cafes = partnerFilter
+    ? allCafes.filter((c) =>
+        partnerFilter === 'partner' ? c.isPartner : !c.isPartner,
+      )
+    : allCafes;
+  const allSelected = cafes.length > 0 && cafes.every((c) => selected.has(c.id));
+
+  const resetFilters = () => {
+    setQ('');
+    setSearch('');
+    setPartnerFilter('');
+    setCursor(undefined);
+    setSelected(new Set());
+  };
+
+  const hasFilters = search || partnerFilter;
 
   return (
     <div>
-      <PageHeader title="Cafes" subtitle="Partner status, ownership, menus, and removal." />
+      <PageHeader
+        title="Cafes"
+        subtitle="Partner status, ownership, menus, and removal."
+        actions={
+          selected.size > 0 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{selected.size} selected</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  bulkPartner.mutate({
+                    ids: Array.from(selected),
+                    isPartner: true,
+                  })
+                }
+                disabled={bulkPartner.isPending}
+              >
+                Mark as Partner
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  if (confirm(`Delete ${selected.size} cafes? This cannot be undone.`))
+                    bulkDelete.mutate(Array.from(selected));
+                }}
+                disabled={bulkDelete.isPending}
+              >
+                <Trash2 className="size-3.5" /> Delete
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                Clear
+              </Button>
+            </div>
+          ) : undefined
+      }
+      />
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSearch(q.trim());
-        }}
-        className="mb-4 flex items-center gap-2"
-      >
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search cafes…"
-            className="pl-9"
-          />
+      {/* Filters */}
+      <Card className="mb-4 p-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSearch(q.trim());
+              setCursor(undefined);
+              setSelected(new Set());
+            }}
+            className="flex flex-1 items-center gap-2"
+          >
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search cafes…"
+                className="h-8 pl-9"
+              />
+            </div>
+            <Button type="submit" size="sm" variant="outline">
+              Search
+            </Button>
+          </form>
+          <Select
+            value={partnerFilter}
+            onValueChange={(v) => {
+              setPartnerFilter(v);
+              setSelected(new Set());
+            }}
+            className="w-36"
+          >
+            <SelectOption value="">All cafes</SelectOption>
+            <SelectOption value="partner">Partners only</SelectOption>
+            <SelectOption value="non-partner">Non-partners</SelectOption>
+          </Select>
+          {hasFilters && (
+            <Button size="sm" variant="ghost" onClick={resetFilters}>
+              Reset
+            </Button>
+          )}
         </div>
-        <Button type="submit">Search</Button>
-      </form>
+      </Card>
 
-      <Table>
-        <thead className="bg-muted/40">
-          <tr>
-            <Th>Cafe</Th>
-            <Th>City</Th>
-            <Th className="text-right">Rating</Th>
-            <Th className="text-right">Followers</Th>
-            <Th>Partner</Th>
-            <Th className="text-right">Actions</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {cafes.map((c) => (
-            <tr key={c.id} className="transition-colors hover:bg-muted/30">
-              <Td>
-                <div className="font-medium">{c.name}</div>
-                <div className="truncate text-xs text-muted-foreground">{c.address}</div>
-              </Td>
-              <Td className="text-muted-foreground">{c.city?.name ?? '—'}</Td>
-              <Td className="text-right">
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <Star className="size-3.5 fill-current text-amber-500" />
-                  {c.avgRating.toFixed(1)}
-                </span>
-              </Td>
-              <Td className="text-right tabular-nums">{c.followerCount}</Td>
-              <Td>
-                <Switch
-                  checked={c.isPartner}
-                  onCheckedChange={(isPartner) =>
-                    setPartner.mutate({ id: c.id, isPartner })
-                  }
-                />
-              </Td>
-              <Td className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setStaffCafe(c)}
-                    title="Manage staff & owner"
-                  >
-                    <UserCog className="size-3.5" />
-                    Owner
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={`/admin/menus?cafeId=${c.id}`} />}
-                  >
-                    Menu
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => {
-                      if (confirm(`Delete ${c.name}?`)) del.mutate(c.id);
-                    }}
-                    title="Delete cafe"
-                  >
-                    <Trash2 className="size-4 text-muted-foreground" />
-                  </Button>
-                </div>
-              </Td>
+      {isLoading ? (
+        <Table>
+          <thead className="bg-muted/40">
+            <tr>
+              <Th className="w-10" />
+              <Th>Cafe</Th>
+              <Th>City</Th>
+              <Th className="text-right">Rating</Th>
+              <Th className="text-right">Followers</Th>
+              <Th>Partner</Th>
+              <Th className="text-right">Actions</Th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
-      {data && cafes.length === 0 ? (
-        <EmptyState>No cafes found.</EmptyState>
-      ) : null}
+          </thead>
+          <tbody className="divide-y divide-border">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <tr key={i} className="animate-pulse">
+                <Td><div className="h-4 w-4 rounded bg-muted" /></Td>
+                <Td>
+                  <div className="space-y-1">
+                    <div className="h-3 w-28 rounded bg-muted" />
+                    <div className="h-2.5 w-36 rounded bg-muted" />
+                  </div>
+                </Td>
+                <Td><div className="h-3 w-20 rounded bg-muted" /></Td>
+                <Td><div className="h-3 w-12 rounded bg-muted ml-auto" /></Td>
+                <Td><div className="h-3 w-10 rounded bg-muted ml-auto" /></Td>
+                <Td><div className="h-5 w-9 rounded-full bg-muted" /></Td>
+                <Td />
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      ) : (
+        <>
+          <Table>
+            <thead className="bg-muted/40">
+              <tr>
+                <Th className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelected(new Set(cafes.map((c) => c.id)));
+                      } else {
+                        setSelected(new Set());
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                </Th>
+                <Th>Cafe</Th>
+                <Th>City</Th>
+                <Th className="text-right">Rating</Th>
+                <Th className="text-right">Followers</Th>
+                <Th>Partner</Th>
+                <Th className="text-right">Actions</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {cafes.map((c) => (
+                <tr key={c.id} className="transition-colors hover:bg-muted/30">
+                  <Td>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.id)}
+                      onChange={(e) => {
+                        const next = new Set(selected);
+                        if (e.target.checked) next.add(c.id);
+                        else next.delete(c.id);
+                        setSelected(next);
+                      }}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                  </Td>
+                  <Td>
+                    <div className="font-medium">{c.name}</div>
+                    <div className="truncate text-xs text-muted-foreground">{c.address}</div>
+                  </Td>
+                  <Td className="text-muted-foreground">{c.city?.name ?? '—'}</Td>
+                  <Td className="text-right">
+                    <span className="inline-flex items-center gap-1 tabular-nums">
+                      <Star className="size-3.5 fill-current text-amber-500" />
+                      {c.avgRating.toFixed(1)}
+                    </span>
+                  </Td>
+                  <Td className="text-right tabular-nums">{c.followerCount}</Td>
+                  <Td>
+                    <Switch
+                      checked={c.isPartner}
+                      onCheckedChange={(isPartner) =>
+                        setPartner.mutate({ id: c.id, isPartner })
+                      }
+                    />
+                  </Td>
+                  <Td className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStaffCafe(c)}
+                        title="Manage staff & owner"
+                      >
+                        <UserCog className="size-3.5" />
+                        Owner
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        render={<Link href={`/admin/menus?cafeId=${c.id}`} />}
+                      >
+                        Menu
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => {
+                          if (confirm(`Delete ${c.name}?`)) del.mutate(c.id);
+                        }}
+                        title="Delete cafe"
+                      >
+                        <Trash2 className="size-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+
+          {/* Pagination */}
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {cafes.length} cafe{cafes.length !== 1 ? 's' : ''} shown
+              {partnerFilter ? ` (filtered)` : ''}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCursor(undefined);
+                  setSelected(new Set());
+                }}
+                disabled={!cursor}
+              >
+                <ChevronLeft className="size-3.5" /> First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (data?.nextCursor) {
+                    setCursor(data.nextCursor);
+                    setSelected(new Set());
+                  }
+                }}
+                disabled={!data?.nextCursor}
+              >
+                Next <ChevronRight className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          {cafes.length === 0 ? (
+            <EmptyState>
+              {hasFilters ? (
+                <>
+                  No cafes match your filters.
+                  <Button variant="link" size="sm" onClick={resetFilters} className="mt-1">
+                    Reset filters
+                  </Button>
+                </>
+              ) : (
+                'No cafes found.'
+              )}
+            </EmptyState>
+          ) : null}
+        </>
+      )}
 
       {staffCafe && (
         <StaffDrawer

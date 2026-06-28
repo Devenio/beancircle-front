@@ -26,7 +26,7 @@ export default function FeatureFlagsPage() {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [q, setQ] = useState('');
 
-  const { data: flags } = useQuery({
+  const { data: flags, isLoading } = useQuery({
     queryKey: ['admin-flags', locale],
     queryFn: () => adminListFlags(locale),
   });
@@ -74,8 +74,27 @@ export default function FeatureFlagsPage() {
       />
 
       <div className="space-y-6">
-        {grouped.map(([category, items]) => (
-          <section key={category}>
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, gi) => (
+            <section key={gi}>
+              <div className="h-3 w-24 rounded bg-muted mb-3" />
+              <Card className="mt-2 divide-y divide-border">
+                {Array.from({ length: 4 }).map((_, fi) => (
+                  <div key={fi} className="flex items-center justify-between gap-4 p-4 animate-pulse">
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-32 rounded bg-muted" />
+                      <div className="h-3 w-48 rounded bg-muted" />
+                    </div>
+                    <div className="h-5 w-9 rounded-full bg-muted" />
+                  </div>
+                ))}
+              </Card>
+            </section>
+          ))
+        ) : (
+          <>
+            {grouped.map(([category, items]) => (
+              <section key={category}>
             <SectionTitle>{category}</SectionTitle>
             <Card className="mt-2 divide-y divide-border">
               {items.map((flag) => {
@@ -143,9 +162,11 @@ export default function FeatureFlagsPage() {
         ))}
         {flags && grouped.length === 0 ? (
           <Card>
-            <EmptyState>No flags match “{q}”.</EmptyState>
+            <EmptyState>No flags match "{q}".</EmptyState>
           </Card>
         ) : null}
+        </>
+        )}
       </div>
     </div>
   );

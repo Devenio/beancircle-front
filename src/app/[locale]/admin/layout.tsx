@@ -13,10 +13,12 @@ import {
   PanelLeftOpen,
   Route,
   ScrollText,
+  Search,
   ShieldCheck,
   ToggleRight,
   Users,
 } from 'lucide-react';
+import { CommandPalette } from '@/components/admin/command-palette';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
@@ -96,6 +98,37 @@ export default function AdminLayout({
 
   if (!user || !isAdmin) return null;
 
+  // Keyboard shortcuts for quick navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      )
+        return;
+
+      const shortcuts: Record<string, string> = {
+        '1': '/admin',
+        '2': '/admin/users',
+        '3': '/admin/cafes',
+        '4': '/admin/suggestions',
+        '5': '/admin/claims',
+        '6': '/admin/feature-flags',
+        '7': '/admin/menus',
+        '8': '/admin/designs',
+        '9': '/admin/audit',
+      };
+
+      if (shortcuts[e.key]) {
+        e.preventDefault();
+        router.push(shortcuts[e.key]);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [router]);
+
   const visible = NAV.filter((n) => isSuper || !n.superOnly);
   const current = NAV.find((n) =>
     n.href === '/admin' ? pathname === '/admin' : pathname.startsWith(n.href),
@@ -103,6 +136,7 @@ export default function AdminLayout({
 
   return (
     <div className="fixed inset-0 z-50 flex bg-background text-foreground">
+      <CommandPalette />
       {/* Sidebar */}
       <aside
         className={cn(
@@ -157,7 +191,14 @@ export default function AdminLayout({
                 )}
               >
                 <Icon className="size-[18px] shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && (
+                  <span className="flex-1">{item.label}</span>
+                )}
+                {!collapsed && (
+                  <kbd className="hidden rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground/50 group-hover:inline">
+                    {NAV.indexOf(item) + 1}
+                  </kbd>
+                )}
               </Link>
             );
           })}
@@ -201,6 +242,17 @@ export default function AdminLayout({
           <h2 className="text-sm font-medium text-muted-foreground">
             {current?.label ?? 'Admin'}
           </h2>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+            className="ml-4 hidden items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted sm:flex"
+          >
+            <Search className="size-3.5" />
+            <span>Search…</span>
+            <kbd className="ml-2 rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]">
+              ⌘K
+            </kbd>
+          </button>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="hidden text-muted-foreground sm:block">
               {user.name ?? user.username}
