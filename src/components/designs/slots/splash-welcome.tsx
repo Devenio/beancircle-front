@@ -11,21 +11,33 @@ import type { WelcomeDesignProps } from '../registry';
  * appears. All CSS is scoped under `.bc-splash` so it never leaks globally,
  * and the stroke length is measured at runtime for an exact reveal.
  */
-export function SplashWelcome({ menu, labels, onViewMenu }: WelcomeDesignProps) {
+export function SplashWelcome({ menu, labels, onViewMenu, onAnimationEnd }: WelcomeDesignProps) {
   const outlineRef = useRef<SVGPathElement>(null);
+  const viewRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const outline = outlineRef.current;
     if (!outline) return;
-    // Measure the real path length so the dash reveal is exact across renderers.
     const len = Math.ceil(outline.getTotalLength());
     outline.style.strokeDasharray = String(len);
     outline.style.strokeDashoffset = String(len);
-    // Restart the animation now that the dash values are accurate.
     outline.style.animation = 'none';
-    void outline.getBoundingClientRect(); // force reflow
+    void outline.getBoundingClientRect();
     outline.style.animation = '';
   }, []);
+
+  useEffect(() => {
+    const btn = viewRef.current;
+    if (!btn || !onAnimationEnd) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      onAnimationEnd();
+      return;
+    }
+    const handler = () => onAnimationEnd();
+    btn.addEventListener('animationend', handler, { once: true });
+    return () => btn.removeEventListener('animationend', handler);
+  }, [onAnimationEnd]);
 
   return (
     <section className="bc-splash">
@@ -58,7 +70,7 @@ export function SplashWelcome({ menu, labels, onViewMenu }: WelcomeDesignProps) 
           <p className="bc-tagline">{menu.welcomeMessage}</p>
         ) : null}
 
-        <button type="button" className="bc-view" onClick={onViewMenu}>
+        <button ref={viewRef} type="button" className="bc-view" onClick={onViewMenu}>
           {labels.viewMenu}
           <ChevronDown className="bc-view-icon" />
         </button>

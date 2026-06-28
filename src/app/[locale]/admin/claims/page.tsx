@@ -3,9 +3,17 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { BadgeCheck, Check, Coffee, X } from 'lucide-react';
+import {
+  BadgeCheck,
+  Check,
+  Coffee,
+  ExternalLink,
+  Phone,
+  X,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   EmptyState,
   PageHeader,
@@ -34,6 +42,8 @@ export default function ClaimsPage() {
   const { locale } = useParams<{ locale: string }>();
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<ClaimStatus>('PENDING');
+  const [search, setSearch] = useState('');
+  const [selectedClaims, setSelectedClaims] = useState<Set<string>>(new Set());
 
   const { data } = useQuery({
     queryKey: ['admin-claims', statusFilter, locale],
@@ -61,7 +71,37 @@ export default function ClaimsPage() {
     },
   });
 
+  const bulkUpdate = useMutation({
+    mutationFn: async ({
+      ids,
+      status,
+    }: {
+      ids: string[];
+      status: ClaimStatus;
+    }) => {
+      for (const id of ids) {
+        await adminUpdateClaim(id, { status });
+      }
+    },
+    onSuccess: () => {
+      invalidate();
+      setSelectedClaims(new Set());
+    },
+  });
+
   const claims = data?.data ?? [];
+  const filteredClaims = search
+    ? claims.filter(
+        (c) =>
+          c.cafe.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+          c.user.username?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : claims;
+
+  const allSelected =
+    filteredClaims.length > 0 &&
+    filteredClaims.every((c) => selectedClaims.has(c.id));
 
   return (
     <div>
@@ -69,35 +109,108 @@ export default function ClaimsPage() {
         title="Ownership Claims"
         subtitle="Owners claiming or creating cafes, awaiting verification."
         actions={
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as ClaimStatus)}
-            className="w-36"
-          >
-            {STATUS_OPTS.map((s) => (
-              <SelectOption key={s} value={s}>
-                {s}
-              </SelectOption>
-            ))}
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as ClaimStatus)}
+              className="w-36"
+            >
+              {STATUS_OPTS.map((s) => (
+                <SelectOption key={s} value={s}>
+                  {s}
+                </SelectOption>
+              ))}
+            </Select>
+          </div>
         }
       />
+
+      <div className="mb-4 flex items-center gap-3">
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search claims by cafe name, user name, or username..."
+          className="max-w-sm"
+        />
+        {statusFilter === 'PENDING' && selectedClaims.size > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {selectedClaims.size} selected
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                bulkUpdate.mutate({
+                  ids: Array.from(selectedClaims),
+                  status: 'APPROVED',
+                })
+              }
+              disabled={bulkUpdate.isPending}
+              className="gap-1 text-green-600 hover:text-green-700"
+            >
+              <Check className="size-3.5" />
+              Approve All
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedClaims(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Table>
         <thead className="bg-muted/40">
           <tr>
+            {statusFilter === 'PENDING' && (
+              <Th className="w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedClaims(
+                        new Set(filteredClaims.map((c) => c.id)),
+                      );
+                    } else {
+                      setSelectedClaims(new Set());
+                    }
+                  }}
+                  className="h-4 w-4 rounded border-border"
+                />
+              </Th>
+            )}
             <Th>Cafe</Th>
             <Th>Claimant</Th>
             <Th>Type</Th>
-            <Th>Message / Phone</Th>
+            <Th>Contact</Th>
             <Th>Status</Th>
             <Th className="text-right">Submitted</Th>
             <Th className="text-right">Actions</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {claims.map((c) => (
+          {filteredClaims.map((c) => (
             <tr key={c.id} className="transition-colors hover:bg-muted/30">
+              {statusFilter === 'PENDING' && (
+                <Td>
+                  <input
+                    type="checkbox"
+                    checked={selectedClaims.has(c.id)}
+                    onChange={(e) => {
+                      const next = new Set(selectedClaims);
+                      if (e.target.checked) next.add(c.id);
+                      else next.delete(c.id);
+                      setSelectedClaims(next);
+                    }}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                </Td>
+              )}
               <Td>
                 <div className="flex items-center gap-1.5 font-medium">
                   {c.cafe.name}
@@ -108,18 +221,34 @@ export default function ClaimsPage() {
                 <div className="truncate text-xs text-muted-foreground">
                   {c.cafe.address}
                 </div>
+                <a
+                  href={`/admin/cafes?q=${encodeURIComponent(c.cafe.name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+                >
+                  View cafe <ExternalLink className="size-2.5" />
+                </a>
               </Td>
               <Td>
                 <div className="flex items-center gap-2">
                   <Avatar size="sm">
-                    {c.user.avatarUrl ? <AvatarImage src={c.user.avatarUrl} /> : null}
+                    {c.user.avatarUrl ? (
+                      <AvatarImage src={c.user.avatarUrl} />
+                    ) : null}
                     <AvatarFallback>
-                      {(c.user.name ?? c.user.username ?? '?').slice(0, 2).toUpperCase()}
+                      {(c.user.name ?? c.user.username ?? '?')
+                        .slice(0, 2)
+                        .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{c.user.name ?? '—'}</div>
-                    <div className="text-xs text-muted-foreground">@{c.user.username ?? '—'}</div>
+                    <div className="truncate text-sm font-medium">
+                      {c.user.name ?? '—'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      @{c.user.username ?? '—'}
+                    </div>
                   </div>
                 </div>
               </Td>
@@ -130,11 +259,18 @@ export default function ClaimsPage() {
                 </span>
               </Td>
               <Td>
-                <p className="max-w-[200px] truncate text-xs text-muted-foreground">
-                  {c.message ?? '—'}
-                </p>
                 {c.phone ? (
-                  <p className="text-xs text-muted-foreground">{c.phone}</p>
+                  <div className="flex items-center gap-1 text-xs">
+                    <Phone className="size-3 text-muted-foreground" />
+                    <span className="font-mono">{c.phone}</span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
+                {c.message ? (
+                  <p className="mt-1 max-w-[180px] truncate text-[11px] text-muted-foreground">
+                    "{c.message}"
+                  </p>
                 ) : null}
               </Td>
               <Td>
@@ -149,7 +285,9 @@ export default function ClaimsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => update.mutate({ id: c.id, status: 'APPROVED' })}
+                      onClick={() =>
+                        update.mutate({ id: c.id, status: 'APPROVED' })
+                      }
                       title="Approve"
                       className="gap-1 text-green-600 hover:text-green-700"
                     >
@@ -163,8 +301,14 @@ export default function ClaimsPage() {
                       size="icon-sm"
                       onClick={() => {
                         const adminNote =
-                          window.prompt('Reason for rejection (optional):') ?? undefined;
-                        update.mutate({ id: c.id, status: 'REJECTED', adminNote });
+                          window.prompt(
+                            'Reason for rejection (optional):',
+                          ) ?? undefined;
+                        update.mutate({
+                          id: c.id,
+                          status: 'REJECTED',
+                          adminNote,
+                        });
                       }}
                       title="Reject"
                     >
@@ -177,8 +321,12 @@ export default function ClaimsPage() {
           ))}
         </tbody>
       </Table>
-      {data && claims.length === 0 ? (
-        <EmptyState>No {statusFilter.toLowerCase()} claims.</EmptyState>
+      {data && filteredClaims.length === 0 ? (
+        <EmptyState>
+          {search
+            ? `No claims matching "${search}"`
+            : `No ${statusFilter.toLowerCase()} claims.`}
+        </EmptyState>
       ) : null}
     </div>
   );

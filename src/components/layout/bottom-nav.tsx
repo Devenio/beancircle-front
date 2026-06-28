@@ -1,7 +1,7 @@
 'use client';
 
-import { Home, Stamp, Compass, MessageCircle } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { Home, Stamp, Compass, MessageCircle, Coffee } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { Link, usePathname } from '@/i18n/navigation';
@@ -9,11 +9,14 @@ import { api } from '@/lib/api/client';
 import { haptic } from '@/lib/mobile/haptics';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
+import { useIdentityStore } from '@/stores/identity-store';
 import {
   useChatArchiveStore,
   getDisplayUnread,
 } from '@/stores/chat-archive-store';
 import type { Conversation, ChatMember } from '@/components/chat/types';
+import type { OwnerCafe } from '@/lib/api/owner';
+import { listOwnerCafes } from '@/lib/api/owner';
 
 type TabKey = 'home' | 'passport' | 'explore' | 'messages' | 'profile';
 
@@ -47,6 +50,8 @@ export function BottomNav() {
   const reduceMotion = useReducedMotion();
   const user = useAuthStore((s) => s.user);
   const archivedAt = useChatArchiveStore((s) => s.archivedAt);
+  const { active, cafes, switchToPersonal, switchToCafe, setSwitcherOpen, switcherOpen } =
+    useIdentityStore();
 
   const { data: conversations } = useQuery({
     queryKey: ['conversations', locale],
@@ -54,22 +59,150 @@ export function BottomNav() {
     staleTime: 30_000,
   });
 
-  const active = (conversations ?? []).filter((c) => !archivedAt[c.id]);
-  const totalUnread = active.reduce((sum, c) => {
+  const { data: ownerCafes } = useQuery({
+    queryKey: ['owner-cafes-nav', locale],
+    queryFn: () => listOwnerCafes(locale),
+    staleTime: 60_000,
+  });
+
+  const activeCafe =
+    active.type === 'cafe'
+      ? cafes.find((c) => c.cafeId === active.cafeId)
+      : null;
+
+  const activeConversations = (conversations ?? []).filter((c) => !archivedAt[c.id]);
+  const totalUnread = activeConversations.reduce((sum, c) => {
     const unread = getDisplayUnread(c.id, c.unreadCount ?? 0);
     return sum + (c.muted ? 0 : unread);
   }, 0);
 
-  const latestUnreadSender: ChatMember | undefined = active
+  const latestUnreadSender: ChatMember | undefined = activeConversations
     .filter((c) => !c.muted && getDisplayUnread(c.id, c.unreadCount ?? 0) > 0)
     .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0]
     ?.otherMember;
 
+  const hasCafes = (ownerCafes?.length ?? 0) > 0;
+
   return (
-    <nav
-      aria-label={t('home')}
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-    >
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
+      {/* Cafe switcher pill - above bottom nav */}
+      <AnimatePresence>
+        {hasCafes && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="pointer-events-auto mx-auto mb-2 w-[min(92vw,430px)]"
+          >
+            <button
+              type="button"
+              onClick={() => setSwitcherOpen(!switcherOpen)}
+              className={cn(
+                'flex w-full items-center gap-2.5 rounded-2xl border px-3 py-2 text-left transition-all',
+                active.type === 'cafe'
+                  ? 'border-amber-300/40 bg-amber-500/10 shadow-sm'
+                  : 'border-border/50 bg-background/80 hover:bg-background/95',
+              )}
+            >
+              {activeCafe?.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={activeCafe.logoUrl}
+                  alt=""
+                  className="h-6 w-6 rounded-lg object-cover"
+                />
+              ) : (
+                <span
+                  className={cn(
+                    'flex h-6 w-6 items-center justify-center rounded-lg',
+                    active.type === 'cafe'
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  <Coffee className="h-3.5 w-3.5" />
+                </span>
+              )}
+              <span className="min-w-0 flex-1 truncate text-xs font-medium">
+                {active.type === 'cafe'
+                  ? activeCafe?.name ?? 'Cafe'
+                  : t('switchToCafe')}
+              </span>
+              {active.type === 'cafe' && (
+                <span className="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  {t('cafeMode')}
+                </span>
+              )}
+            </button>
+
+            {/* Expanded switcher */}
+            <AnimatePresence>
+              {switcherOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-1 overflow-hidden rounded-2xl border border-border bg-background/95 shadow-lg backdrop-blur-xl"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      switchToPersonal();
+                      haptic('selection');
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs transition-colors hover:bg-muted',
+                      active.type === 'personal' && 'bg-muted',
+                    )}
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-muted text-[10px] font-bold text-muted-foreground">
+                      {initials(user ?? undefined)}
+                    </span>
+                    <span className="flex-1 font-medium">{t('personalAccount')}</span>
+                    {active.type === 'personal' && (
+                      <span className="h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </button>
+                  {ownerCafes?.map(({ cafe }) => (
+                    <button
+                      key={cafe.id}
+                      type="button"
+                      onClick={() => {
+                        switchToCafe(cafe.id);
+                        haptic('selection');
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-2.5 border-t border-border px-3 py-2.5 text-left text-xs transition-colors hover:bg-muted',
+                        active.type === 'cafe' && active.cafeId === cafe.id && 'bg-muted',
+                      )}
+                    >
+                      {cafe.photos?.[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={cafe.photos[0].url}
+                          alt=""
+                          className="h-6 w-6 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+                          <Coffee className="h-3 w-3" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1 truncate font-medium">
+                        {cafe.name}
+                      </span>
+                      {active.type === 'cafe' && active.cafeId === cafe.id && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/90 to-transparent"
@@ -105,7 +238,7 @@ export function BottomNav() {
           );
         })}
       </div>
-    </nav>
+    </div>
   );
 }
 

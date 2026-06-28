@@ -11,7 +11,10 @@
     "passport": "Passport",
     "create": "Create",
     "messages": "Messages",
-    "profile": "Profile"
+    "profile": "Profile",
+    "switchToCafe": "Switch to cafe",
+    "cafeMode": "Cafe",
+    "personalAccount": "Personal account"
   },
   "auth": {
     "login": "Log in",
@@ -449,7 +452,26 @@
     "createOwn": "Create your cafe",
     "claimSubmittedTitle": "Request received",
     "weWillCall": "We'll review your request and call you to verify.",
-    "backToCafes": "Back to my cafes"
+    "backToCafes": "Back to my cafes",
+    "verifyOwnership": "Verify ownership",
+    "verificationDescription": "Provide your contact information so we can verify you are the owner of this cafe.",
+    "contactPhone": "Contact phone number",
+    "phonePlaceholder": "+98 912 123 4567",
+    "phoneHint": "We may call this number to verify your ownership.",
+    "additionalInfo": "Additional information (optional)",
+    "messagePlaceholder": "Tell us why you are the owner (business registration number, etc.)",
+    "submitClaim": "Submit claim request",
+    "claimNextSteps": "Our team will review your claim within 24 hours. We may call the phone number you provided to verify ownership. Once approved, you will have full access to manage your cafe.",
+    "emptyTitle": "Claim your cafe on BeanCircle",
+    "emptyDescription": "Manage your cafe menu, see customer insights, and grow your business.",
+    "claimExisting": "Claim existing cafe",
+    "createNew": "Create new cafe",
+    "unverifiedHint": "Your cafe is awaiting verification. Once verified, you will have full access to all cafe management features.",
+    "dashboard": "Dashboard",
+    "menu": "Menu",
+    "qrCodes": "QR Codes",
+    "settings": "Settings",
+    "role": "Role"
   },
   "cafeMenu": {
     "editorTitle": "Menu builder",

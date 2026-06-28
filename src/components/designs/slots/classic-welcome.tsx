@@ -7,7 +7,7 @@ import type { WelcomeDesignProps } from '../registry';
 import { heroImageFor } from './shared';
 
 /** Default welcome screen: full-height hero photo with title + view button. */
-export function ClassicWelcome({ menu, labels, onViewMenu }: WelcomeDesignProps) {
+export function ClassicWelcome({ menu, labels, onViewMenu, onAnimationEnd }: WelcomeDesignProps) {
   const theme = resolveTheme(menu.theme, menu.themeConfig, menu.accentColor);
   const heading = FONT_STACKS[theme.headingFont];
   const heroTint = theme.heroTint ?? theme.accent;
@@ -20,6 +20,7 @@ export function ClassicWelcome({ menu, labels, onViewMenu }: WelcomeDesignProps)
         initial={{ scale: 1.08 }}
         animate={{ scale: 1 }}
         transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+        onAnimationComplete={onAnimationEnd}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={hero} alt="" className="h-full w-full object-cover" />

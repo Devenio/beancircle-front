@@ -40,6 +40,8 @@ export type WelcomeDesignProps = {
   labels: PublicMenuLabels;
   /** Smooth-scroll down to the menu body. */
   onViewMenu: () => void;
+  /** Called once when the welcome entrance animations finish. */
+  onAnimationEnd?: () => void;
 };
 
 export const MENU_DESIGNS: Record<
