@@ -21,6 +21,7 @@ import type { CafeMenuData } from '@/components/cafe-menu/types';
 import { ClassicMenuBody } from './slots/classic-menu';
 import { ClassicWelcome } from './slots/classic-welcome';
 import { EditorialMenu } from './slots/editorial-menu';
+import { NanONanMenu } from './slots/nan-o-nan-menu';
 import { SpotlightWelcome } from './slots/spotlight-welcome';
 import { SplashWelcome } from './slots/splash-welcome';
 
@@ -50,6 +51,7 @@ export const MENU_DESIGNS: Record<
 > = {
   'classic-menu': ClassicMenuBody,
   'editorial-menu': EditorialMenu,
+  'nan-o-nan-menu': NanONanMenu,
 };
 
 export const WELCOME_DESIGNS: Record<
