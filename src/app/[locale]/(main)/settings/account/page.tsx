@@ -19,11 +19,14 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { presignAndUpload } from '@/lib/api/uploads';
-import { useUsernameCheck } from '@/hooks/use-username-check';
+import { useUsernameCheck, type UsernameStatus } from '@/hooks/use-username-check';
 import { useSettingsApi } from '@/hooks/use-settings-api';
 import { SettingsScreen } from '@/components/settings/settings-shell';
 import { SettingsList, SettingsRow, SettingsSectionLabel } from '@/components/settings/settings-row';
-import { SocialLinksEditor } from '@/components/profile/social-links-editor';
+import {
+  SocialLinksEditor,
+  type SocialLink as EditableSocialLink,
+} from '@/components/profile/social-links-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,7 +47,6 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { SocialLink } from '@/lib/social-platforms';
 
 type Me = {
   username?: string | null;
@@ -55,7 +57,7 @@ type Me = {
   avatarUrl?: string | null;
   cityId?: string | null;
   city?: { id: string; name: string } | null;
-  socialLinks?: SocialLink[] | null;
+  socialLinks?: EditableSocialLink[] | null;
 };
 
 type City = { id: string; name: string };
@@ -115,13 +117,17 @@ export default function SettingsAccountPage() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [cityId, setCityId] = useState('');
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [socialLinks, setSocialLinks] = useState<EditableSocialLink[]>([]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
-  const usernameStatus = useUsernameCheck(username, locale, me?.username ?? undefined);
+  const usernameStatus: UsernameStatus = useUsernameCheck(
+    username,
+    locale,
+    me?.username ?? undefined,
+  );
   const usernameSaveOk = usernameStatus === 'available' || usernameStatus === 'idle';
 
   useEffect(() => {

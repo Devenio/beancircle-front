@@ -110,10 +110,8 @@ export default function ProfilePage() {
           <div className="flex items-center gap-1.5">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <IdentityPill />
-                  </span>
+                <TooltipTrigger render={<span />}>
+                  <IdentityPill />
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   Switch between your personal profile and your café(s)
@@ -161,16 +159,18 @@ export default function ProfilePage() {
               return (
                 <TooltipProvider key={i}>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex size-9 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground transition hover:bg-accent hover:text-foreground"
-                        aria-label={displayLabel}
-                      >
-                        <meta.Glyph className="size-4" />
-                      </a>
+                    <TooltipTrigger
+                      render={
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex size-9 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                          aria-label={displayLabel}
+                        />
+                      }
+                    >
+                      <meta.Glyph className="size-4" />
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="flex items-center gap-1">
                       {displayLabel}
@@ -335,7 +335,7 @@ function Stat({ value, label, tooltip }: { value: number; label: string; tooltip
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>{inner}</TooltipTrigger>
+        <TooltipTrigger render={inner} />
         <TooltipContent>{tooltip}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
