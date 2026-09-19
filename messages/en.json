@@ -53,8 +53,16 @@
     "privacy": "Privacy Policy",
     "selectCountry": "Select country",
     "mockCode": "Dev code",
+    "demoCodeTitle": "Demo code",
+    "demoCodeHint": "SMS is mocked — tap to fill and copy",
+    "demoCodeCopied": "Copied",
+    "copyDemoCode": "Copy demo verification code {code}",
     "usernameAvailable": "Username is available",
     "usernameTaken": "Username is already taken"
+  },
+  "demo": {
+    "label": "Demo",
+    "message": "SMS is mocked. After requesting OTP, the code appears on screen."
   },
   "feed": {
     "empty": "Follow people and cafes to see posts",

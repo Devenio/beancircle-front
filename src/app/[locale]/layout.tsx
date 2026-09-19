@@ -10,6 +10,7 @@ import { PushBootstrap } from '@/components/push/push-bootstrap';
 import { BugReportLauncher } from '@/components/bug-report/bug-report-launcher';
 import { PwaProvider } from '@/providers/pwa-provider';
 import { AnalyticsProvider } from '@/providers/analytics-provider';
+import { DemoBanner } from '@/components/demo/demo-banner';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -36,7 +37,12 @@ export default async function LocaleLayout({
               <PushBootstrap />
               <PwaProvider />
               <AnalyticsProvider>
-                <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
+                <div className="flex min-h-screen flex-col">
+                  <DemoBanner />
+                  <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col bg-background shadow-sm">
+                    {children}
+                  </div>
+                </div>
                 <BugReportLauncher />
               </AnalyticsProvider>
             </TooltipProvider>

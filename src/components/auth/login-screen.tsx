@@ -15,6 +15,7 @@ import { api, getGoogleAuthUrl } from '@/lib/api/client';
 import { useAuthStore } from '@/stores/auth-store';
 import { AuthBackground } from './auth-background';
 import { AuthPrimaryButton } from './auth-primary-button';
+import { DemoOtpCode, readOtpCode } from './demo-otp-code';
 import { GoogleAuthButton } from './google-auth-button';
 import { LoginHero } from './login-hero';
 import { OtpInput } from './otp-input';
@@ -113,12 +114,14 @@ export function LoginScreen() {
           locale,
         },
       );
-      if (res.code) setMockCode(res.code);
+      const demoCode = readOtpCode(res);
+      setMockCode(demoCode);
       setPhoneStatus('success');
       setResendIn(RESEND_SECONDS);
       window.setTimeout(() => {
         setPhase('otp');
-        setOtp('');
+        const digits = demoCode.replace(/\D/g, '');
+        setOtp(digits.length === 6 ? digits : '');
         setPhoneStatus('idle');
       }, 420);
     } catch (e) {
@@ -170,6 +173,16 @@ export function LoginScreen() {
     setError('');
     setOtpError(false);
     setPhoneStatus('idle');
+    setMockCode('');
+  }
+
+  function useDemoCode(code: string) {
+    const digits = code.replace(/\D/g, '').slice(0, 6);
+    if (digits) {
+      setOtp(digits);
+      setOtpError(false);
+      setError('');
+    }
   }
 
   const phoneFieldStatus =
@@ -186,7 +199,7 @@ export function LoginScreen() {
     : fadeSlide;
 
   return (
-    <div className="relative flex min-h-dvh min-h-[100dvh] flex-col overflow-hidden text-white">
+    <div className="relative flex h-full min-h-full flex-col overflow-x-hidden overflow-y-auto text-white">
       <AuthBackground />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -288,12 +301,7 @@ export function LoginScreen() {
                   </div>
 
                   {mockCode ? (
-                    <p className="mt-3 text-center text-xs text-white/40">
-                      {t('mockCode')}:{' '}
-                      <span className="font-mono text-amber-200/80">
-                        {mockCode}
-                      </span>
-                    </p>
+                    <DemoOtpCode code={mockCode} onUse={useDemoCode} />
                   ) : null}
 
                   <div className="mt-5">
