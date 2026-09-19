@@ -24,7 +24,7 @@ export function MessageSelectionHeader({
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/95 backdrop-blur-md">
-      <div className="flex items-center gap-2 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="flex items-center gap-2 px-2 py-2">
         <button
           type="button"
           onClick={onCancel}

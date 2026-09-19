@@ -489,7 +489,7 @@ export function ChatRoom({ conversationId, locale }: ChatRoomProps) {
 
   return (
     <ChatPrefsProvider value={{ linkPreviews: settings?.linkPreviews ?? true }}>
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-full flex-col bg-background">
       {selectionMode ? (
         <MessageSelectionHeader
           count={selectedIds.size}

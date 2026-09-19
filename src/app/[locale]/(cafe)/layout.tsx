@@ -24,7 +24,7 @@ export default function CafeGroupLayout({
 
   return (
     <>
-      <main className="min-h-dvh">{children}</main>
+      <main className="min-h-full">{children}</main>
       <IdentitySwitcher />
     </>
   );

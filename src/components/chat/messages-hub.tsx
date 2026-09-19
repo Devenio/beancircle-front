@@ -432,9 +432,9 @@ export function MessagesHub({ locale }: { locale: string }) {
   };
 
   return (
-    <div className="flex h-full min-h-dvh flex-col bg-background">
+    <div className="flex h-full min-h-full flex-col bg-background">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-md">
-        <div className="flex items-center gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+        <div className="flex items-center gap-2 px-4 pt-3 pb-2">
           {isArchivedView ? (
             <button
               type="button"

@@ -32,9 +32,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main
         className={
           isChatRoom
-            ? 'h-dvh overflow-hidden'
+            ? 'h-full overflow-hidden'
             : isSettings
-              ? 'min-h-dvh'
+              ? 'min-h-full'
               : 'pb-[calc(5.25rem+env(safe-area-inset-bottom))]'
         }
       >

@@ -236,12 +236,12 @@ export function OnboardingShell() {
   const progressCurrent = Math.max(0, index - 1);
 
   return (
-    <div className="relative flex min-h-dvh min-h-[100dvh] flex-col overflow-hidden text-white">
+    <div className="relative flex h-full min-h-full flex-col overflow-hidden text-white">
       <AuthBackground />
 
       <LazyMotion features={domAnimation} strict>
         {/* Top bar: progress + persistent escape hatch */}
-        <div className="relative z-20 flex items-center gap-3 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
+        <div className="relative z-20 flex items-center gap-3 px-5 pt-3">
           {index > 0 && (
             <div className="flex-1">
               <OnboardingProgressBar total={progressTotal} current={progressCurrent} />

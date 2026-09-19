@@ -35,12 +35,14 @@ export default async function LocaleLayout({
           <FeatureFlagsProvider>
             <TooltipProvider>
               <PushBootstrap />
-              <PwaProvider />
               <AnalyticsProvider>
-                <div className="flex min-h-screen flex-col">
+                <div className="flex h-dvh max-h-dvh flex-col overflow-hidden">
                   <DemoBanner />
-                  <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col bg-background shadow-sm">
-                    {children}
+                  <div className="app-shell relative flex min-h-0 flex-1 flex-col">
+                    <PwaProvider />
+                    <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col overflow-y-auto bg-background shadow-sm">
+                      {children}
+                    </div>
                   </div>
                 </div>
                 <BugReportLauncher />

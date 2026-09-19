@@ -334,6 +334,18 @@ html[data-chat-wallpaper='minimal'] .chat-wallpaper-dots {
   animation: message-flash 1.2s ease-out;
 }
 
+/*
+  Demo banner lives in normal document flow (not overlay). This shell is the
+  remaining viewport below it. `transform` makes position:fixed descendants
+  (bottom nav, chat, maps, cafe chrome) anchor here instead of the viewport,
+  so they keep their intended positions under the banner. EN/FA wrap height
+  is handled automatically because the banner is in-flow.
+*/
+.app-shell {
+  transform: translateZ(0);
+  overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

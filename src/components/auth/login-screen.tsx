@@ -202,7 +202,7 @@ export function LoginScreen() {
     <div className="relative flex h-full min-h-full flex-col overflow-x-hidden overflow-y-auto text-white">
       <AuthBackground />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
         <LoginHero />
 
         <LazyMotion features={domAnimation} strict>
