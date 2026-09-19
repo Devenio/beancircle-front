@@ -36,10 +36,10 @@ import {
   getPlatform,
   isValidHttpUrl,
 } from '@/lib/social-platforms';
-
-type SocialLink = SocialLinkBase & { _tempId?: string };
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+export type SocialLink = SocialLinkBase & { _tempId?: string };
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */

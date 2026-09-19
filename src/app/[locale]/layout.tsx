@@ -35,9 +35,10 @@ export default async function LocaleLayout({
             <TooltipProvider>
               <PushBootstrap />
               <PwaProvider />
-              <AnalyticsProvider />
-              <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
-              <BugReportLauncher />
+              <AnalyticsProvider>
+                <div className="mx-auto min-h-screen max-w-[430px] bg-background shadow-sm">{children}</div>
+                <BugReportLauncher />
+              </AnalyticsProvider>
             </TooltipProvider>
           </FeatureFlagsProvider>
         </QueryProvider>
