@@ -20,7 +20,7 @@ export function PwaToaster() {
   const reduce = useReducedMotion();
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center pt-[calc(env(safe-area-inset-top)+0.625rem)]">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center pt-2.5">
       <div className="w-full max-w-[430px] space-y-2 px-3">
         <AnimatePresence initial={false}>
           <OfflineToast key="net" reduce={!!reduce} />

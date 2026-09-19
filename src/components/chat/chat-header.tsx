@@ -84,7 +84,7 @@ export function ChatHeader({
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur-md">
-      <div className="flex items-center gap-1 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="flex items-center gap-1 px-2 py-2">
         <Link
           href="/messages"
           aria-label={t('backToConversations')}

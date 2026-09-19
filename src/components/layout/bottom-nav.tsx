@@ -84,7 +84,7 @@ export function BottomNav() {
   const hasCafes = (ownerCafes?.length ?? 0) > 0;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center">
       {/* Cafe switcher pill - above bottom nav */}
       <AnimatePresence>
         {hasCafes && (

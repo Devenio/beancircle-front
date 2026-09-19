@@ -8,7 +8,7 @@ export async function DemoBanner() {
     <div
       role="status"
       data-testid="demo-banner"
-      className="sticky top-0 z-[70] border-b border-amber-950/20 bg-amber-400 px-3 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))] text-center text-[12px] leading-snug text-amber-950"
+      className="shrink-0 border-b border-amber-950/20 bg-amber-400 px-3 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))] text-center text-[12px] leading-snug text-amber-950"
     >
       <span className="me-1.5 inline-flex items-center rounded-full bg-amber-950 px-1.5 py-px text-[10px] font-bold uppercase tracking-[0.16em] text-amber-200">
         {t('label')}

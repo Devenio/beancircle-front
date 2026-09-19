@@ -61,7 +61,7 @@ export default function CafeOsShell({
   if (isPoster) return <>{children}</>;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur-md">
         <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
           {t('cafeMode')}
