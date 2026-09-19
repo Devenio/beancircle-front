@@ -3,6 +3,41 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+const DEFAULT_API_ORIGIN = 'https://beancircle-api.vercel.app';
+const DEFAULT_WS_ORIGIN = 'wss://beancircle-api.vercel.app';
+
+function originFromEnv(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+function withSocketOrigin(origin: string): string[] {
+  if (origin.startsWith('https://')) {
+    return [origin, `wss://${origin.slice('https://'.length)}`];
+  }
+  if (origin.startsWith('http://')) {
+    return [origin, `ws://${origin.slice('http://'.length)}`];
+  }
+  return [origin];
+}
+
+const connectSrcOrigins = [
+  ...new Set([
+    ...withSocketOrigin(
+      originFromEnv(process.env.NEXT_PUBLIC_API_URL) ?? DEFAULT_API_ORIGIN,
+    ),
+    ...withSocketOrigin(
+      originFromEnv(process.env.NEXT_PUBLIC_WS_URL) ?? DEFAULT_API_ORIGIN,
+    ),
+    DEFAULT_API_ORIGIN,
+    DEFAULT_WS_ORIGIN,
+  ]),
+].join(' ');
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
@@ -28,7 +63,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' https://www.neshan.org",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://flagcdn.com https://*.tile.openstreetmap.org data: blob:",
-              "connect-src 'self' ws: wss: https://api.mapbox.com https://www.neshan.org",
+              `connect-src 'self' ws: wss: https://api.mapbox.com https://www.neshan.org ${connectSrcOrigins}`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
