@@ -328,7 +328,7 @@ export default function SettingsAccountPage() {
         </div>
         <Button
           className="min-h-11 w-full"
-          disabled={saveMutation.isPending || !usernameSaveOk || usernameStatus === 'checking'}
+          disabled={saveMutation.isPending || !usernameSaveOk}
           onClick={() => saveMutation.mutate()}
         >
           {saveMutation.isPending ? t('saving') : t('saveChanges')}
